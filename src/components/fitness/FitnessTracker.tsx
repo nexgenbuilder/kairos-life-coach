@@ -205,21 +205,6 @@ const FitnessTracker: React.FC = () => {
       setScheduledWorkouts(updatedScheduled);
       localStorage.setItem(`scheduled_workouts_${user?.id}`, JSON.stringify(updatedScheduled));
 
-      // Add to completed workouts
-      const workout = scheduledWorkouts.find(w => w.id === workoutId);
-      if (workout) {
-        const completedWorkout: Workout = {
-          id: Date.now().toString(),
-          name: workout.name,
-          exercises: workout.exercises,
-          duration: workout.duration,
-          date: new Date().toISOString().split('T')[0],
-          notes: workout.notes,
-          completed: true
-        };
-        setWorkouts([completedWorkout, ...workouts]);
-      }
-
       toast.success('Workout completed!');
     } catch (error) {
       console.error('Error completing workout:', error);
