@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, Mic, MicOff } from 'lucide-react';
+import { Send, Mic, MicOff, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [aiMode, setAiMode] = useState(false); // Toggle for AI conversation mode
 
   // Detection patterns for different actions
   const detectActionType = (message: string): 'task' | 'expense' | 'fitness' | 'chat' => {
@@ -77,33 +78,8 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     setIsLoading(true);
 
     try {
-      const actionType = detectActionType(currentInput);
-
-      if (actionType !== 'chat') {
-        // Use our centralized smart-action edge function for structured operations
-        const { data, error } = await supabase.functions.invoke('smart-action', {
-          body: { 
-            message: currentInput,
-            actionType: actionType,
-            context: window.location.pathname.slice(1) || 'home'
-          },
-          headers: session ? {
-            'Authorization': `Bearer ${session.access_token}`
-          } : {}
-        });
-
-        if (error) throw error;
-
-        const aiResponseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.response,
-          sender: 'kairos',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, aiResponseMessage]);
-      } else {
-        // Use regular AI chat for general conversation
+      if (aiMode) {
+        // Force AI conversation mode - bypass action detection
         const { data, error } = await supabase.functions.invoke('ai-chat', {
           body: { 
             message: currentInput,
@@ -125,7 +101,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         
         setMessages(prev => [...prev, aiResponseMessage]);
 
-        // Add text-to-speech for conversational responses
+        // Add text-to-speech for AI responses
         try {
           const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
             body: { 
@@ -140,6 +116,77 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           }
         } catch (error) {
           console.error('Error generating speech:', error);
+        }
+
+        // Auto-disable AI mode after sending
+        setAiMode(false);
+
+      } else {
+        // Normal mode - detect action type and route accordingly
+        const actionType = detectActionType(currentInput);
+
+        if (actionType !== 'chat') {
+          // Use our centralized smart-action edge function for structured operations
+          const { data, error } = await supabase.functions.invoke('smart-action', {
+            body: { 
+              message: currentInput,
+              actionType: actionType,
+              context: window.location.pathname.slice(1) || 'home'
+            },
+            headers: session ? {
+              'Authorization': `Bearer ${session.access_token}`
+            } : {}
+          });
+
+          if (error) throw error;
+
+          const aiResponseMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: data.response,
+            sender: 'kairos',
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, aiResponseMessage]);
+        } else {
+          // Use regular AI chat for general conversation
+          const { data, error } = await supabase.functions.invoke('ai-chat', {
+            body: { 
+              message: currentInput,
+              context: window.location.pathname.slice(1) || 'home'
+            },
+            headers: session ? {
+              'Authorization': `Bearer ${session.access_token}`
+            } : {}
+          });
+
+          if (error) throw error;
+
+          const aiResponseMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: data.response,
+            sender: 'kairos',
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, aiResponseMessage]);
+
+          // Add text-to-speech for conversational responses
+          try {
+            const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+              body: { 
+                text: data.response,
+                voice: 'alloy'
+              }
+            });
+
+            if (!ttsError && ttsData.audioContent) {
+              const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
+              audio.play().catch(err => console.error('Error playing audio:', err));
+            }
+          } catch (error) {
+            console.error('Error generating speech:', error);
+          }
         }
       }
 
@@ -251,6 +298,16 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         ))}
       </div>
 
+      {/* AI Mode Indicator */}
+      {aiMode && (
+        <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
+          <div className="flex items-center justify-center space-x-2 text-sm text-primary">
+            <Sparkles className="h-4 w-4" />
+            <span>AI Conversation Mode - Next message will chat with Kairos</span>
+          </div>
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
         <div className="flex items-center space-x-2 max-w-4xl mx-auto">
@@ -259,10 +316,23 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Ask Kairos anything or create tasks, log expenses, track fitness..."
+              placeholder={aiMode ? "Chat with Kairos AI..." : "Create tasks, log expenses, track fitness..."}
               className="pr-12 border-border focus:ring-primary"
             />
           </div>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setAiMode(!aiMode)}
+            className={cn(
+              "transition-smooth",
+              aiMode ? 'text-primary bg-primary/10 shadow-glow-soft' : 'text-muted-foreground hover:text-primary'
+            )}
+            title={aiMode ? "Disable AI chat mode" : "Enable AI chat mode"}
+          >
+            {aiMode ? <Sparkles className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+          </Button>
           
           <Button
             variant="ghost"
