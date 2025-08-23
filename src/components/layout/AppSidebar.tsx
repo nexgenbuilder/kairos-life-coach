@@ -12,7 +12,8 @@ import {
   Settings,
   Sparkles,
   LogOut,
-  BarChart3
+  BarChart3,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const lifeCategories = [
+  { title: 'Today', url: '/today', icon: Clock },
   { title: 'Money', url: '/money', icon: DollarSign },
   { title: 'Health', url: '/health', icon: Heart },
   { title: 'Fitness', url: '/fitness', icon: Dumbbell },

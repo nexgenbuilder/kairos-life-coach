@@ -12,6 +12,7 @@ import FitnessPage from "./pages/FitnessPage";
 import TasksPage from "./pages/TasksPage";
 import CalendarPage from "./pages/CalendarPage";
 import DashboardPage from "./pages/DashboardPage";
+import TodayPage from "./pages/TodayPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/today" element={<TodayPage />} />
             <Route path="/money" element={<MoneyPage />} />
             <Route path="/health" element={<HealthPage />} />
             <Route path="/fitness" element={<FitnessPage />} />
