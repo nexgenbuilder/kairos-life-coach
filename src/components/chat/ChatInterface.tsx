@@ -69,6 +69,23 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
       };
       
       setMessages(prev => [...prev, aiResponse]);
+
+      // Add text-to-speech for AI responses
+      try {
+        const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+          body: { 
+            text: data.response,
+            voice: 'alloy'
+          }
+        });
+
+        if (!ttsError && ttsData.audioContent) {
+          const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
+          audio.play().catch(err => console.error('Error playing audio:', err));
+        }
+      } catch (error) {
+        console.error('Error generating speech:', error);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -90,9 +107,67 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     }
   };
 
-  const toggleListening = () => {
-    setIsListening(!isListening);
-    // Voice functionality will be implemented with Web Speech API
+  const toggleListening = async () => {
+    if (!isListening) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const audioChunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onload = async () => {
+            const base64Audio = (reader.result as string).split(',')[1];
+            
+            try {
+              const { data, error } = await supabase.functions.invoke('speech-to-text', {
+                body: { audio: base64Audio }
+              });
+
+              if (error) throw error;
+              if (data.text) {
+                setInputValue(data.text);
+              }
+            } catch (error) {
+              console.error('Error converting speech to text:', error);
+              toast({
+                title: "Error",
+                description: "Failed to convert speech to text",
+                variant: "destructive",
+              });
+            }
+          };
+          reader.readAsDataURL(audioBlob);
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        setIsListening(true);
+
+        // Stop recording after 5 seconds
+        setTimeout(() => {
+          if (mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            setIsListening(false);
+          }
+        }, 5000);
+
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        toast({
+          title: "Error",
+          description: "Could not access microphone",
+          variant: "destructive",
+        });
+      }
+    } else {
+      setIsListening(false);
+    }
   };
 
   return (
