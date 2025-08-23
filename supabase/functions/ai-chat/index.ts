@@ -51,23 +51,7 @@ serve(async (req) => {
 - Calendar scheduling
 - Life goals and personal development
 
-When users ask you to create, update, or manage tasks, expenses, or other data, you should respond with a JSON object containing the action and data, followed by a user-friendly message.
-
-For task creation, respond with:
-{
-  "action": "create_task",
-  "data": {
-    "title": "task title",
-    "description": "task description",
-    "priority": "high|medium|low",
-    "status": "todo",
-    "due_date": "YYYY-MM-DD" (optional)
-  }
-}
-
-Then provide a friendly response about what you've done.
-
-Be encouraging, practical, and provide actionable advice. Keep responses concise but helpful.`;
+When users ask you to create tasks, respond naturally and mention what task you're creating. Be encouraging, practical, and provide actionable advice. Keep responses concise but helpful.`;
 
     if (context) {
       systemPrompt += `\n\nCurrent context: The user is in the ${context} section of the app.`;
@@ -82,13 +66,12 @@ Be encouraging, practical, and provide actionable advice. Keep responses concise
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-2025-08-07',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
-        max_tokens: 1000,
-        temperature: 0.7,
+        max_completion_tokens: 1000,
       }),
     });
 
@@ -101,41 +84,42 @@ Be encouraging, practical, and provide actionable advice. Keep responses concise
     const data = await response.json();
     let aiResponse = data.choices[0].message.content;
 
-    // Check if the response contains an action to perform
-    let actionPerformed = false;
-    const jsonMatch = aiResponse.match(/\{[\s\S]*?"action"[\s\S]*?\}/);
+    // Check if the user is asking to create a task and we have a user ID
+    const createTaskKeywords = ['create task', 'add task', 'new task', 'make task', 'create a task'];
+    const isCreatingTask = createTaskKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword)
+    );
     
-    if (jsonMatch && userId) {
+    if (isCreatingTask && userId) {
       try {
-        const actionData = JSON.parse(jsonMatch[0]);
+        // Extract task information from the user's message
+        const taskTitle = extractTaskTitle(message);
+        const taskPriority = extractPriority(message);
         
-        if (actionData.action === 'create_task') {
-          // Create task in database
+        if (taskTitle) {
           const supabase = createClient(supabaseUrl, supabaseKey);
           
           const { error: taskError } = await supabase
             .from('tasks')
             .insert([{
               user_id: userId,
-              title: actionData.data.title,
-              description: actionData.data.description || '',
-              priority: actionData.data.priority || 'medium',
-              status: actionData.data.status || 'todo',
-              due_date: actionData.data.due_date || null
+              title: taskTitle,
+              description: '',
+              priority: taskPriority,
+              status: 'todo'
             }]);
 
           if (taskError) {
             console.error('Error creating task:', taskError);
             aiResponse = "I apologize, but I encountered an error while creating the task. Please try again.";
           } else {
-            actionPerformed = true;
-            // Remove the JSON from the response
-            aiResponse = aiResponse.replace(jsonMatch[0], '').trim();
-            console.log('Task created successfully');
+            console.log('Task created successfully:', taskTitle);
+            // Update the AI response to confirm the task was actually created
+            aiResponse = `Perfect! I've successfully created the task "${taskTitle}" with ${taskPriority} priority. You can view it in your tasks list and update it as needed.`;
           }
         }
-      } catch (parseError) {
-        console.error('Error parsing action JSON:', parseError);
+      } catch (error) {
+        console.error('Error processing task creation:', error);
       }
     }
 
@@ -157,3 +141,35 @@ Be encouraging, practical, and provide actionable advice. Keep responses concise
     });
   }
 });
+
+// Helper functions to extract task information from natural language
+function extractTaskTitle(message: string): string | null {
+  // Look for patterns like "create task [title]", "add task [title]", etc.
+  const patterns = [
+    /create (?:task|a task) (?:called |named )?["']?([^"']+)["']?/i,
+    /add (?:task|a task) (?:called |named )?["']?([^"']+)["']?/i,
+    /new task (?:called |named )?["']?([^"']+)["']?/i,
+    /make (?:task|a task) (?:called |named )?["']?([^"']+)["']?/i,
+    /task (?:called |named )?["']?([^"']+)["']?/i
+  ];
+  
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+  
+  return null;
+}
+
+function extractPriority(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  if (lowerMessage.includes('high priority') || lowerMessage.includes('urgent')) {
+    return 'high';
+  }
+  if (lowerMessage.includes('low priority')) {
+    return 'low';
+  }
+  return 'medium';
+}
