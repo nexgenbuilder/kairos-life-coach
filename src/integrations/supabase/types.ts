@@ -14,6 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_expenses: {
+        Row: {
+          amount_cents: number
+          category: string
+          created_at: string
+          currency: string
+          date: string
+          description: string
+          id: string
+          is_recurring: boolean
+          receipt_url: string | null
+          recurring_frequency: string | null
+          updated_at: string
+          user_id: string
+          vendor: string | null
+        }
+        Insert: {
+          amount_cents: number
+          category: string
+          created_at?: string
+          currency?: string
+          date: string
+          description: string
+          id?: string
+          is_recurring?: boolean
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          updated_at?: string
+          user_id: string
+          vendor?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          category?: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string
+          id?: string
+          is_recurring?: boolean
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          updated_at?: string
+          user_id?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      business_revenue: {
+        Row: {
+          amount_cents: number
+          client_id: string | null
+          created_at: string
+          currency: string
+          date: string
+          description: string
+          id: string
+          is_recurring: boolean
+          recurring_frequency: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          date: string
+          description: string
+          id?: string
+          is_recurring?: boolean
+          recurring_frequency?: string | null
+          source: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string
+          id?: string
+          is_recurring?: boolean
+          recurring_frequency?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_revenue_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           amount_cents: number | null
@@ -231,6 +332,51 @@ export type Database = {
           },
         ]
       }
+      inventory: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          name: string
+          quantity: number
+          sku: string | null
+          supplier: string | null
+          unit_price_cents: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          quantity?: number
+          sku?: string | null
+          supplier?: string | null
+          unit_price_cents?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          quantity?: number
+          sku?: string | null
+          supplier?: string | null
+          unit_price_cents?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       key_dates: {
         Row: {
           created_at: string | null
@@ -272,9 +418,52 @@ export type Database = {
           },
         ]
       }
+      notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          module: string
+          person_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          module: string
+          person_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          module?: string
+          person_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people: {
         Row: {
+          address: string | null
           birthday: string | null
+          company: string | null
           created_at: string | null
           email: string | null
           full_name: string
@@ -282,13 +471,17 @@ export type Database = {
           last_interaction_at: string | null
           notes: string | null
           phone: string | null
+          position: string | null
+          social_media_links: Json | null
           tags: string[] | null
           type: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          address?: string | null
           birthday?: string | null
+          company?: string | null
           created_at?: string | null
           email?: string | null
           full_name: string
@@ -296,13 +489,17 @@ export type Database = {
           last_interaction_at?: string | null
           notes?: string | null
           phone?: string | null
+          position?: string | null
+          social_media_links?: Json | null
           tags?: string[] | null
           type: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          address?: string | null
           birthday?: string | null
+          company?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string
@@ -310,6 +507,8 @@ export type Database = {
           last_interaction_at?: string | null
           notes?: string | null
           phone?: string | null
+          position?: string | null
+          social_media_links?: Json | null
           tags?: string[] | null
           type?: string
           updated_at?: string | null
@@ -339,6 +538,45 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pto_requests: {
+        Row: {
+          created_at: string
+          end_date: string
+          hours_requested: number | null
+          id: string
+          notes: string | null
+          pto_type: string
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          hours_requested?: number | null
+          id?: string
+          notes?: string | null
+          pto_type: string
+          start_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          hours_requested?: number | null
+          id?: string
+          notes?: string | null
+          pto_type?: string
+          start_date?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -451,6 +689,54 @@ export type Database = {
           scope?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      work_schedules: {
+        Row: {
+          created_at: string
+          daily_rate_cents: number | null
+          end_time: string
+          hourly_rate_cents: number | null
+          id: string
+          is_recurring: boolean
+          recurrence_pattern: string | null
+          salary_weekly_cents: number | null
+          start_time: string
+          title: string
+          updated_at: string
+          user_id: string
+          work_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          daily_rate_cents?: number | null
+          end_time: string
+          hourly_rate_cents?: number | null
+          id?: string
+          is_recurring?: boolean
+          recurrence_pattern?: string | null
+          salary_weekly_cents?: number | null
+          start_time: string
+          title?: string
+          updated_at?: string
+          user_id: string
+          work_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          daily_rate_cents?: number | null
+          end_time?: string
+          hourly_rate_cents?: number | null
+          id?: string
+          is_recurring?: boolean
+          recurrence_pattern?: string | null
+          salary_weekly_cents?: number | null
+          start_time?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          work_type?: string | null
         }
         Relationships: []
       }
