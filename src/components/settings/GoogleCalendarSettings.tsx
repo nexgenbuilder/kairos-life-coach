@@ -51,15 +51,14 @@ export const GoogleCalendarSettings: React.FC = () => {
       const { data, error } = await supabase
         .from('user_google_tokens')
         .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error checking Google connection:', error);
         return;
       }
 
-      setIsConnected(!!data);
+      setIsConnected(data && data.length > 0);
     } catch (error) {
       console.error('Error checking Google connection:', error);
     }
@@ -71,16 +70,16 @@ export const GoogleCalendarSettings: React.FC = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('google-auth', {
-        body: { action: 'authorize' }
+        body: { action: 'getAuthUrl' }
       });
 
       if (error) throw error;
 
       if (data?.authUrl) {
-        window.open(data.authUrl, '_blank');
+        window.open(data.authUrl, '_blank', 'width=500,height=600');
         toast({
           title: 'Google Calendar',
-          description: 'Please complete the authorization in the new window, then refresh this page.',
+          description: 'Please complete the authorization in the popup window, then refresh this page.',
         });
       }
     } catch (error) {
