@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { cleanupAuthState } from "@/hooks/useAuth";
 
 const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -32,6 +33,15 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
+      // Clean up existing state first
+      cleanupAuthState();
+      // Attempt global sign out to clear any existing session
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -65,6 +75,15 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
+      // Clean up existing state first
+      cleanupAuthState();
+      // Attempt global sign out to clear any existing session
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -77,7 +96,8 @@ const AuthPage = () => {
           title: "Welcome back!",
           description: "You've been signed in successfully.",
         });
-        navigate("/");
+        // Force page reload for clean state
+        window.location.href = '/';
       }
     } catch (error: any) {
       toast({
