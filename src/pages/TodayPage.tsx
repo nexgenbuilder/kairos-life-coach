@@ -65,6 +65,14 @@ const TodayPage = () => {
 
       if (expensesError) throw expensesError;
 
+      // Load scheduled workouts from localStorage
+      const storedWorkouts = localStorage.getItem(`scheduled_workouts_${user?.id}`);
+      const scheduledWorkouts = storedWorkouts ? JSON.parse(storedWorkouts) : [];
+      
+      const todayWorkouts = scheduledWorkouts.filter((workout: any) => 
+        workout.scheduled_date === format(today, 'yyyy-MM-dd') && !workout.completed
+      );
+
       // Combine all items
       const items: TodayItem[] = [
         ...(tasks || []).map(task => ({
@@ -78,14 +86,22 @@ const TodayPage = () => {
         ...(events || []).map(event => ({
           id: event.id,
           title: event.title,
-          type: 'event' as const,
-          time: format(new Date(event.start_time), 'HH:mm')
+          type: event.title.startsWith('Workout:') ? 'workout' as const : 'event' as const,
+          time: format(new Date(event.start_time), 'HH:mm'),
+          isWorkout: event.title.startsWith('Workout:')
         })),
         ...(expenses || []).map(expense => ({
           id: expense.id,
           title: `${expense.description} - $${expense.amount}`,
           type: 'expense' as const,
           status: expense.category
+        })),
+        ...todayWorkouts.map((workout: any) => ({
+          id: workout.id,
+          title: workout.name,
+          type: 'workout' as const,
+          time: workout.scheduled_time,
+          status: 'scheduled'
         }))
       ];
 
@@ -95,6 +111,27 @@ const TodayPage = () => {
       toast.error('Failed to load today\'s items');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const completeWorkout = async (workoutId: string) => {
+    try {
+      // Update scheduled workout to completed
+      const storedWorkouts = localStorage.getItem(`scheduled_workouts_${user?.id}`);
+      if (storedWorkouts) {
+        const workouts = JSON.parse(storedWorkouts);
+        const updatedWorkouts = workouts.map((w: any) => 
+          w.id === workoutId ? { ...w, completed: true } : w
+        );
+        localStorage.setItem(`scheduled_workouts_${user?.id}`, JSON.stringify(updatedWorkouts));
+      }
+
+      // Remove from today's items
+      setTodayItems(items => items.filter(item => item.id !== workoutId));
+      toast.success('Workout completed!');
+    } catch (error) {
+      console.error('Error completing workout:', error);
+      toast.error('Failed to complete workout');
     }
   };
 
@@ -247,6 +284,17 @@ const TodayPage = () => {
                           className={item.completed ? 'text-green-600' : ''}
                         >
                           {item.completed ? 'Completed' : 'Mark Complete'}
+                        </Button>
+                      )}
+
+                      {item.type === 'workout' && !item.completed && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => completeWorkout(item.id)}
+                          className="text-green-600"
+                        >
+                          Complete Workout
                         </Button>
                       )}
                     </div>
