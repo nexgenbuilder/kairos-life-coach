@@ -2,12 +2,20 @@ import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import ExpenseForm from '@/components/expenses/ExpenseForm';
 import ExpenseList from '@/components/expenses/ExpenseList';
+import IncomeForm from '@/components/income/IncomeForm';
+import IncomeList from '@/components/income/IncomeList';
+import ReceiptProcessor from '@/components/receipt/ReceiptProcessor';
 
 const MoneyPage = () => {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [expenseRefreshTrigger, setExpenseRefreshTrigger] = useState(0);
+  const [incomeRefreshTrigger, setIncomeRefreshTrigger] = useState(0);
 
   const handleExpenseAdded = () => {
-    setRefreshTrigger(prev => prev + 1);
+    setExpenseRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleIncomeAdded = () => {
+    setIncomeRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -22,9 +30,23 @@ const MoneyPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ExpenseForm onExpenseAdded={handleExpenseAdded} />
-          <ExpenseList refreshTrigger={refreshTrigger} />
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Income Tracking</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <IncomeForm onIncomeAdded={handleIncomeAdded} />
+              <IncomeList refreshTrigger={incomeRefreshTrigger} />
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Expense Tracking</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <ExpenseForm onExpenseAdded={handleExpenseAdded} />
+              <ExpenseList refreshTrigger={expenseRefreshTrigger} />
+              <ReceiptProcessor onExpensesAdded={handleExpenseAdded} />
+            </div>
+          </div>
         </div>
       </div>
     </AppLayout>

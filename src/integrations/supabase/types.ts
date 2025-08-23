@@ -22,6 +22,8 @@ export type Database = {
           date: string
           description: string
           id: string
+          is_recurring: boolean
+          recurring_frequency: string | null
           user_id: string
         }
         Insert: {
@@ -31,6 +33,8 @@ export type Database = {
           date?: string
           description: string
           id?: string
+          is_recurring?: boolean
+          recurring_frequency?: string | null
           user_id: string
         }
         Update: {
@@ -40,6 +44,47 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          is_recurring?: boolean
+          recurring_frequency?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      income: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          is_recurring: boolean
+          recurring_frequency: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          is_recurring?: boolean
+          recurring_frequency?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          is_recurring?: boolean
+          recurring_frequency?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -73,6 +118,8 @@ export type Database = {
       }
       tasks: {
         Row: {
+          activated_at: string | null
+          completed_at: string | null
           created_at: string
           description: string | null
           due_date: string | null
@@ -84,6 +131,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          activated_at?: string | null
+          completed_at?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -95,6 +144,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          activated_at?: string | null
+          completed_at?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null

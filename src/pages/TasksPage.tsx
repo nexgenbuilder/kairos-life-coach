@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TaskForm } from '@/components/tasks/TaskForm';
-import { TaskList } from '@/components/tasks/TaskList';
+import TaskStatusManager from '@/components/tasks/TaskStatusManager';
 
 const TasksPage = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -18,13 +18,9 @@ const TasksPage = () => {
           <p className="text-muted-foreground">Stay organized and get things done</p>
         </div>
         
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div>
-            <TaskForm onTaskCreated={handleTaskCreated} />
-          </div>
-          <div>
-            <TaskList refreshTrigger={refreshTrigger} />
-          </div>
+        <div className="space-y-6">
+          <TaskForm onTaskCreated={handleTaskCreated} />
+          <TaskStatusManager refreshTrigger={refreshTrigger} />
         </div>
       </div>
     </AppLayout>

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,7 +22,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
     amount: '',
     category: '',
     description: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    isRecurring: false,
+    recurringFrequency: ''
   });
 
   const categories = [
@@ -35,6 +38,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
     'Education',
     'Groceries',
     'Other'
+  ];
+
+  const frequencies = [
+    'weekly',
+    'monthly',
+    'quarterly',
+    'yearly'
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,7 +61,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
             amount: parseFloat(formData.amount),
             category: formData.category,
             description: formData.description,
-            date: formData.date
+            date: formData.date,
+            is_recurring: formData.isRecurring,
+            recurring_frequency: formData.isRecurring ? formData.recurringFrequency : null
           }
         ]);
 
@@ -66,7 +78,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
         amount: '',
         category: '',
         description: '',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        isRecurring: false,
+        recurringFrequency: ''
       });
 
       onExpenseAdded();
@@ -140,6 +154,33 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
               required
             />
           </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="recurring"
+              checked={formData.isRecurring}
+              onCheckedChange={(checked) => setFormData({ ...formData, isRecurring: checked as boolean })}
+            />
+            <Label htmlFor="recurring">Recurring Expense</Label>
+          </div>
+
+          {formData.isRecurring && (
+            <div className="space-y-2">
+              <Label htmlFor="frequency">Frequency</Label>
+              <Select onValueChange={(value) => setFormData({ ...formData, recurringFrequency: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {frequencies.map((freq) => (
+                    <SelectItem key={freq} value={freq}>
+                      {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "Adding..." : "Add Expense"}

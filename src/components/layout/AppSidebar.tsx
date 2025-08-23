@@ -11,7 +11,8 @@ import {
   User,
   Settings,
   Sparkles,
-  LogOut
+  LogOut,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ const lifeCategories = [
 ];
 
 const bottomItems = [
+  { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
   { title: 'Settings', url: '/settings', icon: Settings },
 ];
 

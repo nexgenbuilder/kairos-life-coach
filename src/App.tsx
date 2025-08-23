@@ -11,6 +11,7 @@ import HealthPage from "./pages/HealthPage";
 import FitnessPage from "./pages/FitnessPage";
 import TasksPage from "./pages/TasksPage";
 import CalendarPage from "./pages/CalendarPage";
+import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/fitness" element={<FitnessPage />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             {/* Placeholder routes for remaining categories */}
             <Route path="/social" element={<NotFound />} />
             <Route path="/love" element={<NotFound />} />
