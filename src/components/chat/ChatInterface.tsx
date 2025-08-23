@@ -3,6 +3,9 @@ import { Send, Mic, MicOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Message {
   id: string;
@@ -16,6 +19,8 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ className }: ChatInterfaceProps) {
+  const { session } = useAuth();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -26,9 +31,10 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -38,18 +44,50 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue('');
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: { 
+          message: currentInput,
+          context: window.location.pathname.slice(1) || 'home'
+        },
+        headers: session ? {
+          'Authorization': `Bearer ${session.access_token}`
+        } : {}
+      });
+
+      if (error) throw error;
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: 'I understand! Let me help you with that. I\'m currently being set up with all my capabilities. Soon I\'ll be able to help you manage every aspect of your life seamlessly.',
+        content: data.response,
         sender: 'kairos',
         timestamp: new Date()
       };
+      
       setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+      
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        sender: 'kairos',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleListening = () => {
@@ -110,10 +148,14 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
           
           <Button 
             onClick={handleSendMessage}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isLoading}
             className="bg-primary-gradient hover:opacity-90 transition-smooth shadow-glow-soft"
           >
-            <Send className="h-4 w-4" />
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
