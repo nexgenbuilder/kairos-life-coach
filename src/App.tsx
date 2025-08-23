@@ -15,6 +15,10 @@ import DashboardPage from "./pages/DashboardPage";
 import TodayPage from "./pages/TodayPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import BusinessPage from "./pages/BusinessPage";
+import ProfessionalPage from "./pages/ProfessionalPage";
+import SocialPage from "./pages/SocialPage";
+import LovePage from "./pages/LovePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,11 +41,11 @@ const App = () => (
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/business" element={<BusinessPage />} />
+            <Route path="/professional" element={<ProfessionalPage />} />
             {/* Placeholder routes for remaining categories */}
-            <Route path="/social" element={<NotFound />} />
-            <Route path="/love" element={<NotFound />} />
-            <Route path="/business" element={<NotFound />} />
-            <Route path="/professional" element={<NotFound />} />
+            <Route path="/social" element={<SocialPage />} />
+            <Route path="/love" element={<LovePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
