@@ -92,34 +92,46 @@ When users ask you to create tasks, respond naturally and mention what task you'
     
     if (isCreatingTask && userId) {
       try {
+        console.log('Attempting to create task for user:', userId);
         // Extract task information from the user's message
         const taskTitle = extractTaskTitle(message);
         const taskPriority = extractPriority(message);
         
+        console.log('Extracted task title:', taskTitle);
+        console.log('Extracted task priority:', taskPriority);
+        
         if (taskTitle) {
           const taskSupabase = createClient(supabaseUrl, supabaseKey);
           
-          const { error: taskError } = await taskSupabase
+          const taskData = {
+            user_id: userId,
+            title: taskTitle,
+            description: '',
+            priority: taskPriority,
+            status: 'todo'
+          };
+          
+          console.log('Inserting task data:', taskData);
+          
+          const { data, error: taskError } = await taskSupabase
             .from('tasks')
-            .insert([{
-              user_id: userId,
-              title: taskTitle,
-              description: '',
-              priority: taskPriority,
-              status: 'todo'
-            }]);
+            .insert([taskData])
+            .select();
 
           if (taskError) {
             console.error('Error creating task:', taskError);
-            aiResponse = "I apologize, but I encountered an error while creating the task. Please try again.";
+            aiResponse = `I apologize, but I encountered an error while creating the task: ${taskError.message}`;
           } else {
-            console.log('Task created successfully:', taskTitle);
+            console.log('Task created successfully:', data);
             // Update the AI response to confirm the task was actually created
             aiResponse = `Perfect! I've successfully created the task "${taskTitle}" with ${taskPriority} priority. You can view it in your tasks list and update it as needed.`;
           }
+        } else {
+          console.log('No task title extracted from message');
         }
       } catch (error) {
         console.error('Error processing task creation:', error);
+        aiResponse = `I encountered an error while creating the task: ${error.message}`;
       }
     }
 
