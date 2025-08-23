@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      deals: {
+        Row: {
+          amount_cents: number | null
+          close_date: string | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          notes: string | null
+          person_id: string | null
+          probability: number | null
+          stage: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          close_date?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          notes?: string | null
+          person_id?: string | null
+          probability?: number | null
+          stage?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number | null
+          close_date?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          notes?: string | null
+          person_id?: string | null
+          probability?: number | null
+          stage?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -134,6 +187,136 @@ export type Database = {
         }
         Relationships: []
       }
+      interactions: {
+        Row: {
+          channel: string | null
+          created_at: string | null
+          follow_up_date: string | null
+          id: string
+          module: string
+          person_id: string | null
+          sentiment: string | null
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string | null
+          follow_up_date?: string | null
+          id?: string
+          module: string
+          person_id?: string | null
+          sentiment?: string | null
+          summary: string
+          user_id: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string | null
+          follow_up_date?: string | null
+          id?: string
+          module?: string
+          person_id?: string | null
+          sentiment?: string | null
+          summary?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      key_dates: {
+        Row: {
+          created_at: string | null
+          date_value: string
+          id: string
+          person_id: string | null
+          recurrence: string | null
+          reminder_days: number | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          date_value: string
+          id?: string
+          person_id?: string | null
+          recurrence?: string | null
+          reminder_days?: number | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          date_value?: string
+          id?: string
+          person_id?: string | null
+          recurrence?: string | null
+          reminder_days?: number | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_dates_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people: {
+        Row: {
+          birthday: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          last_interaction_at: string | null
+          notes: string | null
+          phone: string | null
+          tags: string[] | null
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          birthday?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          last_interaction_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          birthday?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          last_interaction_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -160,6 +343,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      relationship_rules: {
+        Row: {
+          cadence_days: number
+          created_at: string | null
+          id: string
+          next_nudge_date: string | null
+          person_id: string
+          user_id: string
+        }
+        Insert: {
+          cadence_days: number
+          created_at?: string | null
+          id?: string
+          next_nudge_date?: string | null
+          person_id: string
+          user_id: string
+        }
+        Update: {
+          cadence_days?: number
+          created_at?: string | null
+          id?: string
+          next_nudge_date?: string | null
+          person_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relationship_rules_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
