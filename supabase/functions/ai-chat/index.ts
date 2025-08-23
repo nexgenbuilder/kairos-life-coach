@@ -101,7 +101,15 @@ When users ask you to create tasks, respond naturally and mention what task you'
         console.log('Extracted task priority:', taskPriority);
         
         if (taskTitle) {
-          const taskSupabase = createClient(supabaseUrl, supabaseKey);
+          // Create Supabase client with user's auth token
+          const taskSupabase = createClient(supabaseUrl, supabaseKey, {
+            auth: { persistSession: false },
+            global: {
+              headers: {
+                Authorization: authHeader
+              }
+            }
+          });
           
           const taskData = {
             user_id: userId,
