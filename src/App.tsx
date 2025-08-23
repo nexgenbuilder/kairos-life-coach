@@ -13,6 +13,7 @@ import TasksPage from "./pages/TasksPage";
 import CalendarPage from "./pages/CalendarPage";
 import DashboardPage from "./pages/DashboardPage";
 import TodayPage from "./pages/TodayPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 
@@ -41,7 +42,7 @@ const App = () => (
             <Route path="/love" element={<NotFound />} />
             <Route path="/business" element={<NotFound />} />
             <Route path="/professional" element={<NotFound />} />
-            <Route path="/settings" element={<NotFound />} />
+            <Route path="/settings" element={<SettingsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
