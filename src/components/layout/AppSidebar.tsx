@@ -13,10 +13,13 @@ import {
   Sparkles,
   LogOut,
   BarChart3,
-  Clock
+  Clock,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
@@ -46,6 +49,7 @@ const lifeCategories = [
 
 const bottomItems = [
   { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
+  { title: 'Notifications', url: '/notifications', icon: Bell },
   { title: 'Settings', url: '/settings', icon: Settings },
 ];
 
@@ -55,6 +59,7 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const collapsed = state === 'collapsed';
   const { user, signOut } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
@@ -126,7 +131,16 @@ export function AppSidebar() {
                       title={collapsed ? item.title : undefined}
                     >
                       <item.icon className="h-4 w-4 flex-shrink-0" />
-              {!collapsed && <span className="truncate">{item.title}</span>}
+                      {!collapsed && (
+                        <div className="flex items-center justify-between w-full">
+                          <span className="truncate">{item.title}</span>
+                          {item.title === "Notifications" && unreadCount > 0 && (
+                            <Badge variant="destructive" className="text-xs h-5 w-5 p-0 flex items-center justify-center ml-2">
+                              {unreadCount > 9 ? '9+' : unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
