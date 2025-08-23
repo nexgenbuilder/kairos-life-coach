@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { HeroSection } from '@/components/HeroSection';
-import { ChatInterface } from '@/components/chat/ChatInterface';
+import { N8nChatInterface } from '@/components/chat/N8nChatInterface';
 import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
@@ -40,7 +40,7 @@ const Index = () => {
         
         {/* Main chat interface */}
         <div className="flex-1 min-h-[500px]">
-          <ChatInterface />
+          <N8nChatInterface />
         </div>
       </div>
     </AppLayout>
