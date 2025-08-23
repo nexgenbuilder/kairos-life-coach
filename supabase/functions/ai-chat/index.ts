@@ -158,11 +158,11 @@ When users ask you to create tasks, respond naturally and mention what task you'
 function extractTaskTitle(message: string): string | null {
   // Look for patterns like "create task [title]", "add task [title]", etc.
   const patterns = [
-    /create (?:task|a task) (?:called |named )?["']?([^"']+)["']?/i,
-    /add (?:task|a task) (?:called |named )?["']?([^"']+)["']?/i,
-    /new task (?:called |named )?["']?([^"']+)["']?/i,
-    /make (?:task|a task) (?:called |named )?["']?([^"']+)["']?/i,
-    /task (?:called |named )?["']?([^"']+)["']?/i
+    /create (?:a )?(?:new )?task (?:called |named )?["']?([^"']+?)["']?(?:\s|$)/i,
+    /add (?:a )?(?:new )?task (?:called |named )?["']?([^"']+?)["']?(?:\s|$)/i,
+    /new task (?:called |named )?["']?([^"']+?)["']?(?:\s|$)/i,
+    /make (?:a )?(?:new )?task (?:called |named )?["']?([^"']+?)["']?(?:\s|$)/i,
+    /task (?:called |named )?["']?([^"']+?)["']?(?:\s|$)/i
   ];
   
   for (const pattern of patterns) {
