@@ -97,9 +97,9 @@ When users ask you to create tasks, respond naturally and mention what task you'
         const taskPriority = extractPriority(message);
         
         if (taskTitle) {
-          const supabase = createClient(supabaseUrl, supabaseKey);
+          const taskSupabase = createClient(supabaseUrl, supabaseKey);
           
-          const { error: taskError } = await supabase
+          const { error: taskError } = await taskSupabase
             .from('tasks')
             .insert([{
               user_id: userId,
