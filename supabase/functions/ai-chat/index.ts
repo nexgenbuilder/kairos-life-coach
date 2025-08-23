@@ -51,6 +51,22 @@ serve(async (req) => {
 - Calendar scheduling
 - Life goals and personal development
 
+When users ask you to create, update, or manage tasks, expenses, or other data, you should respond with a JSON object containing the action and data, followed by a user-friendly message.
+
+For task creation, respond with:
+{
+  "action": "create_task",
+  "data": {
+    "title": "task title",
+    "description": "task description",
+    "priority": "high|medium|low",
+    "status": "todo",
+    "due_date": "YYYY-MM-DD" (optional)
+  }
+}
+
+Then provide a friendly response about what you've done.
+
 Be encouraging, practical, and provide actionable advice. Keep responses concise but helpful.`;
 
     if (context) {
@@ -83,7 +99,45 @@ Be encouraging, practical, and provide actionable advice. Keep responses concise
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    let aiResponse = data.choices[0].message.content;
+
+    // Check if the response contains an action to perform
+    let actionPerformed = false;
+    const jsonMatch = aiResponse.match(/\{[\s\S]*?"action"[\s\S]*?\}/);
+    
+    if (jsonMatch && userId) {
+      try {
+        const actionData = JSON.parse(jsonMatch[0]);
+        
+        if (actionData.action === 'create_task') {
+          // Create task in database
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          
+          const { error: taskError } = await supabase
+            .from('tasks')
+            .insert([{
+              user_id: userId,
+              title: actionData.data.title,
+              description: actionData.data.description || '',
+              priority: actionData.data.priority || 'medium',
+              status: actionData.data.status || 'todo',
+              due_date: actionData.data.due_date || null
+            }]);
+
+          if (taskError) {
+            console.error('Error creating task:', taskError);
+            aiResponse = "I apologize, but I encountered an error while creating the task. Please try again.";
+          } else {
+            actionPerformed = true;
+            // Remove the JSON from the response
+            aiResponse = aiResponse.replace(jsonMatch[0], '').trim();
+            console.log('Task created successfully');
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing action JSON:', parseError);
+      }
+    }
 
     console.log('OpenAI response received:', aiResponse);
 
