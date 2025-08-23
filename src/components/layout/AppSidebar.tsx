@@ -10,8 +10,11 @@ import {
   Briefcase,
   User,
   Settings,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
@@ -47,6 +50,7 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const collapsed = state === 'collapsed';
+  const { user, signOut } = useAuth();
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
@@ -118,11 +122,23 @@ export function AppSidebar() {
                       title={collapsed ? item.title : undefined}
                     >
                       <item.icon className="h-4 w-4 flex-shrink-0" />
-                      {!collapsed && <span className="truncate">{item.title}</span>}
+              {!collapsed && <span className="truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {/* Sign Out Button */}
+              <SidebarMenuItem>
+                <Button 
+                  variant="ghost" 
+                  onClick={signOut}
+                  className="w-full justify-start p-2 h-8 font-normal text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  title={collapsed ? "Sign Out" : undefined}
+                >
+                  <LogOut className="h-4 w-4 flex-shrink-0" />
+                  {!collapsed && <span className="ml-2">Sign Out</span>}
+                </Button>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
