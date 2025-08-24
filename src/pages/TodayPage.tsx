@@ -12,11 +12,12 @@ import { format, isToday, startOfDay, endOfDay } from 'date-fns';
 interface TodayItem {
   id: string;
   title: string;
-  type: 'task' | 'event' | 'expense' | 'workout' | 'meal';
+  type: 'task' | 'event' | 'expense' | 'income' | 'workout' | 'meal';
   status?: string;
   time?: string;
   completed?: boolean;
   priority?: string;
+  amount?: number;
 }
 
 const TodayPage = () => {
@@ -65,6 +66,16 @@ const TodayPage = () => {
 
       if (expensesError) throw expensesError;
 
+      // Load today's income
+      const { data: income, error: incomeError } = await supabase
+        .from('income')
+        .select('*')
+        .eq('user_id', user?.id)
+        .gte('date', startDay.toISOString())
+        .lte('date', endDay.toISOString());
+
+      if (incomeError) throw incomeError;
+
       // Load scheduled workouts from localStorage
       const storedWorkouts = localStorage.getItem(`scheduled_workouts_${user?.id}`);
       const scheduledWorkouts = storedWorkouts ? JSON.parse(storedWorkouts) : [];
@@ -94,7 +105,15 @@ const TodayPage = () => {
           id: expense.id,
           title: `${expense.description} - $${expense.amount}`,
           type: 'expense' as const,
-          status: expense.category
+          status: expense.category,
+          amount: expense.amount
+        })),
+        ...(income || []).map(incomeItem => ({
+          id: incomeItem.id,
+          title: `${incomeItem.description} - $${incomeItem.amount}`,
+          type: 'income' as const,
+          status: incomeItem.category,
+          amount: incomeItem.amount
         })),
         ...todayWorkouts.map((workout: any) => ({
           id: workout.id,
@@ -169,6 +188,7 @@ const TodayPage = () => {
       case 'task': return CheckSquare;
       case 'event': return Calendar;
       case 'expense': return DollarSign;
+      case 'income': return DollarSign;
       case 'workout': return Dumbbell;
       case 'meal': return Heart;
       default: return Clock;
@@ -180,6 +200,7 @@ const TodayPage = () => {
       case 'task': return 'bg-blue-500/10 text-blue-700';
       case 'event': return 'bg-purple-500/10 text-purple-700';
       case 'expense': return 'bg-red-500/10 text-red-700';
+      case 'income': return 'bg-green-500/10 text-green-700';
       case 'workout': return 'bg-green-500/10 text-green-700';
       case 'meal': return 'bg-orange-500/10 text-orange-700';
       default: return 'bg-gray-500/10 text-gray-700';

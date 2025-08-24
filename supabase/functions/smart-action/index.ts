@@ -91,7 +91,24 @@ serve(async (req) => {
       }
 
       console.log('Expense created successfully:', data);
-      response = `Great! I've logged your expense of $${expenseData.amount} in the ${expenseData.category} category.`;
+      response = `Great! I've logged your expense of $${expenseData.amount} for ${expenseData.description} in the ${expenseData.category} category.`;
+
+    } else if (actionType === 'income') {
+      // Extract income information
+      const incomeData = extractIncomeData(message, userId);
+      
+      const { data, error } = await supabase
+        .from('income')
+        .insert([incomeData])
+        .select();
+
+      if (error) {
+        console.error('Error creating income:', error);
+        throw error;
+      }
+
+      console.log('Income created successfully:', data);
+      response = `Excellent! I've logged your income of $${incomeData.amount} for ${incomeData.description} in the ${incomeData.category} category.`;
 
     } else if (actionType === 'fitness') {
       // For fitness, we'll create a simple response since there's no fitness table yet
@@ -219,6 +236,67 @@ function extractExpenseData(message: string, userId: string) {
     category: category,
     description: description,
     date: new Date().toISOString()
+  };
+}
+
+function extractIncomeData(message: string, userId: string) {
+  // Extract amount
+  const amountMatch = message.match(/\$?(\d+(?:\.\d{2})?)/);
+  const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+
+  // Extract description/category with better patterns
+  let description = 'Income';
+  let category = 'Other';
+  
+  // Patterns to extract income description
+  const incomePatterns = [
+    /(?:log|add|record|track).*?income.*?(?:from|for)\s+([a-zA-Z\s]+?)(?:\s+\$|\s+for|\s*$)/i,
+    /(?:received|earned|got)\s+\$?\d+(?:\.\d{2})?\s+(?:from|for)\s+([a-zA-Z\s]+?)(?:\s|$)/i,
+    /(?:payment|salary|wage|commission).*?(?:from|for)\s+([a-zA-Z\s]+?)(?:\s|$)/i,
+    /\$?\d+(?:\.\d{2})?\s+(?:from|for)\s+([a-zA-Z\s]+?)(?:\s|$)/i,
+    /(?:income|earnings).*?(?:from|for)\s+([a-zA-Z\s]+?)(?:\s|$)/i
+  ];
+  
+  for (const pattern of incomePatterns) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      description = match[1].trim();
+      break;
+    }
+  }
+  
+  // Map common descriptions to categories
+  const categoryMap: { [key: string]: string } = {
+    'salary': 'Salary',
+    'freelance': 'Freelance',
+    'client': 'Client Work',
+    'job': 'Employment',
+    'work': 'Employment',
+    'commission': 'Commission',
+    'bonus': 'Bonus',
+    'project': 'Project',
+    'consulting': 'Consulting',
+    'investment': 'Investment',
+    'dividend': 'Investment',
+    'rental': 'Rental Income',
+    'side': 'Side Hustle'
+  };
+  
+  const lowerDesc = description.toLowerCase();
+  for (const [key, value] of Object.entries(categoryMap)) {
+    if (lowerDesc.includes(key)) {
+      category = value;
+      break;
+    }
+  }
+
+  return {
+    user_id: userId,
+    amount: amount,
+    category: category,
+    description: description,
+    date: new Date().toISOString(),
+    is_recurring: false
   };
 }
 
