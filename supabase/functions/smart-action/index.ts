@@ -165,17 +165,50 @@ function extractExpenseData(message: string, userId: string) {
   const amountMatch = message.match(/\$?(\d+(?:\.\d{2})?)/);
   const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
 
-  // Extract category
-  const categoryPatterns = [
-    /(?:for|on|category)\s+([a-zA-Z\s]+)/i,
-    /(?:spent|paid)\s+.*?\s+(?:for|on)\s+([a-zA-Z\s]+)/i
+  // Extract description/category with better patterns
+  let description = 'Expense';
+  let category = 'Other';
+  
+  // Patterns to extract expense description
+  const expensePatterns = [
+    /(?:log|add|record|track).*?expense.*?(?:for|on)\s+([a-zA-Z\s]+?)(?:\s+\$|\s+for|\s*$)/i,
+    /(?:spent|paid)\s+\$?\d+(?:\.\d{2})?\s+(?:for|on)\s+([a-zA-Z\s]+?)(?:\s|$)/i,
+    /(?:bought|purchased)\s+([a-zA-Z\s]+?)(?:\s+for|\s+\$|\s*$)/i,
+    /\$?\d+(?:\.\d{2})?\s+(?:for|on)\s+([a-zA-Z\s]+?)(?:\s|$)/i,
+    /(?:expense|cost).*?(?:for|on)\s+([a-zA-Z\s]+?)(?:\s|$)/i
   ];
   
-  let category = 'Other';
-  for (const pattern of categoryPatterns) {
+  for (const pattern of expensePatterns) {
     const match = message.match(pattern);
     if (match && match[1]) {
-      category = match[1].trim();
+      description = match[1].trim();
+      break;
+    }
+  }
+  
+  // Map common descriptions to categories
+  const categoryMap: { [key: string]: string } = {
+    'gym': 'Fitness',
+    'fitness': 'Fitness',
+    'workout': 'Fitness',
+    'food': 'Food',
+    'lunch': 'Food',
+    'dinner': 'Food',
+    'breakfast': 'Food',
+    'coffee': 'Food',
+    'gas': 'Transportation',
+    'uber': 'Transportation',
+    'taxi': 'Transportation',
+    'shopping': 'Shopping',
+    'groceries': 'Groceries',
+    'entertainment': 'Entertainment',
+    'movie': 'Entertainment'
+  };
+  
+  const lowerDesc = description.toLowerCase();
+  for (const [key, value] of Object.entries(categoryMap)) {
+    if (lowerDesc.includes(key)) {
+      category = value;
       break;
     }
   }
@@ -184,7 +217,7 @@ function extractExpenseData(message: string, userId: string) {
     user_id: userId,
     amount: amount,
     category: category,
-    description: message,
+    description: description,
     date: new Date().toISOString()
   };
 }
