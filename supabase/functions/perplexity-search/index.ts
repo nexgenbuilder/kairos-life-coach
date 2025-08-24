@@ -27,6 +27,14 @@ serve(async (req) => {
     }
 
     // Create system prompt based on context
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      timeZone: 'America/Chicago' // Default to Central Time, adjust as needed
+    });
+    
     let systemPrompt = `You are Kairos, a helpful AI assistant with real-time web search capabilities. You can help users with:
 
 - Current information like addresses, phone numbers, business hours
@@ -36,7 +44,9 @@ serve(async (req) => {
 - Restaurant menus and reviews
 - Real-time travel information
 
-When providing current information, be specific and include details like addresses, phone numbers, and hours when available. Always mention when information was last updated.`;
+When providing current information, be specific and include details like addresses, phone numbers, and hours when available. Always mention when information was last updated.
+
+IMPORTANT: Today's date is ${currentDate}. When users ask for "tomorrow" or relative dates, calculate based on this current date.`;
 
     if (context) {
       systemPrompt += `\n\nCurrent context: The user is in the ${context} section of the app.`;
