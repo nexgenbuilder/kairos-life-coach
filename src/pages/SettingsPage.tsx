@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { GoogleCalendarSettings } from '@/components/settings/GoogleCalendarSettings';
+import { SecurityDashboard } from '@/components/security/SecurityDashboard';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,9 +33,9 @@ const SettingsPage = () => {
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
-            <TabsTrigger value="account" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Account
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Security
             </TabsTrigger>
           </TabsList>
 
@@ -65,42 +66,8 @@ const SettingsPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="account" className="mt-6">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Account Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Email</label>
-                    <p className="text-muted-foreground">{user?.email}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">User ID</label>
-                    <p className="text-muted-foreground font-mono text-xs">{user?.id}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Account Created</label>
-                    <p className="text-muted-foreground">
-                      {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Future account settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Preferences</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Additional account preferences will be available here soon.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="security" className="mt-6">
+            <SecurityDashboard />
           </TabsContent>
         </Tabs>
       </div>

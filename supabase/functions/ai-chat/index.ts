@@ -7,6 +7,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Security utility functions
+function sanitizeInput(input: string): string {
+  if (typeof input !== 'string') return '';
+  // Remove potentially dangerous characters and limit length
+  return input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+              .replace(/[<>\"']/g, '')
+              .slice(0, 5000);
+}
+
+function logSecurityEvent(event: string, details: any, req: Request) {
+  console.log(`[SECURITY] ${event}:`, {
+    ...details,
+    ip: req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for'),
+    userAgent: req.headers.get('user-agent'),
+    timestamp: new Date().toISOString()
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -14,10 +32,30 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context, forceGPT5 } = await req.json();
+    const contentType = req.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      logSecurityEvent('INVALID_CONTENT_TYPE', { contentType }, req);
+      throw new Error('Invalid content type. Expected application/json.');
+    }
 
-    if (!message) {
-      throw new Error('Message is required');
+    const body = await req.json();
+    const { message, context, forceGPT5 } = body;
+
+    // Input validation and sanitization
+    if (!message || typeof message !== 'string') {
+      logSecurityEvent('INVALID_INPUT', { messageType: typeof message }, req);
+      throw new Error('Message is required and must be a string');
+    }
+
+    const sanitizedMessage = sanitizeInput(message);
+    if (sanitizedMessage.length === 0) {
+      logSecurityEvent('EMPTY_SANITIZED_INPUT', { originalLength: message.length }, req);
+      throw new Error('Invalid message content');
+    }
+
+    if (sanitizedMessage.length > 2000) {
+      logSecurityEvent('MESSAGE_TOO_LONG', { length: sanitizedMessage.length }, req);
+      throw new Error('Message too long. Maximum 2000 characters allowed.');
     }
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -39,8 +77,28 @@ serve(async (req) => {
       });
 
       const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError) {
+        logSecurityEvent('AUTH_ERROR', { error: authError.message }, req);
+        throw new Error('Authentication failed');
+      }
+      
       userId = user?.id;
+      
+      // Rate limiting for authenticated users
+      if (userId) {
+        const { data: rateLimitOk } = await supabase.rpc('check_rate_limit', {
+          p_endpoint: 'ai-chat',
+          p_limit: 50, // 50 requests per hour
+          p_window_minutes: 60
+        });
+        
+        if (!rateLimitOk) {
+          logSecurityEvent('RATE_LIMIT_EXCEEDED', { userId }, req);
+          throw new Error('Rate limit exceeded. Please try again later.');
+        }
+      }
     }
 
     // Create system prompt based on context
@@ -66,14 +124,14 @@ IMPORTANT: You do not have access to real-time information like current movie sh
       console.log('Forced GPT-5 mode');
     }
 
-    console.log('Sending request to OpenAI with message:', message);
+    console.log('Sending request to OpenAI with message:', sanitizedMessage.slice(0, 100) + '...');
     console.log('Using model: gpt-5-2025-08-07');
 
     const requestBody = {
       model: 'gpt-5-2025-08-07',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: message }
+        { role: 'user', content: sanitizedMessage }
       ],
       max_completion_tokens: 1000,
     };
@@ -96,7 +154,11 @@ IMPORTANT: You do not have access to real-time information like current movie sh
       const errorData = await response.text();
       console.error('OpenAI API error status:', response.status);
       console.error('OpenAI API error response:', errorData);
-      throw new Error(`OpenAI API error (${response.status}): ${errorData}`);
+      logSecurityEvent('OPENAI_API_ERROR', { 
+        status: response.status, 
+        userId: userId 
+      }, req);
+      throw new Error(`AI service temporarily unavailable`);
     }
 
     const data = await response.json();
@@ -117,15 +179,15 @@ IMPORTANT: You do not have access to real-time information like current movie sh
     // Check if the user is asking to create a task and we have a user ID
     const createTaskKeywords = ['create task', 'add task', 'new task', 'make task', 'create a task'];
     const isCreatingTask = createTaskKeywords.some(keyword => 
-      message.toLowerCase().includes(keyword)
+      sanitizedMessage.toLowerCase().includes(keyword)
     );
     
     if (isCreatingTask && userId) {
       try {
         console.log('Attempting to create task for user:', userId);
         // Extract task information from the user's message
-        const taskTitle = extractTaskTitle(message);
-        const taskPriority = extractPriority(message);
+        const taskTitle = extractTaskTitle(sanitizedMessage);
+        const taskPriority = extractPriority(sanitizedMessage);
         
         console.log('Extracted task title:', taskTitle);
         console.log('Extracted task priority:', taskPriority);
@@ -158,7 +220,11 @@ IMPORTANT: You do not have access to real-time information like current movie sh
 
           if (taskError) {
             console.error('Error creating task:', taskError);
-            aiResponse = `I apologize, but I encountered an error while creating the task: ${taskError.message}`;
+            logSecurityEvent('TASK_CREATION_ERROR', { 
+              error: taskError.message, 
+              userId 
+            }, req);
+            aiResponse = `I apologize, but I encountered an error while creating the task. Please try again.`;
           } else {
             console.log('Task created successfully:', data);
             // Update the AI response to confirm the task was actually created
@@ -169,7 +235,11 @@ IMPORTANT: You do not have access to real-time information like current movie sh
         }
       } catch (error) {
         console.error('Error processing task creation:', error);
-        aiResponse = `I encountered an error while creating the task: ${error.message}`;
+        logSecurityEvent('TASK_PROCESSING_ERROR', { 
+          error: error.message, 
+          userId 
+        }, req);
+        aiResponse = `I encountered an error while creating the task. Please try again.`;
       }
     }
 
@@ -183,10 +253,18 @@ IMPORTANT: You do not have access to real-time information like current movie sh
     });
   } catch (error) {
     console.error('Error in ai-chat function:', error);
+    logSecurityEvent('FUNCTION_ERROR', { 
+      error: error.message,
+      stack: error.stack 
+    }, req);
+    
+    // Don't leak internal error details to client
+    const sanitizedError = error.message?.includes('Rate limit') ? error.message : 'Service temporarily unavailable';
+    
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
+      error: sanitizedError
     }), {
-      status: 500,
+      status: error.message?.includes('Rate limit') ? 429 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

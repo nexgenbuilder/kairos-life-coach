@@ -7,6 +7,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Security utility functions
+function sanitizeInput(input: string): string {
+  if (typeof input !== 'string') return '';
+  return input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+              .replace(/[<>\"']/g, '')
+              .slice(0, 1000);
+}
+
+function validateActionType(actionType: string): boolean {
+  const validActions = ['task', 'expense', 'income', 'fitness'];
+  return validActions.includes(actionType);
+}
+
+function logSecurityEvent(event: string, details: any, req: Request) {
+  console.log(`[SECURITY] ${event}:`, {
+    ...details,
+    ip: req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for'),
+    userAgent: req.headers.get('user-agent'),
+    timestamp: new Date().toISOString()
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -14,13 +36,30 @@ serve(async (req) => {
   }
 
   try {
-    const { message, actionType, context } = await req.json();
+    const body = await req.json();
+    const { message, actionType, context } = body;
 
-    if (!message || !actionType) {
-      throw new Error('Message and actionType are required');
+    // Input validation
+    if (!message || typeof message !== 'string' || !actionType || typeof actionType !== 'string') {
+      logSecurityEvent('INVALID_INPUT', { 
+        messageType: typeof message, 
+        actionType: typeof actionType 
+      }, req);
+      throw new Error('Message and actionType are required and must be strings');
     }
 
-    console.log('Processing smart action:', { actionType, message });
+    if (!validateActionType(actionType)) {
+      logSecurityEvent('INVALID_ACTION_TYPE', { actionType }, req);
+      throw new Error('Invalid action type');
+    }
+
+    const sanitizedMessage = sanitizeInput(message);
+    if (sanitizedMessage.length === 0) {
+      logSecurityEvent('EMPTY_SANITIZED_INPUT', { originalLength: message.length }, req);
+      throw new Error('Invalid message content');
+    }
+
+    console.log('Processing smart action:', { actionType, messageLength: sanitizedMessage.length });
 
     // Get user context from auth header
     const authHeader = req.headers.get('Authorization');
@@ -39,12 +78,31 @@ serve(async (req) => {
       });
 
       const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError) {
+        logSecurityEvent('AUTH_ERROR', { error: authError.message }, req);
+        throw new Error('Authentication failed');
+      }
+      
       userId = user?.id;
     }
 
     if (!userId) {
+      logSecurityEvent('UNAUTHENTICATED_ACCESS', { actionType }, req);
       throw new Error('Authentication required');
+    }
+
+    // Rate limiting
+    const { data: rateLimitOk } = await supabase.rpc('check_rate_limit', {
+      p_endpoint: `smart-action-${actionType}`,
+      p_limit: 20, // 20 requests per hour per action type
+      p_window_minutes: 60
+    });
+    
+    if (!rateLimitOk) {
+      logSecurityEvent('RATE_LIMIT_EXCEEDED', { userId, actionType }, req);
+      throw new Error('Rate limit exceeded. Please try again later.');
     }
 
     // Create authenticated Supabase client for database operations
@@ -61,7 +119,7 @@ serve(async (req) => {
 
     if (actionType === 'task') {
       // Extract task information
-      const taskData = extractTaskData(message, userId);
+      const taskData = extractTaskData(sanitizedMessage, userId);
       
       const { data, error } = await supabase
         .from('tasks')
@@ -78,7 +136,7 @@ serve(async (req) => {
 
     } else if (actionType === 'expense') {
       // Extract expense information
-      const expenseData = extractExpenseData(message, userId);
+      const expenseData = extractExpenseData(sanitizedMessage, userId);
       
       const { data, error } = await supabase
         .from('expenses')
@@ -95,7 +153,7 @@ serve(async (req) => {
 
     } else if (actionType === 'income') {
       // Extract income information
-      const incomeData = extractIncomeData(message, userId);
+      const incomeData = extractIncomeData(sanitizedMessage, userId);
       
       const { data, error } = await supabase
         .from('income')
@@ -112,7 +170,7 @@ serve(async (req) => {
 
     } else if (actionType === 'fitness') {
       // Extract fitness information and save to database
-      const fitnessData = extractFitnessData(message, userId);
+      const fitnessData = extractFitnessData(sanitizedMessage, userId);
       
       const { data, error } = await supabase
         .from('fitness_workouts')
@@ -140,11 +198,20 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in smart-action function:', error);
+    logSecurityEvent('FUNCTION_ERROR', { 
+      error: error.message,
+      stack: error.stack 
+    }, req);
+    
+    const isRateLimit = error.message?.includes('Rate limit');
+    const status = isRateLimit ? 429 : 500;
+    const sanitizedError = isRateLimit ? error.message : 'Service temporarily unavailable';
+    
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      response: `I'm sorry, I encountered an error while processing your ${actionType || 'request'}. Please try again.`
+      error: sanitizedError,
+      response: `I'm sorry, I encountered an error while processing your request. Please try again.`
     }), {
-      status: 500,
+      status: status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -369,6 +436,6 @@ function extractFitnessData(message: string, userId: string) {
     exercise_type: exerciseType,
     duration_minutes: finalDuration,
     workout_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-    notes: message
+    notes: sanitizeInput(message)
   };
 }
