@@ -3,24 +3,46 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Static crypto data for reliable functionality
-const cryptoData = [
-  { id: 1, symbol: 'BTC', name: 'Bitcoin', current_price_cents: 9500000, price_change_24h: 2.5, market_cap_cents: 187000000000000 },
-  { id: 1027, symbol: 'ETH', name: 'Ethereum', current_price_cents: 350000, price_change_24h: -1.2, market_cap_cents: 42000000000000 },
-  { id: 52, symbol: 'XRP', name: 'XRP', current_price_cents: 60, price_change_24h: 5.8, market_cap_cents: 3400000000000 },
-  { id: 2010, symbol: 'ADA', name: 'Cardano', current_price_cents: 45, price_change_24h: -2.1, market_cap_cents: 1600000000000 },
-  { id: 5426, symbol: 'SOL', name: 'Solana', current_price_cents: 21000, price_change_24h: 8.3, market_cap_cents: 9800000000000 },
-  { id: 74, symbol: 'DOGE', name: 'Dogecoin', current_price_cents: 8, price_change_24h: 12.4, market_cap_cents: 1200000000000 },
-  { id: 3408, symbol: 'USDC', name: 'USD Coin', current_price_cents: 100, price_change_24h: 0.1, market_cap_cents: 3200000000000 },
-  { id: 6636, symbol: 'DOT', name: 'Polkadot', current_price_cents: 700, price_change_24h: -3.5, market_cap_cents: 950000000000 },
-  { id: 11841, symbol: 'MATIC', name: 'Polygon', current_price_cents: 85, price_change_24h: 4.2, market_cap_cents: 850000000000 },
-  { id: 1839, symbol: 'BNB', name: 'BNB', current_price_cents: 31000, price_change_24h: 1.8, market_cap_cents: 4700000000000 },
-  { id: 1975, symbol: 'LINK', name: 'Chainlink', current_price_cents: 1500, price_change_24h: 3.2, market_cap_cents: 900000000000 },
-  { id: 825, symbol: 'USDT', name: 'Tether', current_price_cents: 100, price_change_24h: 0.0, market_cap_cents: 11000000000000 },
-  { id: 512, symbol: 'XLM', name: 'Stellar', current_price_cents: 12, price_change_24h: -1.5, market_cap_cents: 350000000000 },
-  { id: 1958, symbol: 'TRX', name: 'TRON', current_price_cents: 7, price_change_24h: 2.8, market_cap_cents: 640000000000 },
-  { id: 1321, symbol: 'FTT', name: 'FTX Token', current_price_cents: 150, price_change_24h: -5.2, market_cap_cents: 220000000000 }
-];
+async function fetchCryptoData(apiKey: string) {
+  try {
+    console.log('Fetching crypto data from CoinMarketCap...');
+    
+    const response = await fetch(
+      'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=1&limit=20&convert=USD',
+      {
+        headers: {
+          'X-CMC_PRO_API_KEY': apiKey,
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.error('CoinMarketCap API error:', response.status, response.statusText);
+      return [];
+    }
+
+    const data = await response.json();
+    console.log('CoinMarketCap response status:', data.status);
+
+    if (!data.data || !Array.isArray(data.data)) {
+      console.error('Invalid response format from CoinMarketCap');
+      return [];
+    }
+
+    return data.data.map((crypto: any, index: number) => ({
+      id: crypto.id,
+      symbol: crypto.symbol,
+      name: crypto.name,
+      current_price_cents: Math.round(crypto.quote.USD.price * 100),
+      price_change_24h: crypto.quote.USD.percent_change_24h || 0,
+      market_cap_cents: Math.round((crypto.quote.USD.market_cap || 0) * 100)
+    }));
+  } catch (error) {
+    console.error('Error fetching crypto data:', error);
+    return [];
+  }
+}
 
 Deno.serve(async (req) => {
   console.log('crypto-list function started, method:', req.method);
@@ -33,6 +55,20 @@ Deno.serve(async (req) => {
 
   try {
     if (req.method === 'GET') {
+      const apiKey = Deno.env.get('COINMARKETCAP_API_KEY');
+      
+      if (!apiKey) {
+        console.error('CoinMarketCap API key not found');
+        return new Response(JSON.stringify({ 
+          error: 'API key not configured',
+          message: 'CoinMarketCap API key is required'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      const cryptoData = await fetchCryptoData(apiKey);
       console.log('Returning crypto data, count:', cryptoData.length);
       
       return new Response(JSON.stringify({ 
