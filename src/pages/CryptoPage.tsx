@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Edit, Trash2, Bitcoin } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Edit, Trash2, Bitcoin, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -64,6 +64,8 @@ const CryptoPage = () => {
 
       if (error) throw error;
       setHoldings(data || []);
+      // Update prices after loading holdings
+      updatePrices();
     } catch (error) {
       console.error('Error loading crypto holdings:', error);
       toast({
@@ -73,6 +75,42 @@ const CryptoPage = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updatePrices = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('crypto-prices', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Error updating prices:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to update crypto prices',
+          variant: 'destructive',
+        });
+      } else {
+        // Reload holdings to get updated prices
+        const { data: updatedHoldings, error: reloadError } = await supabase
+          .from('crypto_portfolio')
+          .select('*')
+          .eq('user_id', user!.id)
+          .order('created_at', { ascending: false });
+
+        if (!reloadError) {
+          setHoldings(updatedHoldings || []);
+          toast({
+            title: 'Success',
+            description: 'Crypto prices updated',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error updating prices:', error);
     }
   };
 
@@ -262,13 +300,18 @@ const CryptoPage = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Your Holdings</CardTitle>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => { resetForm(); setEditingHolding(null); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Holding
-                  </Button>
-                </DialogTrigger>
+              <div className="flex gap-2">
+                <Button onClick={updatePrices} variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Update Prices
+                </Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => { resetForm(); setEditingHolding(null); }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Holding
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>{editingHolding ? 'Edit' : 'Add'} Crypto Holding</DialogTitle>
@@ -385,7 +428,8 @@ const CryptoPage = () => {
                     </div>
                   </form>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
