@@ -144,7 +144,9 @@ const StocksPage = () => {
     
     try {
       console.log('Now trying to load from edge function...');
-      const { data, error } = await supabase.functions.invoke('stocks-list');
+      const { data, error } = await supabase.functions.invoke('stocks-list', { 
+        method: 'GET' 
+      });
       
       console.log('Function response received:', { data, error });
       
