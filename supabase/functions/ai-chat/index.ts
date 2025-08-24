@@ -51,7 +51,9 @@ serve(async (req) => {
 - Calendar scheduling
 - Life goals and personal development
 
-When users ask you to create tasks, respond naturally and mention what task you're creating. Be encouraging, practical, and provide actionable advice. Keep responses concise but helpful.`;
+When users ask you to create tasks, respond naturally and mention what task you're creating. Be encouraging, practical, and provide actionable advice. Keep responses concise but helpful.
+
+IMPORTANT: You do not have access to real-time information like current movie showtimes, weather, news, or live data. When users ask for such information, politely explain that you cannot access real-time data and suggest they check the relevant websites or apps directly. You can still help them plan around such activities or create tasks related to them.`;
 
     if (context) {
       systemPrompt += `\n\nCurrent context: The user is in the ${context} section of the app.`;
