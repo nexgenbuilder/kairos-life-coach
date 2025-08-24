@@ -107,9 +107,17 @@ interface AllModuleStats {
     upcomingLivestreams: number;
   };
   
-  // Health & Calendar
+  // Health
   health: {
-    recentActivities: number;
+    recentMetrics: number;
+    activeMedications: number;
+    latestWeight: string;
+    latestBloodPressure: string;
+    thisWeekMetrics: number;
+  };
+  
+  // Calendar
+  calendar: {
     upcomingEvents: number;
     todaysEvents: number;
     thisWeekEvents: number;
@@ -136,7 +144,8 @@ const DashboardPage = () => {
     professional: { totalContacts: 0, workSchedules: 0, ptoRequests: 0, weeklyEarnings: 0, hoursWorkedThisWeek: 0, pendingPTO: 0 },
     love: { totalContacts: 0, family: 0, significantOthers: 0, upcomingCelebrations: 0, keyDates: 0, needsAttention: 0 },
     creators: { totalPlatforms: 0, totalFollowers: 0, totalContent: 0, publishedContent: 0, monthlyRevenue: 0, totalEngagement: 0, upcomingLivestreams: 0 },
-    health: { recentActivities: 0, upcomingEvents: 0, todaysEvents: 0, thisWeekEvents: 0 },
+    health: { recentMetrics: 0, activeMedications: 0, latestWeight: 'N/A', latestBloodPressure: 'N/A', thisWeekMetrics: 0 },
+    calendar: { upcomingEvents: 0, todaysEvents: 0, thisWeekEvents: 0 },
     fitness: { totalWorkouts: 0, thisWeekWorkouts: 0, topExercise: 'None', totalCalories: 0, activeGoals: 0, averageWorkoutDuration: 0 }
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -180,7 +189,11 @@ const DashboardPage = () => {
         supabase.from('content_income').select('amount_cents, date').eq('user_id', user.id),
         supabase.from('livestream_schedules').select('*').eq('user_id', user.id),
         
-        // Health & Calendar
+        // Health
+        supabase.from('health_metrics').select('*').eq('user_id', user.id),
+        supabase.from('medications').select('*').eq('user_id', user.id).eq('is_active', true),
+        
+        // Calendar
         supabase.from('events').select('*').eq('user_id', user.id),
         
         // Fitness
@@ -196,6 +209,7 @@ const DashboardPage = () => {
         professionalContactsResult, workSchedulesResult, ptoRequestsResult,
         loveContactsResult, keyDatesResult,
         contentPlatformsResult, contentCatalogResult, contentIncomeResult, livestreamResult,
+        healthMetricsResult, medicationsResult,
         eventsResult, fitnessWorkoutsResult, fitnessGoalsResult
       ] = queries;
 
@@ -315,7 +329,24 @@ const DashboardPage = () => {
         new Date(stream.scheduled_start) >= today && stream.status === 'scheduled'
       ).length;
 
-      // Process Health & Events
+      // Process Health
+      const healthMetrics = healthMetricsResult.status === 'fulfilled' ? healthMetricsResult.value.data || [] : [];
+      const medications = medicationsResult.status === 'fulfilled' ? medicationsResult.value.data || [] : [];
+      
+      const recentMetrics = healthMetrics.filter(metric => {
+        const metricDate = new Date(metric.date);
+        return metricDate >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      }).length;
+      
+      const thisWeekMetrics = healthMetrics.filter(metric => {
+        const metricDate = new Date(metric.date);
+        return metricDate >= startOfWeek && metricDate <= endOfWeek;
+      }).length;
+      
+      const latestWeight = healthMetrics.find(m => m.metric_type === 'weight')?.value || 'N/A';
+      const latestBP = healthMetrics.find(m => m.metric_type === 'blood_pressure')?.value || 'N/A';
+
+      // Process Events
       const events = eventsResult.status === 'fulfilled' ? eventsResult.value.data || [] : [];
       const todaysEvents = events.filter(event => {
         const eventDate = new Date(event.start_time);
@@ -392,11 +423,13 @@ const DashboardPage = () => {
           upcomingLivestreams
         },
         health: {
-          recentActivities: events.filter(event => 
-            event.title.toLowerCase().includes('workout') || 
-            event.title.toLowerCase().includes('exercise') ||
-            event.title.toLowerCase().includes('fitness')
-          ).length,
+          recentMetrics,
+          activeMedications: medications.length,
+          latestWeight: latestWeight + (latestWeight !== 'N/A' ? ' lbs' : ''),
+          latestBloodPressure: latestBP + (latestBP !== 'N/A' ? ' mmHg' : ''),
+          thisWeekMetrics
+        },
+        calendar: {
           upcomingEvents,
           todaysEvents,
           thisWeekEvents
@@ -538,9 +571,9 @@ const DashboardPage = () => {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.health.thisWeekEvents}</div>
+              <div className="text-2xl font-bold">{stats.health.thisWeekMetrics}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.health.todaysEvents} today
+                Health metrics this week
               </p>
             </CardContent>
           </Card>
@@ -965,9 +998,9 @@ const DashboardPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.health.upcomingEvents}</div>
+                  <div className="text-3xl font-bold">{stats.calendar.upcomingEvents}</div>
                   <p className="text-sm text-muted-foreground">
-                    {stats.health.todaysEvents} today • {stats.health.thisWeekEvents} this week
+                    {stats.calendar.todaysEvents} today • {stats.calendar.thisWeekEvents} this week
                   </p>
                   <Link to="/calendar" className="mt-2 inline-block">
                     <Button variant="outline" size="sm">View Calendar</Button>
@@ -978,16 +1011,34 @@ const DashboardPage = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
+                    <Heart className="h-5 w-5" />
                     Health Tracking
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">Coming Soon</div>
-                  <p className="text-sm text-muted-foreground">Health metrics integration</p>
-                  <Link to="/health" className="mt-2 inline-block">
-                    <Button variant="outline" size="sm">View Health</Button>
-                  </Link>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Recent Metrics</p>
+                        <p className="text-xl font-bold">{stats.health.recentMetrics}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Active Medications</p>
+                        <p className="text-xl font-bold">{stats.health.activeMedications}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Latest Weight</p>
+                        <p className="text-sm font-medium">{stats.health.latestWeight}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Blood Pressure</p>
+                        <p className="text-sm font-medium">{stats.health.latestBloodPressure}</p>
+                      </div>
+                    </div>
+                    <Link to="/health" className="mt-2 inline-block">
+                      <Button variant="outline" size="sm">View Health</Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             </div>
