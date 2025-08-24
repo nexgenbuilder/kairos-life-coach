@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context } = await req.json();
+    const { message, context, forceGPT5 } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
@@ -61,59 +61,13 @@ IMPORTANT: You do not have access to real-time information like current movie sh
       systemPrompt += `\n\nCurrent context: The user is in the ${context} section of the app.`;
     }
 
-    // Determine if this query needs real-time information
-    const needsRealTimeInfo = checkIfNeedsRealTime(message);
-    
-    if (needsRealTimeInfo) {
-      console.log('Query requires real-time info, routing to Perplexity');
-      try {
-        const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
-        if (perplexityApiKey) {
-          const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${perplexityApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'llama-3.1-sonar-large-128k-online',
-              messages: [
-                { role: 'system', content: systemPrompt + '\n\nIMPORTANT: You have real-time web search capabilities. Provide current, accurate information.' },
-                { role: 'user', content: message }
-              ],
-              temperature: 0.2,
-              top_p: 0.9,
-              max_tokens: 1000,
-              return_images: false,
-              return_related_questions: false,
-              search_recency_filter: 'month',
-              frequency_penalty: 1,
-              presence_penalty: 0
-            }),
-          });
-
-          if (perplexityResponse.ok) {
-            const perplexityData = await perplexityResponse.json();
-            if (perplexityData.choices?.[0]?.message?.content) {
-              console.log('Using Perplexity response for real-time query');
-              return new Response(JSON.stringify({ 
-                response: perplexityData.choices[0].message.content,
-                source: 'perplexity',
-                userId: userId 
-              }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              });
-            }
-          }
-        }
-        console.log('Perplexity failed, falling back to GPT-5');
-      } catch (error) {
-        console.error('Perplexity error, falling back to GPT-5:', error);
-      }
+    // Use GPT-5 when forced or for general conversation
+    if (forceGPT5) {
+      console.log('Forced GPT-5 mode');
     }
 
     console.log('Sending request to OpenAI with message:', message);
-    console.log('Using model: gpt-5-2025-08-07 (upgraded from gpt-4o-mini)');
+    console.log('Using model: gpt-5-2025-08-07');
 
     const requestBody = {
       model: 'gpt-5-2025-08-07',

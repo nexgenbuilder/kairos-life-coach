@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, Mic, MicOff, Bot, Sparkles } from 'lucide-react';
+import { Send, Mic, MicOff, Bot, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -33,7 +33,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [aiMode, setAiMode] = useState(false); // Toggle for AI conversation mode
+  const [routingMode, setRoutingMode] = useState<'auto' | 'gpt5' | 'search'>('auto'); // Manual routing control
 
   // Detection patterns for different actions
   const detectActionType = (message: string): 'task' | 'expense' | 'income' | 'fitness' | 'chat' => {
@@ -93,9 +93,9 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     setIsLoading(true);
 
     try {
-      if (aiMode) {
-        // Force AI conversation mode - bypass action detection
-        const { data, error } = await supabase.functions.invoke('ai-chat', {
+      if (routingMode === 'search') {
+        // Force Perplexity for real-time search
+        const { data, error } = await supabase.functions.invoke('perplexity-search', {
           body: { 
             message: currentInput,
             context: window.location.pathname.slice(1) || 'home'
@@ -112,12 +112,37 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           content: data.response,
           sender: 'kairos',
           timestamp: new Date(),
-          source: data.source || 'gpt-5'
+          source: 'perplexity'
         };
         
         setMessages(prev => [...prev, aiResponseMessage]);
 
-        // Add text-to-speech for AI responses
+      } else if (routingMode === 'gpt5') {
+        // Force GPT-5 for reasoning/conversation
+        const { data, error } = await supabase.functions.invoke('ai-chat', {
+          body: { 
+            message: currentInput,
+            context: window.location.pathname.slice(1) || 'home',
+            forceGPT5: true
+          },
+          headers: session ? {
+            'Authorization': `Bearer ${session.access_token}`
+          } : {}
+        });
+
+        if (error) throw error;
+
+        const aiResponseMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.response,
+          sender: 'kairos',
+          timestamp: new Date(),
+          source: 'gpt-5'
+        };
+        
+        setMessages(prev => [...prev, aiResponseMessage]);
+
+        // Add text-to-speech for GPT-5 responses
         try {
           const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
             body: { 
@@ -134,9 +159,8 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           console.error('Error generating speech:', error);
         }
 
-        // Keep AI mode active - don't auto-disable
-
       } else {
+        // Auto mode - keep existing logic
         // Normal mode - detect action type and route accordingly
         const actionType = detectActionType(currentInput);
 
@@ -214,6 +238,11 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             console.error('Error generating speech:', error);
           }
         }
+      }
+
+      // Reset routing mode to auto after sending (unless it's a specific mode selection)
+      if (routingMode !== 'auto') {
+        setTimeout(() => setRoutingMode('auto'), 100);
       }
 
     } catch (error) {
@@ -336,12 +365,14 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         ))}
       </div>
 
-      {/* AI Mode Indicator */}
-      {aiMode && (
+      {/* Routing Mode Indicator */}
+      {routingMode !== 'auto' && (
         <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
           <div className="flex items-center justify-center space-x-2 text-sm text-primary">
-            <Sparkles className="h-4 w-4" />
-            <span>AI Conversation Mode - Next message will chat with Kairos</span>
+            {routingMode === 'gpt5' ? <Bot className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            <span>
+              {routingMode === 'gpt5' ? 'GPT-5 Mode - Advanced reasoning and conversation' : 'Search Mode - Real-time web search capabilities'}
+            </span>
           </div>
         </div>
       )}
@@ -354,22 +385,37 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder={aiMode ? "Chat with Kairos AI..." : "Create tasks, log expenses, track fitness..."}
+              placeholder={routingMode === 'gpt5' ? "Chat with GPT-5..." : routingMode === 'search' ? "Search the web..." : "Create tasks, log expenses, track fitness..."}
               className="pr-12 border-border focus:ring-primary"
             />
           </div>
           
+          {/* GPT-5 Button */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setAiMode(!aiMode)}
+            onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
             className={cn(
               "transition-smooth",
-              aiMode ? 'text-primary bg-primary/10 shadow-glow-soft' : 'text-muted-foreground hover:text-primary'
+              routingMode === 'gpt5' ? 'text-blue-600 bg-blue-100 dark:bg-blue-900/50 shadow-glow-soft' : 'text-muted-foreground hover:text-blue-600'
             )}
-            title={aiMode ? "Disable AI chat mode" : "Enable AI chat mode"}
+            title="GPT-5 - Advanced reasoning and conversation"
           >
-            {aiMode ? <Sparkles className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+            <Bot className="h-4 w-4" />
+          </Button>
+
+          {/* Perplexity Search Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
+            className={cn(
+              "transition-smooth",
+              routingMode === 'search' ? 'text-green-600 bg-green-100 dark:bg-green-900/50 shadow-glow-soft' : 'text-muted-foreground hover:text-green-600'
+            )}
+            title="Perplexity Search - Real-time web search"
+          >
+            <Search className="h-4 w-4" />
           </Button>
           
           <Button
