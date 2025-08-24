@@ -121,13 +121,15 @@ serve(async (req) => {
     // Insert each item as a separate expense
     const expenseRecords = items.map((item: any) => ({
       user_id: userId,
-      amount: item.amount,
+      amount: parseFloat(item.amount.toString()),
       category: item.category,
       description: item.description,
       date: new Date().toISOString(),
       is_recurring: false,
       recurring_frequency: null
     }));
+
+    console.log('Inserting expense records:', expenseRecords);
 
     const { error: insertError } = await supabase
       .from('expenses')
