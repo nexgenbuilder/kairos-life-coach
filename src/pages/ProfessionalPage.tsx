@@ -9,12 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Target, TrendingUp, Calendar, CheckCircle, Edit, Trash2 } from 'lucide-react';
+import { Plus, Target, TrendingUp, Calendar, CheckCircle, Edit, Trash2, Clock, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import PersonForm from '@/components/shared/PersonForm';
+import { WorkScheduleManager } from '@/components/professional/WorkScheduleManager';
+import { PTOManager } from '@/components/professional/PTOManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Deal {
   id: string;
@@ -305,7 +308,7 @@ const ProfessionalPage = () => {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Professional
             </h1>
-            <p className="text-muted-foreground mt-2">Track your sales pipeline and professional goals</p>
+            <p className="text-muted-foreground mt-2">Manage your work schedule, sales pipeline, and professional network</p>
           </div>
           
           <div className="space-x-2">
@@ -454,8 +457,18 @@ const ProfessionalPage = () => {
          </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="opportunities" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
+            <TabsTrigger value="schedule">Work Schedule</TabsTrigger>
+            <TabsTrigger value="pto">Time Off</TabsTrigger>
+            <TabsTrigger value="contacts">Contacts</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="opportunities" className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
@@ -608,6 +621,71 @@ const ProfessionalPage = () => {
             </Table>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="schedule" className="space-y-6">
+            <WorkScheduleManager />
+          </TabsContent>
+
+          <TabsContent value="pto" className="space-y-6">
+            <PTOManager />
+          </TabsContent>
+
+          <TabsContent value="contacts" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Professional Contacts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {people.map((person) => (
+                      <TableRow key={person.id}>
+                        <TableCell className="font-medium">{person.full_name}</TableCell>
+                        <TableCell>{person.company || '-'}</TableCell>
+                        <TableCell>{person.position || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {person.type.charAt(0).toUpperCase() + person.type.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{person.email || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePersonEdit(person)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePersonDelete(person.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
