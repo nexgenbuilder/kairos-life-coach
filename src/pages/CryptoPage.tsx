@@ -126,14 +126,31 @@ const CryptoPage = () => {
   const loadAvailableCryptos = async () => {
     console.log('=== loadAvailableCryptos START ===');
     
-    // Add some sample data immediately for testing
+    // Add realistic sample data with current approximate prices (January 2025)
     const sampleData = [
-      { id: 1, symbol: 'BTC', name: 'Bitcoin', current_price_cents: 9500000, price_change_24h: 2.5, market_cap_cents: 187000000000000 },
-      { id: 1027, symbol: 'ETH', name: 'Ethereum', current_price_cents: 350000, price_change_24h: -1.2, market_cap_cents: 42000000000000 },
-      { id: 52, symbol: 'XRP', name: 'XRP', current_price_cents: 60, price_change_24h: 5.8, market_cap_cents: 3400000000000 }
+      { id: 1, symbol: 'BTC', name: 'Bitcoin', current_price_cents: 10800000, price_change_24h: 1.8, market_cap_cents: 213000000000000 },
+      { id: 1027, symbol: 'ETH', name: 'Ethereum', current_price_cents: 380000, price_change_24h: -0.5, market_cap_cents: 46000000000000 },
+      { id: 52, symbol: 'XRP', name: 'XRP', current_price_cents: 320, price_change_24h: 8.2, market_cap_cents: 1800000000000 },
+      { id: 2010, symbol: 'ADA', name: 'Cardano', current_price_cents: 95, price_change_24h: -1.2, market_cap_cents: 3400000000000 },
+      { id: 5426, symbol: 'SOL', name: 'Solana', current_price_cents: 26000, price_change_24h: 3.1, market_cap_cents: 12200000000000 },
+      { id: 74, symbol: 'DOGE', name: 'Dogecoin', current_price_cents: 40, price_change_24h: 5.6, market_cap_cents: 590000000000 },
+      { id: 3408, symbol: 'USDC', name: 'USD Coin', current_price_cents: 100, price_change_24h: 0.0, market_cap_cents: 4200000000000 },
+      { id: 825, symbol: 'USDT', name: 'Tether', current_price_cents: 100, price_change_24h: 0.1, market_cap_cents: 13800000000000 },
+      { id: 6636, symbol: 'DOT', name: 'Polkadot', current_price_cents: 850, price_change_24h: -2.3, market_cap_cents: 1200000000000 },
+      { id: 11841, symbol: 'MATIC', name: 'Polygon', current_price_cents: 48, price_change_24h: 2.7, market_cap_cents: 480000000000 },
+      { id: 1839, symbol: 'BNB', name: 'BNB', current_price_cents: 71000, price_change_24h: 0.9, market_cap_cents: 10600000000000 },
+      { id: 1975, symbol: 'LINK', name: 'Chainlink', current_price_cents: 2800, price_change_24h: 1.4, market_cap_cents: 1700000000000 },
+      { id: 512, symbol: 'XLM', name: 'Stellar', current_price_cents: 48, price_change_24h: -0.8, market_cap_cents: 1400000000000 },
+      { id: 1958, symbol: 'TRX', name: 'TRON', current_price_cents: 29, price_change_24h: 4.2, market_cap_cents: 250000000000 },
+      { id: 7083, symbol: 'UNI', name: 'Uniswap', current_price_cents: 1650, price_change_24h: -1.9, market_cap_cents: 1000000000000 },
+      { id: 1027, symbol: 'ATOM', name: 'Cosmos', current_price_cents: 920, price_change_24h: 2.1, market_cap_cents: 360000000000 },
+      { id: 4687, symbol: 'AVAX', name: 'Avalanche', current_price_cents: 5200, price_change_24h: 1.7, market_cap_cents: 2100000000000 },
+      { id: 8916, symbol: 'ICP', name: 'Internet Computer', current_price_cents: 1420, price_change_24h: -0.3, market_cap_cents: 660000000000 },
+      { id: 3635, symbol: 'NEAR', name: 'NEAR Protocol', current_price_cents: 680, price_change_24h: 3.5, market_cap_cents: 750000000000 },
+      { id: 7226, symbol: 'ALGO', name: 'Algorand', current_price_cents: 45, price_change_24h: -1.1, market_cap_cents: 370000000000 }
     ];
     
-    console.log('Setting sample data first:', sampleData);
+    console.log('Setting sample data first:', sampleData.length, 'cryptocurrencies');
     setAvailableCryptos(sampleData);
     
     try {
