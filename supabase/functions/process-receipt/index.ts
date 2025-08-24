@@ -31,6 +31,7 @@ serve(async (req) => {
     }
 
     if (!openAIApiKey) {
+      console.error('OpenAI API key not found in environment');
       return new Response(
         JSON.stringify({ success: false, error: 'OpenAI API key not configured' }),
         { 
@@ -39,6 +40,8 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log('Processing receipt with OpenAI Vision API...');
 
     // Use OpenAI Vision API to analyze the receipt
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
