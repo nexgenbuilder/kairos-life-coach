@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          operation: string
+          table_name: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          operation: string
+          table_name: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          operation?: string
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       business_expenses: {
         Row: {
           amount_cents: number
@@ -590,6 +626,30 @@ export type Database = {
           is_recurring?: boolean
           recurring_frequency?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      failed_auth_attempts: {
+        Row: {
+          attempt_type: string
+          attempted_email: string | null
+          created_at: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          attempt_type: string
+          attempted_email?: string | null
+          created_at?: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          attempt_type?: string
+          attempted_email?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string
         }
         Relationships: []
       }
@@ -1218,6 +1278,36 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: string | null
+          request_count: number
+          user_id: string | null
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address?: string | null
+          request_count?: number
+          user_id?: string | null
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: string | null
+          request_count?: number
+          user_id?: string | null
+          window_start?: string
+        }
+        Relationships: []
+      }
       relationship_rules: {
         Row: {
           cadence_days: number
@@ -1482,7 +1572,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_limit?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
+      cleanup_security_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      log_audit: {
+        Args: {
+          p_ip_address?: string
+          p_new_data?: Json
+          p_old_data?: Json
+          p_operation: string
+          p_table_name: string
+          p_user_agent?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
