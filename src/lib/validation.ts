@@ -95,7 +95,27 @@ export const platformHandleSchema = z.string()
 
 // Utility functions
 export const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/[<>]/g, '');
+  return input
+    .trim()
+    // Remove HTML tags and potentially dangerous characters
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<[^>]*>/g, '')
+    // Remove javascript: and data: protocols
+    .replace(/javascript:/gi, '')
+    .replace(/data:/gi, '')
+    // Remove event handlers
+    .replace(/on\w+\s*=/gi, '')
+    // Remove potentially dangerous characters
+    .replace(/[<>'"&]/g, (match) => {
+      const htmlEntities: Record<string, string> = {
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '&': '&amp;'
+      };
+      return htmlEntities[match] || match;
+    });
 };
 
 export const validateAndSanitize = <T>(
