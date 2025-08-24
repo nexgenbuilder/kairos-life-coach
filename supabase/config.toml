@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.crypto-prices]
 verify_jwt = true
+
+[functions.crypto-list]
+verify_jwt = false

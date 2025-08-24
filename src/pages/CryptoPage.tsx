@@ -124,12 +124,23 @@ const CryptoPage = () => {
 
   const loadAvailableCryptos = async () => {
     try {
+      console.log('Loading available cryptos...');
       const { data, error } = await supabase.functions.invoke('crypto-list');
       
-      if (error) throw error;
-      setAvailableCryptos(data.data || []);
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      console.log('Received crypto data:', data);
+      setAvailableCryptos(data?.data || []);
     } catch (error) {
       console.error('Error loading available cryptos:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load cryptocurrency list',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -694,7 +705,20 @@ const CryptoPage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredCryptos.map((crypto) => (
+                    {filteredCryptos.length === 0 && availableCryptos.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          Loading cryptocurrencies...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredCryptos.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          No cryptocurrencies found matching "{searchTerm}"
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredCryptos.map((crypto) => (
                       <TableRow key={crypto.id}>
                         <TableCell>
                           <div>
@@ -724,8 +748,9 @@ const CryptoPage = () => {
                             )}
                           </div>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
