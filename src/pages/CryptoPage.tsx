@@ -74,6 +74,7 @@ const CryptoPage = () => {
   });
 
   useEffect(() => {
+    console.log('CryptoPage useEffect triggered, user:', user);
     if (user) {
       loadHoldings();
       loadWatchlist();
