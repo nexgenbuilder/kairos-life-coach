@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
+import PersonForm from '@/components/shared/PersonForm';
 
 interface Deal {
   id: string;
@@ -35,7 +36,15 @@ interface Person {
   id: string;
   full_name: string;
   email: string;
+  phone: string;
   type: string;
+  company: string;
+  position: string;
+  address: string;
+  birthday: string;
+  notes: string;
+  tags: string[];
+  social_media_links: Record<string, string>;
 }
 
 interface Task {
@@ -53,6 +62,8 @@ const ProfessionalPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
+  const [isPersonDialogOpen, setIsPersonDialogOpen] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -92,14 +103,18 @@ const ProfessionalPage = () => {
       // Load people (prospects, clients, coworkers)
       const { data: peopleData, error: peopleError } = await supabase
         .from('people')
-        .select('id, full_name, email, type')
+        .select('*')
         .eq('user_id', user!.id)
-        .in('type', ['lead', 'customer', 'coworker']);
+        .in('type', ['colleague', 'manager', 'hr', 'client']);
 
       if (peopleError) throw peopleError;
 
       setDeals(dealsData || []);
-      setPeople(peopleData || []);
+      setPeople((peopleData || []).map(person => ({
+        ...person,
+        tags: person.tags || [],
+        social_media_links: person.social_media_links || {}
+      })) as Person[]);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -210,6 +225,41 @@ const ProfessionalPage = () => {
     }
   };
 
+  const handlePersonSave = () => {
+    setIsPersonDialogOpen(false);
+    setEditingPerson(null);
+    loadData();
+  };
+
+  const handlePersonEdit = (person: Person) => {
+    setEditingPerson(person);
+    setIsPersonDialogOpen(true);
+  };
+
+  const handlePersonDelete = async (personId: string) => {
+    try {
+      const { error } = await supabase
+        .from('people')
+        .delete()
+        .eq('id', personId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Contact deleted successfully',
+      });
+      loadData();
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete contact',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStageColor = (stage: string) => {
     const colors = {
       prospect: 'bg-gray-100 text-gray-800',
@@ -258,13 +308,31 @@ const ProfessionalPage = () => {
             <p className="text-muted-foreground mt-2">Track your sales pipeline and professional goals</p>
           </div>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Opportunity
-              </Button>
-            </DialogTrigger>
+          <div className="space-x-2">
+            <Dialog open={isPersonDialogOpen} onOpenChange={setIsPersonDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Contact
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+                <PersonForm
+                  person={editingPerson}
+                  module="professional"
+                  onSave={handlePersonSave}
+                  onCancel={() => setIsPersonDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Opportunity
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>{editingDeal ? 'Edit Opportunity' : 'Create New Opportunity'}</DialogTitle>
@@ -381,8 +449,9 @@ const ProfessionalPage = () => {
                   </Button>
                 </div>
               </form>
-            </DialogContent>
-          </Dialog>
+             </DialogContent>
+           </Dialog>
+         </div>
         </div>
 
         {/* KPI Cards */}
@@ -431,6 +500,59 @@ const ProfessionalPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Professional Contacts */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Professional Contacts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {people.map((person) => (
+                  <TableRow key={person.id}>
+                    <TableCell className="font-medium">{person.full_name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {person.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{person.company || '-'}</TableCell>
+                    <TableCell>{person.email || '-'}</TableCell>
+                    <TableCell>{person.phone || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => handlePersonEdit(person)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handlePersonDelete(person.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {people.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No contacts yet. Add your first professional contact to get started.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
         {/* Opportunities Table */}
         <Card>

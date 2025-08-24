@@ -70,7 +70,11 @@ const PersonForm: React.FC<PersonFormProps> = ({ person, module, onSave, onCance
       case 'social':
         return [
           { value: 'friend', label: 'Friend' },
-          { value: 'colleague', label: 'Colleague' },
+          { value: 'work', label: 'Work Friend' },
+          { value: 'romantic', label: 'Romantic' },
+          { value: 'school', label: 'School Friend' },
+          { value: 'family', label: 'Family Friend' },
+          { value: 'neighbor', label: 'Neighbor' },
           { value: 'acquaintance', label: 'Acquaintance' }
         ];
       case 'love':
