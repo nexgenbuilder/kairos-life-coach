@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface TaskCategory {
@@ -31,6 +31,21 @@ interface CategoryStats {
   };
 }
 
+const PRESET_COLORS = [
+  '#3b82f6', // Blue
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#ef4444', // Red
+  '#8b5cf6', // Violet
+  '#f97316', // Orange
+  '#06b6d4', // Cyan
+  '#84cc16', // Lime
+  '#ec4899', // Pink
+  '#6366f1', // Indigo
+  '#14b8a6', // Teal
+  '#a855f7', // Purple
+];
+
 export const CategoryManager = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -39,6 +54,7 @@ export const CategoryManager = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<TaskCategory | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -267,18 +283,50 @@ export const CategoryManager = () => {
               </div>
               <div>
                 <Label htmlFor="color">Color</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="color"
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    className="w-16 h-10"
-                  />
-                  <div
-                    className="w-10 h-10 rounded border"
-                    style={{ backgroundColor: formData.color }}
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowColorPicker(!showColorPicker)}
+                      className="flex items-center gap-2"
+                    >
+                      <Palette className="h-4 w-4" />
+                      {showColorPicker ? 'Hide Colors' : 'Choose Color'}
+                    </Button>
+                    <div
+                      className="w-8 h-8 rounded-full border-2 border-border"
+                      style={{ backgroundColor: formData.color }}
+                    />
+                  </div>
+                  
+                  {showColorPicker && (
+                    <div className="grid grid-cols-6 gap-2 p-3 bg-muted rounded-lg">
+                      {PRESET_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
+                            formData.color === color ? 'border-foreground ring-2 ring-ring' : 'border-border'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setFormData(prev => ({ ...prev, color }))}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="color"
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                      className="w-16 h-10"
+                    />
+                    <span className="text-sm text-muted-foreground">Custom color</span>
+                  </div>
                 </div>
               </div>
               <div>

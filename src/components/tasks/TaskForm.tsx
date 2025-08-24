@@ -51,6 +51,29 @@ export const TaskForm = ({ onTaskCreated }: TaskFormProps) => {
     fetchCategories();
   }, [user]);
 
+  // Real-time updates for categories
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('categories-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_categories',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => fetchCategories()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -144,15 +167,15 @@ export const TaskForm = ({ onTaskCreated }: TaskFormProps) => {
                 <SelectTrigger>
                   <SelectValue placeholder="Select category (optional)" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border shadow-lg z-50">
                   {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
+                    <SelectItem key={category.id} value={category.id} className="cursor-pointer">
+                      <div className="flex items-center gap-2 w-full">
                         <div
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: category.color }}
                         />
-                        {category.name}
+                        <span className="truncate">{category.name}</span>
                       </div>
                     </SelectItem>
                   ))}
