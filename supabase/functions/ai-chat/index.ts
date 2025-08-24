@@ -95,11 +95,13 @@ IMPORTANT: You do not have access to real-time information like current movie sh
     }
 
     const data = await response.json();
-    console.log('OpenAI response received:', data);
+    console.log('OpenAI response received:', JSON.stringify(data, null, 2));
     let aiResponse = data.choices?.[0]?.message?.content || '';
     
     if (!aiResponse) {
-      console.error('Empty response from OpenAI:', data);
+      console.error('Empty response from OpenAI. Full data:', data);
+      console.error('Choices array:', data.choices);
+      console.error('Available data keys:', Object.keys(data));
       aiResponse = "I'm having trouble generating a response right now. Please try again.";
     }
 

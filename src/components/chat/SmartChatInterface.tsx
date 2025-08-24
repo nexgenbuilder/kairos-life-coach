@@ -35,7 +35,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [aiMode, setAiMode] = useState(false); // Toggle for AI conversation mode
 
   // Detection patterns for different actions
-  const detectActionType = (message: string): 'task' | 'expense' | 'fitness' | 'chat' => {
+  const detectActionType = (message: string): 'task' | 'expense' | 'income' | 'fitness' | 'chat' => {
     const lowerMessage = message.toLowerCase();
     
     // Task-related keywords
@@ -50,6 +50,14 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         lowerMessage.includes('spent') || lowerMessage.includes('cost') ||
         lowerMessage.includes('paid') || lowerMessage.includes('expense')) {
       return 'expense';
+    }
+    
+    // Income-related keywords
+    if (lowerMessage.includes('log income') || lowerMessage.includes('add income') ||
+        lowerMessage.includes('received') || lowerMessage.includes('earned') ||
+        lowerMessage.includes('income') || lowerMessage.includes('payment') ||
+        lowerMessage.includes('salary') || lowerMessage.includes('commission')) {
+      return 'income';
     }
     
     // Fitness-related keywords
@@ -118,8 +126,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           console.error('Error generating speech:', error);
         }
 
-        // Auto-disable AI mode after sending
-        setAiMode(false);
+        // Keep AI mode active - don't auto-disable
 
       } else {
         // Normal mode - detect action type and route accordingly
