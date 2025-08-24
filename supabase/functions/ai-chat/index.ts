@@ -87,7 +87,13 @@ IMPORTANT: You do not have access to real-time information like current movie sh
     }
 
     const data = await response.json();
-    let aiResponse = data.choices[0].message.content;
+    console.log('OpenAI response received:', data);
+    let aiResponse = data.choices?.[0]?.message?.content || '';
+    
+    if (!aiResponse) {
+      console.error('Empty response from OpenAI:', data);
+      aiResponse = "I'm having trouble generating a response right now. Please try again.";
+    }
 
     // Check if the user is asking to create a task and we have a user ID
     const createTaskKeywords = ['create task', 'add task', 'new task', 'make task', 'create a task'];
