@@ -405,7 +405,10 @@ const DashboardPage = () => {
     return (
       <AppLayout>
         <div className="p-6">
-          <div className="text-center">Loading comprehensive dashboard...</div>
+          <div className="text-center">
+            <div className="animate-pulse">Loading comprehensive dashboard...</div>
+            <p className="text-muted-foreground mt-2">Fetching data from all modules</p>
+          </div>
         </div>
       </AppLayout>
     );
