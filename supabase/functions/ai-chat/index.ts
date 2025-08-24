@@ -62,6 +62,18 @@ IMPORTANT: You do not have access to real-time information like current movie sh
     }
 
     console.log('Sending request to OpenAI with message:', message);
+    console.log('Using model: gpt-5-2025-08-07');
+
+    const requestBody = {
+      model: 'gpt-5-2025-08-07',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message }
+      ],
+      max_completion_tokens: 1000,
+    };
+    
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -69,15 +81,11 @@ IMPORTANT: You do not have access to real-time information like current movie sh
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_completion_tokens: 1000,
-      }),
+      body: JSON.stringify(requestBody),
     });
+
+    console.log('OpenAI response status:', response.status);
+    console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorData = await response.text();
