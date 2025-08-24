@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import NotesManager from '@/components/shared/NotesManager';
+import ContentForm from '@/components/content/ContentForm';
+import PlatformForm from '@/components/content/PlatformForm';
 import { 
   Video, 
   Calendar, 
@@ -89,6 +91,8 @@ const CreatorsPage = () => {
   const [platforms, setPlatforms] = useState<ContentPlatform[]>([]);
   const [recentContent, setRecentContent] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [contentFormOpen, setContentFormOpen] = useState(false);
+  const [platformFormOpen, setPlatformFormOpen] = useState(false);
 
   const fetchCreatorStats = async () => {
     if (!user) return;
@@ -292,7 +296,7 @@ const CreatorsPage = () => {
           <TabsContent value="content" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Content Catalog</h2>
-              <Button>
+              <Button onClick={() => setContentFormOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Content
               </Button>
@@ -335,7 +339,7 @@ const CreatorsPage = () => {
           <TabsContent value="platforms" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Platform Management</h2>
-              <Button>
+              <Button onClick={() => setPlatformFormOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Platform
               </Button>
@@ -445,6 +449,18 @@ const CreatorsPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <ContentForm 
+        open={contentFormOpen}
+        onOpenChange={setContentFormOpen}
+        onSuccess={fetchCreatorStats}
+      />
+      
+      <PlatformForm 
+        open={platformFormOpen}
+        onOpenChange={setPlatformFormOpen}
+        onSuccess={fetchCreatorStats}
+      />
     </AppLayout>
   );
 };
