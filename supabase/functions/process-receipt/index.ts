@@ -84,7 +84,15 @@ serve(async (req) => {
 
     let items;
     try {
-      items = JSON.parse(content);
+      // Remove markdown code blocks if present
+      let cleanContent = content.trim();
+      if (cleanContent.startsWith('```json') && cleanContent.endsWith('```')) {
+        cleanContent = cleanContent.slice(7, -3).trim();
+      } else if (cleanContent.startsWith('```') && cleanContent.endsWith('```')) {
+        cleanContent = cleanContent.slice(3, -3).trim();
+      }
+      
+      items = JSON.parse(cleanContent);
     } catch (parseError) {
       console.error('Failed to parse AI response:', content);
       return new Response(
