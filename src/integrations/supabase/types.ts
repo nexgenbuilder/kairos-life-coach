@@ -593,6 +593,99 @@ export type Database = {
         }
         Relationships: []
       }
+      fitness_goals: {
+        Row: {
+          created_at: string
+          current_value: number | null
+          description: string | null
+          goal_type: string
+          id: string
+          is_active: boolean
+          target_date: string | null
+          target_value: number | null
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          goal_type: string
+          id?: string
+          is_active?: boolean
+          target_date?: string | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          goal_type?: string
+          id?: string
+          is_active?: boolean
+          target_date?: string | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fitness_workouts: {
+        Row: {
+          calories_burned: number | null
+          created_at: string
+          distance_miles: number | null
+          duration_minutes: number | null
+          exercise_name: string
+          exercise_type: string
+          id: string
+          notes: string | null
+          reps: number | null
+          sets: number | null
+          updated_at: string
+          user_id: string
+          weight_lbs: number | null
+          workout_date: string
+        }
+        Insert: {
+          calories_burned?: number | null
+          created_at?: string
+          distance_miles?: number | null
+          duration_minutes?: number | null
+          exercise_name: string
+          exercise_type: string
+          id?: string
+          notes?: string | null
+          reps?: number | null
+          sets?: number | null
+          updated_at?: string
+          user_id: string
+          weight_lbs?: number | null
+          workout_date?: string
+        }
+        Update: {
+          calories_burned?: number | null
+          created_at?: string
+          distance_miles?: number | null
+          duration_minutes?: number | null
+          exercise_name?: string
+          exercise_type?: string
+          id?: string
+          notes?: string | null
+          reps?: number | null
+          sets?: number | null
+          updated_at?: string
+          user_id?: string
+          weight_lbs?: number | null
+          workout_date?: string
+        }
+        Relationships: []
+      }
       income: {
         Row: {
           amount: number

@@ -114,6 +114,16 @@ interface AllModuleStats {
     todaysEvents: number;
     thisWeekEvents: number;
   };
+  
+  // Fitness Module
+  fitness: {
+    totalWorkouts: number;
+    thisWeekWorkouts: number;
+    topExercise: string;
+    totalCalories: number;
+    activeGoals: number;
+    averageWorkoutDuration: number;
+  };
 }
 
 const DashboardPage = () => {
@@ -126,7 +136,8 @@ const DashboardPage = () => {
     professional: { totalContacts: 0, workSchedules: 0, ptoRequests: 0, weeklyEarnings: 0, hoursWorkedThisWeek: 0, pendingPTO: 0 },
     love: { totalContacts: 0, family: 0, significantOthers: 0, upcomingCelebrations: 0, keyDates: 0, needsAttention: 0 },
     creators: { totalPlatforms: 0, totalFollowers: 0, totalContent: 0, publishedContent: 0, monthlyRevenue: 0, totalEngagement: 0, upcomingLivestreams: 0 },
-    health: { recentActivities: 0, upcomingEvents: 0, todaysEvents: 0, thisWeekEvents: 0 }
+    health: { recentActivities: 0, upcomingEvents: 0, todaysEvents: 0, thisWeekEvents: 0 },
+    fitness: { totalWorkouts: 0, thisWeekWorkouts: 0, topExercise: 'None', totalCalories: 0, activeGoals: 0, averageWorkoutDuration: 0 }
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -170,7 +181,11 @@ const DashboardPage = () => {
         supabase.from('livestream_schedules').select('*').eq('user_id', user.id),
         
         // Health & Calendar
-        supabase.from('events').select('*').eq('user_id', user.id)
+        supabase.from('events').select('*').eq('user_id', user.id),
+        
+        // Fitness
+        supabase.from('fitness_workouts').select('*').eq('user_id', user.id),
+        supabase.from('fitness_goals').select('*').eq('user_id', user.id).eq('is_active', true)
       ]);
 
       // Process results
@@ -181,7 +196,7 @@ const DashboardPage = () => {
         professionalContactsResult, workSchedulesResult, ptoRequestsResult,
         loveContactsResult, keyDatesResult,
         contentPlatformsResult, contentCatalogResult, contentIncomeResult, livestreamResult,
-        eventsResult
+        eventsResult, fitnessWorkoutsResult, fitnessGoalsResult
       ] = queries;
 
       // Calculate current date ranges
@@ -385,6 +400,31 @@ const DashboardPage = () => {
           upcomingEvents,
           todaysEvents,
           thisWeekEvents
+        },
+        fitness: {
+          totalWorkouts: fitnessWorkoutsResult.status === 'fulfilled' ? (fitnessWorkoutsResult.value.data || []).length : 0,
+          thisWeekWorkouts: fitnessWorkoutsResult.status === 'fulfilled' ? 
+            (fitnessWorkoutsResult.value.data || []).filter((w: any) => {
+              const workoutDate = new Date(w.workout_date);
+              return workoutDate >= startOfWeek && workoutDate <= endOfWeek;
+            }).length : 0,
+          topExercise: fitnessWorkoutsResult.status === 'fulfilled' ? (() => {
+            const workouts = fitnessWorkoutsResult.value.data || [];
+            const exerciseCounts: { [key: string]: number } = {};
+            workouts.forEach((w: any) => {
+              exerciseCounts[w.exercise_name] = (exerciseCounts[w.exercise_name] || 0) + 1;
+            });
+            return Object.entries(exerciseCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'None';
+          })() : 'None',
+          totalCalories: fitnessWorkoutsResult.status === 'fulfilled' ? 
+            (fitnessWorkoutsResult.value.data || []).reduce((sum: number, w: any) => sum + (w.calories_burned || 0), 0) : 0,
+          activeGoals: fitnessGoalsResult.status === 'fulfilled' ? (fitnessGoalsResult.value.data || []).length : 0,
+          averageWorkoutDuration: fitnessWorkoutsResult.status === 'fulfilled' ? (() => {
+            const workouts = fitnessWorkoutsResult.value.data || [];
+            const workoutsWithDuration = workouts.filter((w: any) => w.duration_minutes);
+            return workoutsWithDuration.length > 0 ? 
+              Math.round(workoutsWithDuration.reduce((sum: number, w: any) => sum + w.duration_minutes, 0) / workoutsWithDuration.length) : 0;
+          })() : 0
         }
       });
 
@@ -887,15 +927,33 @@ const DashboardPage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Activity className="h-5 w-5" />
-                    Fitness Activities
+                    Fitness Tracking
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.health.recentActivities}</div>
-                  <p className="text-sm text-muted-foreground">Recent workout sessions</p>
-                  <Link to="/fitness" className="mt-2 inline-block">
-                    <Button variant="outline" size="sm">View Fitness</Button>
-                  </Link>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Total Workouts</p>
+                        <p className="text-xl font-bold">{stats.fitness.totalWorkouts}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">This Week</p>
+                        <p className="text-xl font-bold">{stats.fitness.thisWeekWorkouts}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Top Exercise</p>
+                        <p className="text-sm font-medium truncate">{stats.fitness.topExercise}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Calories Burned</p>
+                        <p className="text-xl font-bold">{stats.fitness.totalCalories}</p>
+                      </div>
+                    </div>
+                    <Link to="/fitness" className="mt-2 inline-block">
+                      <Button variant="outline" size="sm">View Fitness</Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
 
