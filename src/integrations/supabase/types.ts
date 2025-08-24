@@ -1253,9 +1253,40 @@ export type Database = {
           },
         ]
       }
+      task_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           activated_at: string | null
+          category_id: string | null
           completed_at: string | null
           created_at: string
           description: string | null
@@ -1269,6 +1300,7 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          category_id?: string | null
           completed_at?: string | null
           created_at?: string
           description?: string | null
@@ -1282,6 +1314,7 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          category_id?: string | null
           completed_at?: string | null
           created_at?: string
           description?: string | null
@@ -1293,7 +1326,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "task_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       travel_schedules: {
         Row: {

@@ -8,14 +8,22 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Clock } from "lucide-react";
 
+interface TaskCategory {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface Task {
   id: string;
   title: string;
   description: string | null;
   status: string;
   priority: string;
+  category_id: string | null;
   due_date: string | null;
   created_at: string;
+  task_categories?: TaskCategory;
 }
 
 interface TaskListProps {
@@ -34,7 +42,14 @@ export const TaskList = ({ refreshTrigger }: TaskListProps) => {
     try {
       const { data, error } = await supabase
         .from("tasks")
-        .select("*")
+        .select(`
+          *,
+          task_categories (
+            id,
+            name,
+            color
+          )
+        `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -181,6 +196,18 @@ export const TaskList = ({ refreshTrigger }: TaskListProps) => {
                       <Badge variant={getPriorityColor(task.priority)} className="text-xs">
                         {task.priority}
                       </Badge>
+                      {task.task_categories && (
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs"
+                          style={{ 
+                            borderColor: task.task_categories.color,
+                            color: task.task_categories.color 
+                          }}
+                        >
+                          {task.task_categories.name}
+                        </Badge>
+                      )}
                       {task.due_date && (
                         <div className="flex items-center text-xs text-muted-foreground">
                           <Clock className="h-3 w-3 mr-1" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
+interface TaskCategory {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface TaskFormProps {
   onTaskCreated?: () => void;
 }
@@ -17,10 +23,33 @@ export const TaskForm = ({ onTaskCreated }: TaskFormProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [dueDate, setDueDate] = useState("");
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<TaskCategory[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const fetchCategories = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('task_categories')
+        .select('id, name, color')
+        .eq('user_id', user.id)
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +64,7 @@ export const TaskForm = ({ onTaskCreated }: TaskFormProps) => {
           title,
           description: description || null,
           priority,
+          category_id: categoryId || null,
           due_date: dueDate || null,
         });
 
@@ -49,6 +79,7 @@ export const TaskForm = ({ onTaskCreated }: TaskFormProps) => {
       setTitle("");
       setDescription("");
       setPriority("medium");
+      setCategoryId("");
       setDueDate("");
       
       onTaskCreated?.();
@@ -92,7 +123,7 @@ export const TaskForm = ({ onTaskCreated }: TaskFormProps) => {
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
               <Select value={priority} onValueChange={setPriority}>
@@ -103,6 +134,28 @@ export const TaskForm = ({ onTaskCreated }: TaskFormProps) => {
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

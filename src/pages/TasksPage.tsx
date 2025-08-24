@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TaskForm } from '@/components/tasks/TaskForm';
+import { CategoryManager } from '@/components/tasks/CategoryManager';
 import TaskStatusManager from '@/components/tasks/TaskStatusManager';
 
 const TasksPage = () => {
@@ -19,6 +20,7 @@ const TasksPage = () => {
         </div>
         
         <div className="space-y-6">
+          <CategoryManager />
           <TaskForm onTaskCreated={handleTaskCreated} />
           <TaskStatusManager refreshTrigger={refreshTrigger} />
         </div>
