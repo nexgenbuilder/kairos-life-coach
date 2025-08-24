@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { PageLoading } from '@/components/ui/loading-spinner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -477,12 +479,7 @@ const DashboardPage = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="p-6">
-          <div className="text-center">
-            <div className="animate-pulse">Loading comprehensive dashboard...</div>
-            <p className="text-muted-foreground mt-2">Fetching data from all modules</p>
-          </div>
-        </div>
+        <PageLoading message="Loading comprehensive dashboard..." />
       </AppLayout>
     );
   }
@@ -496,6 +493,7 @@ const DashboardPage = () => {
 
   return (
     <AppLayout>
+      <ErrorBoundary>
       <div className="p-6 space-y-8">
         {/* Header */}
         <div className="flex justify-between items-start">
@@ -1133,7 +1131,8 @@ const DashboardPage = () => {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+        </div>
+      </ErrorBoundary>
     </AppLayout>
   );
 };
