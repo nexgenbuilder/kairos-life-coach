@@ -25,6 +25,21 @@ const TodayPage = () => {
   const [todayItems, setTodayItems] = useState<TodayItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Function to refresh today's data (can be called from chat)
+  const refreshTodayData = () => {
+    if (user) {
+      loadTodayItems();
+    }
+  };
+
+  // Expose refresh function globally for chat interface
+  useEffect(() => {
+    (window as any).refreshTodayPage = refreshTodayData;
+    return () => {
+      delete (window as any).refreshTodayPage;
+    };
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       loadTodayItems();
@@ -76,11 +91,29 @@ const TodayPage = () => {
 
       if (incomeError) throw incomeError;
 
-      // Load scheduled workouts from localStorage
+      // Load today's fitness workouts from database
+      const { data: fitnessWorkouts, error: fitnessError } = await supabase
+        .from('fitness_workouts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('workout_date', format(today, 'yyyy-MM-dd'));
+
+      if (fitnessError) throw fitnessError;
+
+      // Load today's health metrics  
+      const { data: healthMetrics, error: healthError } = await supabase
+        .from('health_metrics')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('date', format(today, 'yyyy-MM-dd'));
+
+      if (healthError) throw healthError;
+
+      // Load scheduled workouts from localStorage (for future workouts)
       const storedWorkouts = localStorage.getItem(`scheduled_workouts_${user?.id}`);
       const scheduledWorkouts = storedWorkouts ? JSON.parse(storedWorkouts) : [];
       
-      const todayWorkouts = scheduledWorkouts.filter((workout: any) => 
+      const todayScheduledWorkouts = scheduledWorkouts.filter((workout: any) => 
         workout.scheduled_date === format(today, 'yyyy-MM-dd') && !workout.completed
       );
 
@@ -115,7 +148,21 @@ const TodayPage = () => {
           status: incomeItem.category,
           amount: incomeItem.amount
         })),
-        ...todayWorkouts.map((workout: any) => ({
+        ...(fitnessWorkouts || []).map(workout => ({
+          id: workout.id,
+          title: `${workout.exercise_name} - ${workout.duration_minutes ? `${workout.duration_minutes} min` : workout.exercise_type}`,
+          type: 'workout' as const,
+          status: 'completed',
+          time: workout.duration_minutes ? `${workout.duration_minutes} min` : undefined
+        })),
+        ...(healthMetrics || []).map(metric => ({
+          id: metric.id,
+          title: `${metric.metric_type}: ${metric.value}`,
+          type: 'meal' as const,
+          status: 'logged',
+          time: undefined
+        })),
+        ...todayScheduledWorkouts.map((workout: any) => ({
           id: workout.id,
           title: workout.name,
           type: 'workout' as const,

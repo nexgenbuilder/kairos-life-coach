@@ -111,10 +111,21 @@ serve(async (req) => {
       response = `Excellent! I've logged your income of $${incomeData.amount} for ${incomeData.description} in the ${incomeData.category} category.`;
 
     } else if (actionType === 'fitness') {
-      // For fitness, we'll create a simple response since there's no fitness table yet
-      // You can extend this when you add fitness tracking
-      const fitnessData = extractFitnessData(message);
-      response = `Awesome! I've noted your workout: ${fitnessData.exercise}${fitnessData.duration ? ` for ${fitnessData.duration} minutes` : ''}. Great job staying active!`;
+      // Extract fitness information and save to database
+      const fitnessData = extractFitnessData(message, userId);
+      
+      const { data, error } = await supabase
+        .from('fitness_workouts')
+        .insert([fitnessData])
+        .select();
+
+      if (error) {
+        console.error('Error creating fitness workout:', error);
+        throw error;
+      }
+
+      console.log('Fitness workout created successfully:', data);
+      response = `Awesome! I've logged your workout: ${fitnessData.exercise_name}${fitnessData.duration_minutes ? ` for ${fitnessData.duration_minutes} minutes` : ''}. Great job staying active!`;
 
     } else {
       throw new Error(`Unknown action type: ${actionType}`);
@@ -300,12 +311,64 @@ function extractIncomeData(message: string, userId: string) {
   };
 }
 
-function extractFitnessData(message: string) {
-  const exerciseMatch = message.match(/(?:did|completed|finished)\s+([^,]+)/i);
-  const durationMatch = message.match(/(\d+)\s+(?:minutes?|mins?|hours?|hrs?)/i);
+function extractFitnessData(message: string, userId: string) {
+  // Extract exercise name
+  const exercisePatterns = [
+    /(?:did|completed|finished|logged)\s+([a-zA-Z\s]+?)(?:\s+for|\s+\d+|\s*$)/i,
+    /(?:workout|exercise).*?:\s*([a-zA-Z\s]+?)(?:\s+for|\s+\d+|\s*$)/i,
+    /(?:went|did)\s+([a-zA-Z\s]+?)(?:\s+for|\s+\d+|\s*$)/i
+  ];
   
+  let exerciseName = 'Workout';
+  for (const pattern of exercisePatterns) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      exerciseName = match[1].trim();
+      break;
+    }
+  }
+  
+  // Extract duration
+  const durationMatch = message.match(/(\d+)\s*(?:minutes?|mins?|hours?|hrs?)/i);
+  const duration = durationMatch ? parseInt(durationMatch[1]) : null;
+  
+  // Convert hours to minutes if needed
+  const finalDuration = message.toLowerCase().includes('hour') && duration ? duration * 60 : duration;
+  
+  // Extract exercise type based on common activities
+  const exerciseTypeMap: { [key: string]: string } = {
+    'running': 'Cardio',
+    'jogging': 'Cardio',
+    'cycling': 'Cardio',
+    'biking': 'Cardio',
+    'swimming': 'Cardio',
+    'walking': 'Cardio',
+    'weights': 'Strength',
+    'lifting': 'Strength',
+    'pushups': 'Strength',
+    'squats': 'Strength',
+    'yoga': 'Flexibility',
+    'stretching': 'Flexibility',
+    'pilates': 'Flexibility',
+    'gym': 'General',
+    'workout': 'General'
+  };
+  
+  let exerciseType = 'General';
+  const lowerMessage = message.toLowerCase();
+  for (const [key, value] of Object.entries(exerciseTypeMap)) {
+    if (lowerMessage.includes(key)) {
+      exerciseType = value;
+      break;
+    }
+  }
+
   return {
-    exercise: exerciseMatch ? exerciseMatch[1].trim() : message,
-    duration: durationMatch ? parseInt(durationMatch[1]) : null
+    user_id: userId,
+    exercise_name: exerciseName,
+    exercise_type: exerciseType,
+    duration_minutes: finalDuration,
+    workout_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+    notes: message
   };
 }

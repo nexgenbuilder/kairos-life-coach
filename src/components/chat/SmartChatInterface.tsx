@@ -63,7 +63,13 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     // Fitness-related keywords
     if (lowerMessage.includes('workout') || lowerMessage.includes('exercise') ||
         lowerMessage.includes('fitness') || lowerMessage.includes('gym') ||
-        lowerMessage.includes('ran') || lowerMessage.includes('cycling')) {
+        lowerMessage.includes('ran') || lowerMessage.includes('cycling') ||
+        lowerMessage.includes('running') || lowerMessage.includes('jogging') ||
+        lowerMessage.includes('swimming') || lowerMessage.includes('lifting') ||
+        lowerMessage.includes('weights') || lowerMessage.includes('cardio') ||
+        lowerMessage.includes('yoga') || lowerMessage.includes('pilates') ||
+        lowerMessage.includes('did pushups') || lowerMessage.includes('did squats') ||
+        lowerMessage.includes('log workout') || lowerMessage.includes('track workout')) {
       return 'fitness';
     }
     
@@ -155,6 +161,11 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           };
           
           setMessages(prev => [...prev, aiResponseMessage]);
+
+          // Refresh Today page if it exists  
+          if ((window as any).refreshTodayPage) {
+            (window as any).refreshTodayPage();
+          }
         } else {
           // Use regular AI chat for general conversation
           const { data, error } = await supabase.functions.invoke('ai-chat', {
@@ -177,6 +188,11 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           };
           
           setMessages(prev => [...prev, aiResponseMessage]);
+
+          // Refresh Today page if it exists for AI chat responses too
+          if ((window as any).refreshTodayPage) {
+            (window as any).refreshTodayPage();
+          }
 
           // Add text-to-speech for conversational responses
           try {
