@@ -13,6 +13,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [betaPassword, setBetaPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,6 +34,15 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
+      // Validate beta password first
+      const { data: validation, error: validateError } = await supabase.functions.invoke('validate-beta-password', {
+        body: { betaPassword }
+      });
+
+      if (validateError || !validation?.valid) {
+        throw new Error('Invalid beta password. Please contact support for access.');
+      }
+
       // Clean up existing state first
       cleanupAuthState();
       // Attempt global sign out to clear any existing session
@@ -160,17 +170,28 @@ const AuthPage = () => {
             
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                  />
-                </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="signup-beta">Beta Access Code</Label>
+                   <Input
+                     id="signup-beta"
+                     type="password"
+                     placeholder="Enter beta access code"
+                     value={betaPassword}
+                     onChange={(e) => setBetaPassword(e.target.value)}
+                     required
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="signup-name">Full Name</Label>
+                   <Input
+                     id="signup-name"
+                     type="text"
+                     placeholder="Enter your full name"
+                     value={fullName}
+                     onChange={(e) => setFullName(e.target.value)}
+                     required
+                   />
+                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
