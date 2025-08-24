@@ -1,1 +1,4 @@
 project_id = "fqppatxeddglmklobzow"
+
+[functions.beta-signup]
+verify_jwt = false

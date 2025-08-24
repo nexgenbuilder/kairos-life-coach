@@ -50,6 +50,30 @@ export type Database = {
         }
         Relationships: []
       }
+      beta_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          status?: string
+        }
+        Relationships: []
+      }
       business_expenses: {
         Row: {
           amount_cents: number
