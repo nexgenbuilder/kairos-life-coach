@@ -137,7 +137,13 @@ serve(async (req) => {
 
     if (insertError) {
       console.error('Database error:', insertError);
-      throw new Error('Failed to save expenses to database');
+      return new Response(
+        JSON.stringify({ success: false, error: `Database error: ${insertError.message}` }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     console.log(`Successfully processed receipt and added ${items.length} expenses for user ${userId}`);
