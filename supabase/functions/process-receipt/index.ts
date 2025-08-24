@@ -44,6 +44,7 @@ serve(async (req) => {
     console.log('Processing receipt with OpenAI Vision API...');
 
     // Use OpenAI Vision API to analyze the receipt
+    console.log('Making OpenAI Vision API request...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -51,7 +52,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'user',
@@ -59,11 +60,11 @@ serve(async (req) => {
               {
                 type: 'text',
                 text: `Analyze this receipt and extract individual items with their amounts. Return ONLY a valid JSON array with objects containing:
-                - description: string (item name/description)
-                - amount: number (item price)
+                - description: string (item name/description)  
+                - amount: number (item price in decimal format)
                 - category: string (one of: "Food & Dining", "Transportation", "Shopping", "Entertainment", "Bills & Utilities", "Healthcare", "Travel", "Education", "Groceries", "Other")
                 
-                Return only the JSON array, no markdown formatting, no additional text. Example format:
+                Return only the JSON array, no markdown formatting, no additional text. Example:
                 [{"description": "Coffee", "amount": 4.50, "category": "Food & Dining"}]`
               },
               {
@@ -75,12 +76,16 @@ serve(async (req) => {
             ]
           }
         ],
-        max_completion_tokens: 1000
+        max_tokens: 1000
       }),
     });
 
+    console.log('OpenAI API response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const aiResponse = await response.json();
