@@ -3,29 +3,86 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Static stock data for reliable functionality (S&P 500 popular stocks)
-const stocksData = [
-  { id: 1, symbol: 'AAPL', name: 'Apple Inc.', current_price_cents: 22500, price_change_24h: 1.2, market_cap_cents: 340000000000000, sector: 'Technology' },
-  { id: 2, symbol: 'MSFT', name: 'Microsoft Corporation', current_price_cents: 42000, price_change_24h: -0.8, market_cap_cents: 310000000000000, sector: 'Technology' },
-  { id: 3, symbol: 'GOOGL', name: 'Alphabet Inc.', current_price_cents: 18500, price_change_24h: 2.1, market_cap_cents: 230000000000000, sector: 'Technology' },
-  { id: 4, symbol: 'AMZN', name: 'Amazon.com Inc.', current_price_cents: 19800, price_change_24h: 1.5, market_cap_cents: 210000000000000, sector: 'Consumer Discretionary' },
-  { id: 5, symbol: 'TSLA', name: 'Tesla Inc.', current_price_cents: 41000, price_change_24h: 3.8, market_cap_cents: 130000000000000, sector: 'Automotive' },
-  { id: 6, symbol: 'NVDA', name: 'NVIDIA Corporation', current_price_cents: 14200, price_change_24h: 2.9, market_cap_cents: 350000000000000, sector: 'Technology' },
-  { id: 7, symbol: 'META', name: 'Meta Platforms Inc.', current_price_cents: 58000, price_change_24h: -1.3, market_cap_cents: 150000000000000, sector: 'Technology' },
-  { id: 8, symbol: 'BRK.B', name: 'Berkshire Hathaway Inc.', current_price_cents: 47500, price_change_24h: 0.5, market_cap_cents: 98000000000000, sector: 'Financial Services' },
-  { id: 9, symbol: 'LLY', name: 'Eli Lilly and Company', current_price_cents: 78000, price_change_24h: -0.2, market_cap_cents: 74000000000000, sector: 'Healthcare' },
-  { id: 10, symbol: 'AVGO', name: 'Broadcom Inc.', current_price_cents: 22800, price_change_24h: 1.7, market_cap_cents: 107000000000000, sector: 'Technology' },
-  { id: 11, symbol: 'JPM', name: 'JPMorgan Chase & Co.', current_price_cents: 23500, price_change_24h: 0.8, market_cap_cents: 69000000000000, sector: 'Financial Services' },
-  { id: 12, symbol: 'UNH', name: 'UnitedHealth Group Inc.', current_price_cents: 52000, price_change_24h: -0.4, market_cap_cents: 48000000000000, sector: 'Healthcare' },
-  { id: 13, symbol: 'XOM', name: 'Exxon Mobil Corporation', current_price_cents: 11500, price_change_24h: 2.3, market_cap_cents: 48000000000000, sector: 'Energy' },
-  { id: 14, symbol: 'V', name: 'Visa Inc.', current_price_cents: 30500, price_change_24h: 0.9, market_cap_cents: 64000000000000, sector: 'Financial Services' },
-  { id: 15, symbol: 'PG', name: 'Procter & Gamble Co.', current_price_cents: 16800, price_change_24h: -0.1, market_cap_cents: 39000000000000, sector: 'Consumer Staples' },
-  { id: 16, symbol: 'JNJ', name: 'Johnson & Johnson', current_price_cents: 15200, price_change_24h: 0.3, market_cap_cents: 36000000000000, sector: 'Healthcare' },
-  { id: 17, symbol: 'MA', name: 'Mastercard Inc.', current_price_cents: 48500, price_change_24h: 1.1, market_cap_cents: 45000000000000, sector: 'Financial Services' },
-  { id: 18, symbol: 'HD', name: 'The Home Depot Inc.', current_price_cents: 41000, price_change_24h: -0.6, market_cap_cents: 42000000000000, sector: 'Consumer Discretionary' },
-  { id: 19, symbol: 'NFLX', name: 'Netflix Inc.', current_price_cents: 89000, price_change_24h: 4.2, market_cap_cents: 38000000000000, sector: 'Communication Services' },
-  { id: 20, symbol: 'BAC', name: 'Bank of America Corp.', current_price_cents: 4200, price_change_24h: 1.4, market_cap_cents: 32000000000000, sector: 'Financial Services' }
+// Popular S&P 500 stock symbols to fetch from Alpha Vantage
+const stockSymbols = [
+  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'BRK.B', 
+  'LLY', 'AVGO', 'JPM', 'UNH', 'XOM', 'V', 'PG', 'JNJ', 'MA', 'HD', 'NFLX', 'BAC'
 ];
+
+async function fetchStockData(symbols: string[], apiKey: string) {
+  const stockData = [];
+  
+  // Alpha Vantage allows up to 5 API calls per minute for free tier
+  // We'll fetch data for the first 5 stocks to stay within limits
+  for (let i = 0; i < Math.min(symbols.length, 5); i++) {
+    const symbol = symbols[i];
+    
+    try {
+      console.log(`Fetching data for ${symbol}...`);
+      
+      // Fetch real-time quote data
+      const quoteResponse = await fetch(
+        `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`
+      );
+      
+      if (!quoteResponse.ok) {
+        console.error(`Failed to fetch quote for ${symbol}: ${quoteResponse.status}`);
+        continue;
+      }
+      
+      const quoteData = await quoteResponse.json();
+      console.log(`Quote data for ${symbol}:`, quoteData);
+      
+      const quote = quoteData['Global Quote'];
+      if (!quote || !quote['05. price']) {
+        console.warn(`No quote data available for ${symbol}`);
+        continue;
+      }
+      
+      // Fetch company overview for additional data
+      const overviewResponse = await fetch(
+        `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`
+      );
+      
+      let companyName = symbol;
+      let sector = 'Unknown';
+      let marketCap = 0;
+      
+      if (overviewResponse.ok) {
+        const overviewData = await overviewResponse.json();
+        if (overviewData.Name) {
+          companyName = overviewData.Name;
+          sector = overviewData.Sector || 'Unknown';
+          marketCap = parseInt(overviewData.MarketCapitalization) || 0;
+        }
+      }
+      
+      const currentPrice = parseFloat(quote['05. price']);
+      const change = parseFloat(quote['09. change']);
+      const changePercent = parseFloat(quote['10. change percent'].replace('%', ''));
+      
+      stockData.push({
+        id: i + 1,
+        symbol: symbol,
+        name: companyName,
+        current_price_cents: Math.round(currentPrice * 100), // Convert to cents
+        price_change_24h: changePercent,
+        market_cap_cents: marketCap * 100, // Convert to cents
+        sector: sector
+      });
+      
+      // Add delay between requests to respect rate limits (12 seconds = 5 requests per minute)
+      if (i < Math.min(symbols.length, 5) - 1) {
+        await new Promise(resolve => setTimeout(resolve, 12000));
+      }
+      
+    } catch (error) {
+      console.error(`Error fetching data for ${symbol}:`, error);
+    }
+  }
+  
+  return stockData;
+}
 
 Deno.serve(async (req) => {
   console.log('stocks-list function started, method:', req.method);
@@ -38,11 +95,27 @@ Deno.serve(async (req) => {
 
   try {
     if (req.method === 'GET') {
-      console.log('Returning stock data, count:', stocksData.length);
+      const apiKey = Deno.env.get('ALPHA_VANTAGE_API_KEY');
+      
+      if (!apiKey) {
+        console.error('Alpha Vantage API key not found');
+        return new Response(JSON.stringify({ 
+          error: 'API key not configured',
+          message: 'Alpha Vantage API key is required'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      console.log('Fetching stock data from Alpha Vantage...');
+      const stockData = await fetchStockData(stockSymbols, apiKey);
+      
+      console.log('Returning stock data, count:', stockData.length);
       
       return new Response(JSON.stringify({ 
         success: true,
-        data: stocksData 
+        data: stockData 
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
