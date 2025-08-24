@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Edit, Trash2, BarChart3 } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Edit, Trash2, BarChart3, RefreshCw, Eye, Search, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -29,9 +30,34 @@ interface StockHolding {
   created_at: string;
 }
 
+interface StockWatchlistItem {
+  id: string;
+  symbol: string;
+  name: string;
+  current_price_cents: number;
+  price_change_24h: number;
+  market_cap_cents: number;
+  sector: string;
+  currency: string;
+  created_at: string;
+}
+
+interface AvailableStock {
+  id: number;
+  symbol: string;
+  name: string;
+  current_price_cents: number;
+  price_change_24h: number;
+  market_cap_cents: number;
+  sector: string;
+}
+
 const StocksPage = () => {
   const { user } = useAuth();
   const [holdings, setHoldings] = useState<StockHolding[]>([]);
+  const [watchlist, setWatchlist] = useState<StockWatchlistItem[]>([]);
+  const [availableStocks, setAvailableStocks] = useState<AvailableStock[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<StockHolding | null>(null);
@@ -43,16 +69,19 @@ const StocksPage = () => {
     average_buy_price_cents: '',
     total_invested_cents: '',
     current_price_cents: '',
+    market: '',
     sector: '',
-    market: 'NYSE',
     dividend_yield: '',
     notes: '',
     currency: 'USD'
   });
 
   useEffect(() => {
+    console.log('StocksPage useEffect triggered, user:', user);
     if (user) {
       loadHoldings();
+      loadWatchlist();
+      loadAvailableStocks();
     }
   }, [user]);
 
@@ -78,6 +107,80 @@ const StocksPage = () => {
     }
   };
 
+  const loadWatchlist = async () => {
+    // Temporarily disabled until tables are created
+    console.log('Watchlist loading temporarily disabled');
+  };
+
+  const loadAvailableStocks = async () => {
+    console.log('=== loadAvailableStocks START ===');
+    
+    // Add realistic sample data with current approximate prices (January 2025)
+    const sampleData = [
+      { id: 1, symbol: 'AAPL', name: 'Apple Inc.', current_price_cents: 22500, price_change_24h: 1.2, market_cap_cents: 340000000000000, sector: 'Technology' },
+      { id: 2, symbol: 'MSFT', name: 'Microsoft Corporation', current_price_cents: 42000, price_change_24h: -0.8, market_cap_cents: 310000000000000, sector: 'Technology' },
+      { id: 3, symbol: 'GOOGL', name: 'Alphabet Inc.', current_price_cents: 18500, price_change_24h: 2.1, market_cap_cents: 230000000000000, sector: 'Technology' },
+      { id: 4, symbol: 'AMZN', name: 'Amazon.com Inc.', current_price_cents: 19800, price_change_24h: 1.5, market_cap_cents: 210000000000000, sector: 'Consumer Discretionary' },
+      { id: 5, symbol: 'TSLA', name: 'Tesla Inc.', current_price_cents: 41000, price_change_24h: 3.8, market_cap_cents: 130000000000000, sector: 'Automotive' },
+      { id: 6, symbol: 'NVDA', name: 'NVIDIA Corporation', current_price_cents: 14200, price_change_24h: 2.9, market_cap_cents: 350000000000000, sector: 'Technology' },
+      { id: 7, symbol: 'META', name: 'Meta Platforms Inc.', current_price_cents: 58000, price_change_24h: -1.3, market_cap_cents: 150000000000000, sector: 'Technology' },
+      { id: 8, symbol: 'BRK.B', name: 'Berkshire Hathaway Inc.', current_price_cents: 47500, price_change_24h: 0.5, market_cap_cents: 98000000000000, sector: 'Financial Services' },
+      { id: 9, symbol: 'LLY', name: 'Eli Lilly and Company', current_price_cents: 78000, price_change_24h: -0.2, market_cap_cents: 74000000000000, sector: 'Healthcare' },
+      { id: 10, symbol: 'AVGO', name: 'Broadcom Inc.', current_price_cents: 22800, price_change_24h: 1.7, market_cap_cents: 107000000000000, sector: 'Technology' },
+      { id: 11, symbol: 'JPM', name: 'JPMorgan Chase & Co.', current_price_cents: 23500, price_change_24h: 0.8, market_cap_cents: 69000000000000, sector: 'Financial Services' },
+      { id: 12, symbol: 'UNH', name: 'UnitedHealth Group Inc.', current_price_cents: 52000, price_change_24h: -0.4, market_cap_cents: 48000000000000, sector: 'Healthcare' },
+      { id: 13, symbol: 'XOM', name: 'Exxon Mobil Corporation', current_price_cents: 11500, price_change_24h: 2.3, market_cap_cents: 48000000000000, sector: 'Energy' },
+      { id: 14, symbol: 'V', name: 'Visa Inc.', current_price_cents: 30500, price_change_24h: 0.9, market_cap_cents: 64000000000000, sector: 'Financial Services' },
+      { id: 15, symbol: 'PG', name: 'Procter & Gamble Co.', current_price_cents: 16800, price_change_24h: -0.1, market_cap_cents: 39000000000000, sector: 'Consumer Staples' },
+      { id: 16, symbol: 'JNJ', name: 'Johnson & Johnson', current_price_cents: 15200, price_change_24h: 0.3, market_cap_cents: 36000000000000, sector: 'Healthcare' },
+      { id: 17, symbol: 'MA', name: 'Mastercard Inc.', current_price_cents: 48500, price_change_24h: 1.1, market_cap_cents: 45000000000000, sector: 'Financial Services' },
+      { id: 18, symbol: 'HD', name: 'The Home Depot Inc.', current_price_cents: 41000, price_change_24h: -0.6, market_cap_cents: 42000000000000, sector: 'Consumer Discretionary' },
+      { id: 19, symbol: 'NFLX', name: 'Netflix Inc.', current_price_cents: 89000, price_change_24h: 4.2, market_cap_cents: 38000000000000, sector: 'Communication Services' },
+      { id: 20, symbol: 'BAC', name: 'Bank of America Corp.', current_price_cents: 4200, price_change_24h: 1.4, market_cap_cents: 32000000000000, sector: 'Financial Services' }
+    ];
+    
+    console.log('Setting sample data first:', sampleData.length, 'stocks');
+    setAvailableStocks(sampleData);
+    
+    try {
+      console.log('Now trying to load from edge function...');
+      const { data, error } = await supabase.functions.invoke('stocks-list');
+      
+      console.log('Function response received:', { data, error });
+      
+      if (error) {
+        console.error('Function returned error:', error);
+        return; // Keep sample data
+      }
+      
+      if (data?.data && Array.isArray(data.data)) {
+        console.log('Updating with real data:', data.data.length, 'items');
+        setAvailableStocks(data.data);
+      } else {
+        console.warn('Invalid data format received:', data);
+      }
+      
+    } catch (error) {
+      console.error('Exception in loadAvailableStocks:', error);
+    }
+    
+    console.log('=== loadAvailableStocks END ===');
+  };
+
+  const addToWatchlist = async (stock: AvailableStock) => {
+    // Temporarily disabled until tables are created
+    console.log('Add to watchlist temporarily disabled for:', stock.symbol);
+    toast({
+      title: 'Feature Coming Soon',
+      description: 'Watchlist functionality will be available once the database is set up.',
+    });
+  };
+
+  const removeFromWatchlist = async (id: string) => {
+    // Temporarily disabled until tables are created
+    console.log('Remove from watchlist temporarily disabled');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -92,7 +195,7 @@ const StocksPage = () => {
         total_invested_cents: parseInt(formData.total_invested_cents) * 100,
         current_price_cents: formData.current_price_cents ? parseInt(formData.current_price_cents) * 100 : 0,
         sector: formData.sector || null,
-        market: formData.market,
+        market: formData.market || null,
         dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : null,
         notes: formData.notes || null,
         currency: formData.currency
@@ -138,8 +241,8 @@ const StocksPage = () => {
       average_buy_price_cents: '',
       total_invested_cents: '',
       current_price_cents: '',
+      market: '',
       sector: '',
-      market: 'NYSE',
       dividend_yield: '',
       notes: '',
       currency: 'USD'
@@ -155,8 +258,8 @@ const StocksPage = () => {
       average_buy_price_cents: (holding.average_buy_price_cents / 100).toString(),
       total_invested_cents: (holding.total_invested_cents / 100).toString(),
       current_price_cents: (holding.current_price_cents / 100).toString(),
+      market: holding.market || '',
       sector: holding.sector || '',
-      market: holding.market,
       dividend_yield: holding.dividend_yield?.toString() || '',
       notes: holding.notes || '',
       currency: holding.currency
@@ -185,6 +288,15 @@ const StocksPage = () => {
   const totalGainLoss = totalCurrentValue - totalInvested;
   const gainLossPercentage = totalInvested > 0 ? (totalGainLoss / totalInvested) * 100 : 0;
 
+  const filteredStocks = availableStocks.filter(stock => 
+    stock.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    stock.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const isInWatchlist = (symbol: string) => {
+    return watchlist.some(item => item.symbol === symbol);
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -203,7 +315,7 @@ const StocksPage = () => {
             Stock Portfolio
           </h1>
           <p className="text-muted-foreground mt-2">
-            Track your stock investments
+            Track your stock investments and watchlist
           </p>
         </div>
 
@@ -262,207 +374,338 @@ const StocksPage = () => {
           </Card>
         </div>
 
-        {/* Holdings Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Your Holdings</CardTitle>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => { resetForm(); setEditingHolding(null); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Holding
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>{editingHolding ? 'Edit' : 'Add'} Stock Holding</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="symbol">Symbol</Label>
-                        <Input
-                          id="symbol"
-                          value={formData.symbol}
-                          onChange={(e) => setFormData(prev => ({ ...prev, symbol: e.target.value }))}
-                          placeholder="AAPL, GOOGL, etc."
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="company_name">Company Name</Label>
-                        <Input
-                          id="company_name"
-                          value={formData.company_name}
-                          onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
-                          placeholder="Apple Inc., Google, etc."
-                          required
-                        />
-                      </div>
-                    </div>
+        {/* Tabs for Portfolio and Market */}
+        <Tabs defaultValue="portfolio" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="portfolio">My Portfolio</TabsTrigger>
+            <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
+            <TabsTrigger value="market">Explore Market</TabsTrigger>
+          </TabsList>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="quantity">Quantity</Label>
-                        <Input
-                          id="quantity"
-                          type="number"
-                          value={formData.quantity}
-                          onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="average_buy_price_cents">Avg Buy Price ($)</Label>
-                        <Input
-                          id="average_buy_price_cents"
-                          type="number"
-                          step="0.01"
-                          value={formData.average_buy_price_cents}
-                          onChange={(e) => setFormData(prev => ({ ...prev, average_buy_price_cents: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="total_invested_cents">Total Invested ($)</Label>
-                        <Input
-                          id="total_invested_cents"
-                          type="number"
-                          step="0.01"
-                          value={formData.total_invested_cents}
-                          onChange={(e) => setFormData(prev => ({ ...prev, total_invested_cents: e.target.value }))}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="current_price_cents">Current Price ($)</Label>
-                        <Input
-                          id="current_price_cents"
-                          type="number"
-                          step="0.01"
-                          value={formData.current_price_cents}
-                          onChange={(e) => setFormData(prev => ({ ...prev, current_price_cents: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="sector">Sector</Label>
-                        <Input
-                          id="sector"
-                          value={formData.sector}
-                          onChange={(e) => setFormData(prev => ({ ...prev, sector: e.target.value }))}
-                          placeholder="Technology, Healthcare, etc."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="market">Market</Label>
-                        <Input
-                          id="market"
-                          value={formData.market}
-                          onChange={(e) => setFormData(prev => ({ ...prev, market: e.target.value }))}
-                          placeholder="NYSE, NASDAQ, etc."
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="dividend_yield">Dividend Yield (%)</Label>
-                      <Input
-                        id="dividend_yield"
-                        type="number"
-                        step="0.01"
-                        value={formData.dividend_yield}
-                        onChange={(e) => setFormData(prev => ({ ...prev, dividend_yield: e.target.value }))}
-                        placeholder="2.5"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="notes">Notes</Label>
-                      <Textarea
-                        id="notes"
-                        value={formData.notes}
-                        onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Additional notes..."
-                      />
-                    </div>
-
-                    <div className="flex justify-end space-x-2">
-                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancel
+          {/* Portfolio Tab */}
+          <TabsContent value="portfolio">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Your Holdings</CardTitle>
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button onClick={() => { resetForm(); setEditingHolding(null); }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Holding
                       </Button>
-                      <Button type="submit">
-                        {editingHolding ? 'Update' : 'Add'} Holding
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Symbol</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Avg Price</TableHead>
-                  <TableHead>Current Price</TableHead>
-                  <TableHead>Total Value</TableHead>
-                  <TableHead>P&L</TableHead>
-                  <TableHead>Dividend</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {holdings.map((holding) => {
-                  const currentValue = holding.current_price_cents * holding.quantity;
-                  const gainLoss = currentValue - holding.total_invested_cents;
-                  const gainLossPercent = holding.total_invested_cents > 0 ? (gainLoss / holding.total_invested_cents) * 100 : 0;
-                  
-                  return (
-                    <TableRow key={holding.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{holding.symbol}</div>
-                          <div className="text-sm text-muted-foreground">{holding.company_name}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{holding.quantity}</TableCell>
-                      <TableCell>{formatCurrency(holding.average_buy_price_cents / 100)}</TableCell>
-                      <TableCell>{formatCurrency(holding.current_price_cents / 100)}</TableCell>
-                      <TableCell>{formatCurrency(currentValue / 100)}</TableCell>
-                      <TableCell>
-                        <div className={gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {formatCurrency(gainLoss / 100)}
-                          <div className="text-xs">
-                            ({gainLossPercent >= 0 ? '+' : ''}{gainLossPercent.toFixed(2)}%)
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>{editingHolding ? 'Edit' : 'Add'} Stock Holding</DialogTitle>
+                        <DialogDescription>
+                          {editingHolding ? 'Update your stock holding information' : 'Add a new stock to your portfolio'}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="symbol">Symbol</Label>
+                            <Input
+                              id="symbol"
+                              value={formData.symbol}
+                              onChange={(e) => setFormData(prev => ({ ...prev, symbol: e.target.value }))}
+                              placeholder="AAPL, GOOGL, etc."
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="company_name">Company Name</Label>
+                            <Input
+                              id="company_name"
+                              value={formData.company_name}
+                              onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                              placeholder="Apple Inc., Google, etc."
+                              required
+                            />
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {holding.dividend_yield ? `${holding.dividend_yield}%` : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(holding)}>
-                            <Edit className="h-4 w-4" />
+
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <Label htmlFor="quantity">Quantity</Label>
+                            <Input
+                              id="quantity"
+                              type="number"
+                              step="0.0001"
+                              value={formData.quantity}
+                              onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="average_buy_price_cents">Avg Buy Price ($)</Label>
+                            <Input
+                              id="average_buy_price_cents"
+                              type="number"
+                              step="0.01"
+                              value={formData.average_buy_price_cents}
+                              onChange={(e) => setFormData(prev => ({ ...prev, average_buy_price_cents: e.target.value }))}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="total_invested_cents">Total Invested ($)</Label>
+                            <Input
+                              id="total_invested_cents"
+                              type="number"
+                              step="0.01"
+                              value={formData.total_invested_cents}
+                              onChange={(e) => setFormData(prev => ({ ...prev, total_invested_cents: e.target.value }))}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="current_price_cents">Current Price ($)</Label>
+                            <Input
+                              id="current_price_cents"
+                              type="number"
+                              step="0.01"
+                              value={formData.current_price_cents}
+                              onChange={(e) => setFormData(prev => ({ ...prev, current_price_cents: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="market">Exchange</Label>
+                            <Input
+                              id="market"
+                              value={formData.market}
+                              onChange={(e) => setFormData(prev => ({ ...prev, market: e.target.value }))}
+                              placeholder="NYSE, NASDAQ, etc."
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="sector">Sector</Label>
+                          <Input
+                            id="sector"
+                            value={formData.sector}
+                            onChange={(e) => setFormData(prev => ({ ...prev, sector: e.target.value }))}
+                            placeholder="Technology, Healthcare, etc."
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="notes">Notes</Label>
+                          <Textarea
+                            id="notes"
+                            value={formData.notes}
+                            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                            placeholder="Additional notes..."
+                          />
+                        </div>
+
+                        <div className="flex justify-end space-x-2">
+                          <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                            Cancel
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(holding.id)}>
-                            <Trash2 className="h-4 w-4" />
+                          <Button type="submit">
+                            {editingHolding ? 'Update' : 'Add'} Holding
                           </Button>
                         </div>
-                      </TableCell>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Symbol</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Avg Price</TableHead>
+                      <TableHead>Current Price</TableHead>
+                      <TableHead>Total Value</TableHead>
+                      <TableHead>P&L</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {holdings.map((holding) => {
+                      const currentValue = holding.current_price_cents * holding.quantity;
+                      const gainLoss = currentValue - holding.total_invested_cents;
+                      const gainLossPercent = holding.total_invested_cents > 0 ? (gainLoss / holding.total_invested_cents) * 100 : 0;
+                      
+                      return (
+                        <TableRow key={holding.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{holding.symbol}</div>
+                              <div className="text-sm text-muted-foreground">{holding.company_name}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{holding.quantity}</TableCell>
+                          <TableCell>{formatCurrency(holding.average_buy_price_cents / 100)}</TableCell>
+                          <TableCell>{formatCurrency(holding.current_price_cents / 100)}</TableCell>
+                          <TableCell>{formatCurrency(currentValue / 100)}</TableCell>
+                          <TableCell>
+                            <div className={gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {formatCurrency(gainLoss / 100)}
+                              <div className="text-xs">
+                                ({gainLossPercent >= 0 ? '+' : ''}{gainLossPercent.toFixed(2)}%)
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => handleEdit(holding)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleDelete(holding.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Watchlist Tab */}
+          <TabsContent value="watchlist">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Watchlist</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Symbol</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>24h Change</TableHead>
+                      <TableHead>Market Cap</TableHead>
+                      <TableHead>Sector</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {watchlist.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{item.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{item.name}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatCurrency(item.current_price_cents / 100)}</TableCell>
+                        <TableCell>
+                          <div className={item.price_change_24h >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {item.price_change_24h >= 0 ? '+' : ''}{item.price_change_24h.toFixed(2)}%
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatCurrency(item.market_cap_cents / 100)}</TableCell>
+                        <TableCell>{item.sector}</TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm" onClick={() => removeFromWatchlist(item.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Market Tab */}
+          <TabsContent value="market">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Explore Stocks</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search stocks..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-64"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Symbol</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>24h Change</TableHead>
+                      <TableHead>Market Cap</TableHead>
+                      <TableHead>Sector</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStocks.length === 0 && availableStocks.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          Loading stocks...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredStocks.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          No stocks found matching "{searchTerm}"
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredStocks.map((stock) => (
+                        <TableRow key={stock.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{stock.symbol}</div>
+                              <div className="text-sm text-muted-foreground">{stock.name}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatCurrency(stock.current_price_cents / 100)}</TableCell>
+                          <TableCell>
+                            <div className={stock.price_change_24h >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {stock.price_change_24h >= 0 ? '+' : ''}{stock.price_change_24h.toFixed(2)}%
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatCurrency(stock.market_cap_cents / 100)}</TableCell>
+                          <TableCell>{stock.sector}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              {isInWatchlist(stock.symbol) ? (
+                                <Button variant="outline" size="sm" disabled>
+                                  <Star className="h-4 w-4 text-yellow-500" />
+                                  Watching
+                                </Button>
+                              ) : (
+                                <Button variant="outline" size="sm" onClick={() => addToWatchlist(stock)}>
+                                  <Eye className="h-4 w-4" />
+                                  Watch
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
