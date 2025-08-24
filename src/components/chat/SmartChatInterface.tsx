@@ -12,6 +12,7 @@ interface Message {
   content: string;
   sender: 'user' | 'kairos';
   timestamp: Date;
+  source?: string; // Track which AI model responded
 }
 
 interface ChatInterfaceProps {
@@ -110,7 +111,8 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           id: (Date.now() + 1).toString(),
           content: data.response,
           sender: 'kairos',
-          timestamp: new Date()
+          timestamp: new Date(),
+          source: data.source || 'gpt-5'
         };
         
         setMessages(prev => [...prev, aiResponseMessage]);
@@ -184,7 +186,8 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             id: (Date.now() + 1).toString(),
             content: data.response,
             sender: 'kairos',
-            timestamp: new Date()
+            timestamp: new Date(),
+            source: data.source || 'gpt-5'
           };
           
           setMessages(prev => [...prev, aiResponseMessage]);
@@ -316,6 +319,18 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
               )}
             >
               <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
+              {message.sender === 'kairos' && message.source && (
+                <div className="mt-2 flex justify-end">
+                  <span className={cn(
+                    "text-xs px-2 py-1 rounded-full font-medium",
+                    message.source === 'perplexity' 
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' 
+                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                  )}>
+                    {message.source === 'perplexity' ? '🌐 Live Search' : '🧠 GPT-5'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         ))}

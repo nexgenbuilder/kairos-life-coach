@@ -61,17 +61,67 @@ IMPORTANT: You do not have access to real-time information like current movie sh
       systemPrompt += `\n\nCurrent context: The user is in the ${context} section of the app.`;
     }
 
+    // Determine if this query needs real-time information
+    const needsRealTimeInfo = checkIfNeedsRealTime(message);
+    
+    if (needsRealTimeInfo) {
+      console.log('Query requires real-time info, routing to Perplexity');
+      try {
+        const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
+        if (perplexityApiKey) {
+          const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${perplexityApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'llama-3.1-sonar-large-128k-online',
+              messages: [
+                { role: 'system', content: systemPrompt + '\n\nIMPORTANT: You have real-time web search capabilities. Provide current, accurate information.' },
+                { role: 'user', content: message }
+              ],
+              temperature: 0.2,
+              top_p: 0.9,
+              max_tokens: 1000,
+              return_images: false,
+              return_related_questions: false,
+              search_recency_filter: 'month',
+              frequency_penalty: 1,
+              presence_penalty: 0
+            }),
+          });
+
+          if (perplexityResponse.ok) {
+            const perplexityData = await perplexityResponse.json();
+            if (perplexityData.choices?.[0]?.message?.content) {
+              console.log('Using Perplexity response for real-time query');
+              return new Response(JSON.stringify({ 
+                response: perplexityData.choices[0].message.content,
+                source: 'perplexity',
+                userId: userId 
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+          }
+        }
+        console.log('Perplexity failed, falling back to GPT-5');
+      } catch (error) {
+        console.error('Perplexity error, falling back to GPT-5:', error);
+      }
+    }
+
     console.log('Sending request to OpenAI with message:', message);
-    console.log('Using model: gpt-4o-mini (fallback from gpt-5)');
+    console.log('Using model: gpt-5-2025-08-07 (upgraded from gpt-4o-mini)');
 
     const requestBody = {
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-2025-08-07',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
       ],
-      max_tokens: 1000,
-      temperature: 0.7,
+      max_completion_tokens: 1000,
     };
     
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
@@ -218,4 +268,33 @@ function extractPriority(message: string): string {
     return 'low';
   }
   return 'medium';
+}
+
+// Helper function to determine if a query needs real-time information
+function checkIfNeedsRealTime(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  
+  // Location/address queries
+  const locationKeywords = [
+    'address', 'location', 'where is', 'directions to', 'how to get to',
+    'phone number', 'hours', 'open', 'closed', 'operating hours'
+  ];
+  
+  // Current events/real-time data
+  const realTimeKeywords = [
+    'weather', 'temperature', 'forecast', 'current', 'today',
+    'news', 'latest', 'recent', 'now', 'live',
+    'stock price', 'market', 'score', 'game',
+    'showtimes', 'schedule', 'menu', 'price'
+  ];
+  
+  // Business/place queries
+  const businessKeywords = [
+    'restaurant', 'store', 'shop', 'mall', 'theater', 'cinema',
+    'hotel', 'hospital', 'bank', 'gas station', 'pharmacy'
+  ];
+  
+  const allKeywords = [...locationKeywords, ...realTimeKeywords, ...businessKeywords];
+  
+  return allKeywords.some(keyword => lowerMessage.includes(keyword));
 }
