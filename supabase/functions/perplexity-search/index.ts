@@ -43,10 +43,10 @@ When providing current information, be specific and include details like address
     }
 
     console.log('Sending request to Perplexity with message:', message);
-    console.log('Using model: llama-3.1-sonar-large-128k-online');
+    console.log('Using model: llama-3.1-sonar-small-128k-online');
 
     const requestBody = {
-      model: 'llama-3.1-sonar-large-128k-online',
+      model: 'llama-3.1-sonar-small-128k-online',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
