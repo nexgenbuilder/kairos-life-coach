@@ -570,6 +570,45 @@ export type Database = {
         }
         Relationships: []
       }
+      crypto_watchlist: {
+        Row: {
+          created_at: string
+          currency: string
+          current_price_cents: number | null
+          id: string
+          market_cap_cents: number | null
+          name: string
+          price_change_24h: number | null
+          symbol: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          current_price_cents?: number | null
+          id?: string
+          market_cap_cents?: number | null
+          name: string
+          price_change_24h?: number | null
+          symbol: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          current_price_cents?: number | null
+          id?: string
+          market_cap_cents?: number | null
+          name?: string
+          price_change_24h?: number | null
+          symbol?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           amount_cents: number | null

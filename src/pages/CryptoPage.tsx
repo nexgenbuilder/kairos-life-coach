@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Edit, Trash2, Bitcoin, RefreshCw } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Edit, Trash2, Bitcoin, RefreshCw, Eye, Search, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -28,9 +29,33 @@ interface CryptoHolding {
   created_at: string;
 }
 
+interface CryptoWatchlistItem {
+  id: string;
+  symbol: string;
+  name: string;
+  current_price_cents: number;
+  price_change_24h: number;
+  market_cap_cents: number;
+  currency: string;
+  created_at: string;
+}
+
+interface AvailableCrypto {
+  id: number;
+  symbol: string;
+  name: string;
+  current_price_cents: number;
+  price_change_24h: number;
+  market_cap_cents: number;
+}
+
 const CryptoPage = () => {
   const { user } = useAuth();
   const [holdings, setHoldings] = useState<CryptoHolding[]>([]);
+  const [watchlist, setWatchlist] = useState<CryptoWatchlistItem[]>([]);
+  const [availableCryptos, setAvailableCryptos] = useState<AvailableCrypto[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<CryptoHolding | null>(null);
@@ -51,6 +76,8 @@ const CryptoPage = () => {
   useEffect(() => {
     if (user) {
       loadHoldings();
+      loadWatchlist();
+      loadAvailableCryptos();
     }
   }, [user]);
 
@@ -77,6 +104,85 @@ const CryptoPage = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const loadWatchlist = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('crypto_watchlist')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setWatchlist(data || []);
+    } catch (error) {
+      console.error('Error loading watchlist:', error);
+    }
+  };
+
+  const loadAvailableCryptos = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('crypto-list');
+      
+      if (error) throw error;
+      setAvailableCryptos(data.data || []);
+    } catch (error) {
+      console.error('Error loading available cryptos:', error);
+    }
+  };
+
+  const addToWatchlist = async (crypto: AvailableCrypto) => {
+    try {
+      const { error } = await supabase
+        .from('crypto_watchlist')
+        .insert([{
+          user_id: user!.id,
+          symbol: crypto.symbol,
+          name: crypto.name,
+          current_price_cents: crypto.current_price_cents,
+          price_change_24h: crypto.price_change_24h,
+          market_cap_cents: crypto.market_cap_cents,
+          currency: 'USD'
+        }]);
+
+      if (error) throw error;
+      toast({
+        title: 'Success',
+        description: `${crypto.symbol} added to watchlist`,
+      });
+      loadWatchlist();
+    } catch (error) {
+      console.error('Error adding to watchlist:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add to watchlist',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const removeFromWatchlist = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('crypto_watchlist')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast({
+        title: 'Success',
+        description: 'Removed from watchlist',
+      });
+      loadWatchlist();
+    } catch (error) {
+      console.error('Error removing from watchlist:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove from watchlist',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -220,6 +326,15 @@ const CryptoPage = () => {
   const totalGainLoss = totalCurrentValue - totalInvested;
   const gainLossPercentage = totalInvested > 0 ? (totalGainLoss / totalInvested) * 100 : 0;
 
+  const filteredCryptos = availableCryptos.filter(crypto => 
+    crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const isInWatchlist = (symbol: string) => {
+    return watchlist.some(item => item.symbol === symbol);
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -238,7 +353,7 @@ const CryptoPage = () => {
             Crypto Portfolio
           </h1>
           <p className="text-muted-foreground mt-2">
-            Track your cryptocurrency investments
+            Track your cryptocurrency investments and watchlist
           </p>
         </div>
 
@@ -297,202 +412,326 @@ const CryptoPage = () => {
           </Card>
         </div>
 
-        {/* Holdings Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Your Holdings</CardTitle>
-              <div className="flex gap-2">
-                <Button onClick={updatePrices} variant="outline">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Update Prices
-                </Button>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => { resetForm(); setEditingHolding(null); }}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Holding
+        {/* Tabs for Portfolio and Market */}
+        <Tabs defaultValue="portfolio" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="portfolio">My Portfolio</TabsTrigger>
+            <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
+            <TabsTrigger value="market">Explore Market</TabsTrigger>
+          </TabsList>
+
+          {/* Portfolio Tab */}
+          <TabsContent value="portfolio">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Your Holdings</CardTitle>
+                  <div className="flex gap-2">
+                    <Button onClick={updatePrices} variant="outline">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Update Prices
                     </Button>
-                  </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>{editingHolding ? 'Edit' : 'Add'} Crypto Holding</DialogTitle>
-                    <DialogDescription>
-                      {editingHolding ? 'Update your crypto holding information' : 'Add a new cryptocurrency to your portfolio'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="symbol">Symbol</Label>
-                        <Input
-                          id="symbol"
-                          value={formData.symbol}
-                          onChange={(e) => setFormData(prev => ({ ...prev, symbol: e.target.value }))}
-                          placeholder="BTC, ETH, etc."
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Bitcoin, Ethereum, etc."
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="quantity">Quantity</Label>
-                        <Input
-                          id="quantity"
-                          type="number"
-                          step="0.00000001"
-                          value={formData.quantity}
-                          onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="average_buy_price_cents">Avg Buy Price ($)</Label>
-                        <Input
-                          id="average_buy_price_cents"
-                          type="number"
-                          step="0.01"
-                          value={formData.average_buy_price_cents}
-                          onChange={(e) => setFormData(prev => ({ ...prev, average_buy_price_cents: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="total_invested_cents">Total Invested ($)</Label>
-                        <Input
-                          id="total_invested_cents"
-                          type="number"
-                          step="0.01"
-                          value={formData.total_invested_cents}
-                          onChange={(e) => setFormData(prev => ({ ...prev, total_invested_cents: e.target.value }))}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="current_price_cents">Current Price ($)</Label>
-                        <Input
-                          id="current_price_cents"
-                          type="number"
-                          step="0.01"
-                          value={formData.current_price_cents}
-                          onChange={(e) => setFormData(prev => ({ ...prev, current_price_cents: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="exchange">Exchange</Label>
-                        <Input
-                          id="exchange"
-                          value={formData.exchange}
-                          onChange={(e) => setFormData(prev => ({ ...prev, exchange: e.target.value }))}
-                          placeholder="Coinbase, Binance, etc."
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="wallet_address">Wallet Address</Label>
-                      <Input
-                        id="wallet_address"
-                        value={formData.wallet_address}
-                        onChange={(e) => setFormData(prev => ({ ...prev, wallet_address: e.target.value }))}
-                        placeholder="Optional wallet address"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="notes">Notes</Label>
-                      <Textarea
-                        id="notes"
-                        value={formData.notes}
-                        onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Additional notes..."
-                      />
-                    </div>
-
-                    <div className="flex justify-end space-x-2">
-                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit">
-                        {editingHolding ? 'Update' : 'Add'} Holding
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Symbol</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Avg Price</TableHead>
-                  <TableHead>Current Price</TableHead>
-                  <TableHead>Total Value</TableHead>
-                  <TableHead>P&L</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {holdings.map((holding) => {
-                  const currentValue = holding.current_price_cents * holding.quantity;
-                  const gainLoss = currentValue - holding.total_invested_cents;
-                  const gainLossPercent = holding.total_invested_cents > 0 ? (gainLoss / holding.total_invested_cents) * 100 : 0;
-                  
-                  return (
-                    <TableRow key={holding.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{holding.symbol}</div>
-                          <div className="text-sm text-muted-foreground">{holding.name}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{holding.quantity}</TableCell>
-                      <TableCell>{formatCurrency(holding.average_buy_price_cents / 100)}</TableCell>
-                      <TableCell>{formatCurrency(holding.current_price_cents / 100)}</TableCell>
-                      <TableCell>{formatCurrency(currentValue / 100)}</TableCell>
-                      <TableCell>
-                        <div className={gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {formatCurrency(gainLoss / 100)}
-                          <div className="text-xs">
-                            ({gainLossPercent >= 0 ? '+' : ''}{gainLossPercent.toFixed(2)}%)
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button onClick={() => { resetForm(); setEditingHolding(null); }}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Holding
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>{editingHolding ? 'Edit' : 'Add'} Crypto Holding</DialogTitle>
+                          <DialogDescription>
+                            {editingHolding ? 'Update your crypto holding information' : 'Add a new cryptocurrency to your portfolio'}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="symbol">Symbol</Label>
+                              <Input
+                                id="symbol"
+                                value={formData.symbol}
+                                onChange={(e) => setFormData(prev => ({ ...prev, symbol: e.target.value }))}
+                                placeholder="BTC, ETH, etc."
+                                required
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="name">Name</Label>
+                              <Input
+                                id="name"
+                                value={formData.name}
+                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="Bitcoin, Ethereum, etc."
+                                required
+                              />
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(holding)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(holding.id)}>
+
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <Label htmlFor="quantity">Quantity</Label>
+                              <Input
+                                id="quantity"
+                                type="number"
+                                step="0.00000001"
+                                value={formData.quantity}
+                                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                                required
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="average_buy_price_cents">Avg Buy Price ($)</Label>
+                              <Input
+                                id="average_buy_price_cents"
+                                type="number"
+                                step="0.01"
+                                value={formData.average_buy_price_cents}
+                                onChange={(e) => setFormData(prev => ({ ...prev, average_buy_price_cents: e.target.value }))}
+                                required
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="total_invested_cents">Total Invested ($)</Label>
+                              <Input
+                                id="total_invested_cents"
+                                type="number"
+                                step="0.01"
+                                value={formData.total_invested_cents}
+                                onChange={(e) => setFormData(prev => ({ ...prev, total_invested_cents: e.target.value }))}
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="current_price_cents">Current Price ($)</Label>
+                              <Input
+                                id="current_price_cents"
+                                type="number"
+                                step="0.01"
+                                value={formData.current_price_cents}
+                                onChange={(e) => setFormData(prev => ({ ...prev, current_price_cents: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="exchange">Exchange</Label>
+                              <Input
+                                id="exchange"
+                                value={formData.exchange}
+                                onChange={(e) => setFormData(prev => ({ ...prev, exchange: e.target.value }))}
+                                placeholder="Coinbase, Binance, etc."
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label htmlFor="wallet_address">Wallet Address</Label>
+                            <Input
+                              id="wallet_address"
+                              value={formData.wallet_address}
+                              onChange={(e) => setFormData(prev => ({ ...prev, wallet_address: e.target.value }))}
+                              placeholder="Optional wallet address"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="notes">Notes</Label>
+                            <Textarea
+                              id="notes"
+                              value={formData.notes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                              placeholder="Additional notes..."
+                            />
+                          </div>
+
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button type="submit">
+                              {editingHolding ? 'Update' : 'Add'} Holding
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Symbol</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Avg Price</TableHead>
+                      <TableHead>Current Price</TableHead>
+                      <TableHead>Total Value</TableHead>
+                      <TableHead>P&L</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {holdings.map((holding) => {
+                      const currentValue = holding.current_price_cents * holding.quantity;
+                      const gainLoss = currentValue - holding.total_invested_cents;
+                      const gainLossPercent = holding.total_invested_cents > 0 ? (gainLoss / holding.total_invested_cents) * 100 : 0;
+                      
+                      return (
+                        <TableRow key={holding.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{holding.symbol}</div>
+                              <div className="text-sm text-muted-foreground">{holding.name}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{holding.quantity}</TableCell>
+                          <TableCell>{formatCurrency(holding.average_buy_price_cents / 100)}</TableCell>
+                          <TableCell>{formatCurrency(holding.current_price_cents / 100)}</TableCell>
+                          <TableCell>{formatCurrency(currentValue / 100)}</TableCell>
+                          <TableCell>
+                            <div className={gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {formatCurrency(gainLoss / 100)}
+                              <div className="text-xs">
+                                ({gainLossPercent >= 0 ? '+' : ''}{gainLossPercent.toFixed(2)}%)
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => handleEdit(holding)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleDelete(holding.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Watchlist Tab */}
+          <TabsContent value="watchlist">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Watchlist</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Symbol</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>24h Change</TableHead>
+                      <TableHead>Market Cap</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {watchlist.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{item.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{item.name}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatCurrency(item.current_price_cents / 100)}</TableCell>
+                        <TableCell>
+                          <div className={item.price_change_24h >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {item.price_change_24h >= 0 ? '+' : ''}{item.price_change_24h.toFixed(2)}%
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatCurrency(item.market_cap_cents / 100)}</TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm" onClick={() => removeFromWatchlist(item.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </TableCell>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Market Tab */}
+          <TabsContent value="market">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Explore Cryptocurrencies</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search cryptocurrencies..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-64"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Symbol</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>24h Change</TableHead>
+                      <TableHead>Market Cap</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCryptos.map((crypto) => (
+                      <TableRow key={crypto.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{crypto.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{crypto.name}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatCurrency(crypto.current_price_cents / 100)}</TableCell>
+                        <TableCell>
+                          <div className={crypto.price_change_24h >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {crypto.price_change_24h >= 0 ? '+' : ''}{crypto.price_change_24h.toFixed(2)}%
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatCurrency(crypto.market_cap_cents / 100)}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            {isInWatchlist(crypto.symbol) ? (
+                              <Button variant="outline" size="sm" disabled>
+                                <Star className="h-4 w-4 text-yellow-500" />
+                                Watching
+                              </Button>
+                            ) : (
+                              <Button variant="outline" size="sm" onClick={() => addToWatchlist(crypto)}>
+                                <Eye className="h-4 w-4" />
+                                Watch
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
