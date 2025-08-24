@@ -519,6 +519,57 @@ export type Database = {
         }
         Relationships: []
       }
+      crypto_portfolio: {
+        Row: {
+          average_buy_price_cents: number
+          created_at: string
+          currency: string
+          current_price_cents: number | null
+          exchange: string | null
+          id: string
+          name: string
+          notes: string | null
+          quantity: number
+          symbol: string
+          total_invested_cents: number
+          updated_at: string
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          average_buy_price_cents?: number
+          created_at?: string
+          currency?: string
+          current_price_cents?: number | null
+          exchange?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          quantity?: number
+          symbol: string
+          total_invested_cents?: number
+          updated_at?: string
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          average_buy_price_cents?: number
+          created_at?: string
+          currency?: string
+          current_price_cents?: number | null
+          exchange?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          quantity?: number
+          symbol?: string
+          total_invested_cents?: number
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           amount_cents: number | null
@@ -1138,6 +1189,57 @@ export type Database = {
         }
         Relationships: []
       }
+      news_feed: {
+        Row: {
+          category: string
+          content: string | null
+          created_at: string
+          id: string
+          is_bookmarked: boolean
+          is_read: boolean
+          keywords: string[] | null
+          published_date: string
+          sentiment: string | null
+          source: string
+          title: string
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_bookmarked?: boolean
+          is_read?: boolean
+          keywords?: string[] | null
+          published_date: string
+          sentiment?: string | null
+          source: string
+          title: string
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_bookmarked?: boolean
+          is_read?: boolean
+          keywords?: string[] | null
+          published_date?: string
+          sentiment?: string | null
+          source?: string
+          title?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           content: string
@@ -1178,6 +1280,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payroll: {
+        Row: {
+          created_at: string
+          currency: string
+          deductions_cents: number | null
+          employee_email: string | null
+          employee_name: string
+          gross_pay_cents: number
+          hours_worked: number | null
+          id: string
+          net_pay_cents: number
+          notes: string | null
+          pay_date: string
+          pay_frequency: string
+          pay_period_end: string
+          pay_period_start: string
+          pay_rate_cents: number
+          taxes_cents: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          deductions_cents?: number | null
+          employee_email?: string | null
+          employee_name: string
+          gross_pay_cents: number
+          hours_worked?: number | null
+          id?: string
+          net_pay_cents: number
+          notes?: string | null
+          pay_date: string
+          pay_frequency: string
+          pay_period_end: string
+          pay_period_start: string
+          pay_rate_cents: number
+          taxes_cents?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          deductions_cents?: number | null
+          employee_email?: string | null
+          employee_name?: string
+          gross_pay_cents?: number
+          hours_worked?: number | null
+          id?: string
+          net_pay_cents?: number
+          notes?: string | null
+          pay_date?: string
+          pay_frequency?: string
+          pay_period_end?: string
+          pay_period_start?: string
+          pay_rate_cents?: number
+          taxes_cents?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       people: {
         Row: {
@@ -1366,6 +1531,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stocks_portfolio: {
+        Row: {
+          average_buy_price_cents: number
+          company_name: string
+          created_at: string
+          currency: string
+          current_price_cents: number | null
+          dividend_yield: number | null
+          id: string
+          market: string | null
+          notes: string | null
+          quantity: number
+          sector: string | null
+          symbol: string
+          total_invested_cents: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_buy_price_cents?: number
+          company_name: string
+          created_at?: string
+          currency?: string
+          current_price_cents?: number | null
+          dividend_yield?: number | null
+          id?: string
+          market?: string | null
+          notes?: string | null
+          quantity?: number
+          sector?: string | null
+          symbol: string
+          total_invested_cents?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_buy_price_cents?: number
+          company_name?: string
+          created_at?: string
+          currency?: string
+          current_price_cents?: number | null
+          dividend_yield?: number | null
+          id?: string
+          market?: string | null
+          notes?: string | null
+          quantity?: number
+          sector?: string | null
+          symbol?: string
+          total_invested_cents?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       task_categories: {
         Row: {

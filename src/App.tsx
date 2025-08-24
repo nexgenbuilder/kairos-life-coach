@@ -21,6 +21,9 @@ import ProfessionalPage from "./pages/ProfessionalPage";
 import SocialPage from "./pages/SocialPage";
 import LovePage from "./pages/LovePage";
 import CreatorsPage from "./pages/CreatorsPage";
+import CryptoPage from "./pages/CryptoPage";
+import StocksPage from "./pages/StocksPage";
+import NewsPage from "./pages/NewsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +52,9 @@ const App = () => (
             <Route path="/social" element={<SocialPage />} />
             <Route path="/love" element={<LovePage />} />
             <Route path="/creators" element={<CreatorsPage />} />
+            <Route path="/crypto" element={<CryptoPage />} />
+            <Route path="/stocks" element={<StocksPage />} />
+            <Route path="/news" element={<NewsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

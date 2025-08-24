@@ -15,7 +15,10 @@ import {
   BarChart3,
   Clock,
   Bell,
-  Video
+  Video,
+  Bitcoin,
+  TrendingUp,
+  Newspaper
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -46,6 +49,9 @@ const lifeCategories = [
   { title: 'Business', url: '/business', icon: Briefcase },
   { title: 'Professional', url: '/professional', icon: User },
   { title: 'Creators', url: '/creators', icon: Video },
+  { title: 'Crypto', url: '/crypto', icon: Bitcoin },
+  { title: 'Stocks', url: '/stocks', icon: TrendingUp },
+  { title: 'News', url: '/news', icon: Newspaper },
   { title: 'Calendar', url: '/calendar', icon: Calendar },
 ];
 
