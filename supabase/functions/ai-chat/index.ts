@@ -21,7 +21,9 @@ serve(async (req) => {
     }
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    console.log('OpenAI API Key status:', openAIApiKey ? 'Present' : 'Missing');
     if (!openAIApiKey) {
+      console.error('OpenAI API key not found in environment variables');
       throw new Error('OpenAI API key not configured');
     }
 
@@ -78,9 +80,10 @@ IMPORTANT: You do not have access to real-time information like current movie sh
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      const errorData = await response.text();
+      console.error('OpenAI API error status:', response.status);
+      console.error('OpenAI API error response:', errorData);
+      throw new Error(`OpenAI API error (${response.status}): ${errorData}`);
     }
 
     const data = await response.json();
