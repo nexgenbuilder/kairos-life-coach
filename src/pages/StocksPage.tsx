@@ -155,15 +155,16 @@ const StocksPage = () => {
         return; // Keep sample data
       }
       
-      if (data?.data && Array.isArray(data.data)) {
+      if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
         console.log('Updating with real data:', data.data.length, 'items');
         setAvailableStocks(data.data);
       } else {
-        console.warn('Invalid data format received:', data);
+        console.warn('No data returned from API, keeping sample data');
+        // Keep the sample data we already set
       }
-      
     } catch (error) {
-      console.error('Exception in loadAvailableStocks:', error);
+      console.error('Error loading stocks:', error);
+      // Keep sample data on error
     }
     
     console.log('=== loadAvailableStocks END ===');
