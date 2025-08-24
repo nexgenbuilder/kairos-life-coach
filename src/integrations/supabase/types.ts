@@ -115,6 +115,350 @@ export type Database = {
           },
         ]
       }
+      content_catalog: {
+        Row: {
+          comment_count: number | null
+          content_type: string
+          content_url: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          duration_seconds: number | null
+          engagement_rate: number | null
+          file_size_mb: number | null
+          hashtags: string[] | null
+          id: string
+          like_count: number | null
+          notes: string | null
+          platform_id: string | null
+          published_date: string | null
+          revenue_generated_cents: number | null
+          scheduled_date: string | null
+          share_count: number | null
+          status: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          comment_count?: number | null
+          content_type: string
+          content_url?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          engagement_rate?: number | null
+          file_size_mb?: number | null
+          hashtags?: string[] | null
+          id?: string
+          like_count?: number | null
+          notes?: string | null
+          platform_id?: string | null
+          published_date?: string | null
+          revenue_generated_cents?: number | null
+          scheduled_date?: string | null
+          share_count?: number | null
+          status?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          comment_count?: number | null
+          content_type?: string
+          content_url?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          engagement_rate?: number | null
+          file_size_mb?: number | null
+          hashtags?: string[] | null
+          id?: string
+          like_count?: number | null
+          notes?: string | null
+          platform_id?: string | null
+          published_date?: string | null
+          revenue_generated_cents?: number | null
+          scheduled_date?: string | null
+          share_count?: number | null
+          status?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_catalog_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "content_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_expenses: {
+        Row: {
+          amount_cents: number
+          content_id: string | null
+          created_at: string
+          currency: string
+          date: string
+          description: string
+          expense_category: string
+          id: string
+          is_recurring: boolean
+          platform_id: string | null
+          receipt_url: string | null
+          recurring_frequency: string | null
+          updated_at: string
+          user_id: string
+          vendor: string | null
+        }
+        Insert: {
+          amount_cents: number
+          content_id?: string | null
+          created_at?: string
+          currency?: string
+          date: string
+          description: string
+          expense_category: string
+          id?: string
+          is_recurring?: boolean
+          platform_id?: string | null
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          updated_at?: string
+          user_id: string
+          vendor?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          content_id?: string | null
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string
+          expense_category?: string
+          id?: string
+          is_recurring?: boolean
+          platform_id?: string | null
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          updated_at?: string
+          user_id?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_expenses_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_expenses_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "content_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_income: {
+        Row: {
+          amount_cents: number
+          content_id: string | null
+          created_at: string
+          currency: string
+          date: string
+          description: string
+          id: string
+          income_source: string
+          is_recurring: boolean
+          payment_status: string | null
+          platform_id: string | null
+          recurring_frequency: string | null
+          tax_deductible: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          content_id?: string | null
+          created_at?: string
+          currency?: string
+          date: string
+          description: string
+          id?: string
+          income_source: string
+          is_recurring?: boolean
+          payment_status?: string | null
+          platform_id?: string | null
+          recurring_frequency?: string | null
+          tax_deductible?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          content_id?: string | null
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string
+          id?: string
+          income_source?: string
+          is_recurring?: boolean
+          payment_status?: string | null
+          platform_id?: string | null
+          recurring_frequency?: string | null
+          tax_deductible?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_income_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_income_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "content_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_platforms: {
+        Row: {
+          account_display_name: string | null
+          account_handle: string
+          account_url: string | null
+          created_at: string
+          followers_count: number | null
+          following_count: number | null
+          id: string
+          is_active: boolean
+          platform_name: string
+          total_comments: number | null
+          total_likes: number | null
+          total_posts: number | null
+          total_shares: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_display_name?: string | null
+          account_handle: string
+          account_url?: string | null
+          created_at?: string
+          followers_count?: number | null
+          following_count?: number | null
+          id?: string
+          is_active?: boolean
+          platform_name: string
+          total_comments?: number | null
+          total_likes?: number | null
+          total_posts?: number | null
+          total_shares?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_display_name?: string | null
+          account_handle?: string
+          account_url?: string | null
+          created_at?: string
+          followers_count?: number | null
+          following_count?: number | null
+          id?: string
+          is_active?: boolean
+          platform_name?: string
+          total_comments?: number | null
+          total_likes?: number | null
+          total_posts?: number | null
+          total_shares?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      creator_events: {
+        Row: {
+          attendees: string[] | null
+          content_opportunities: string[] | null
+          cost_cents: number | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          end_time: string | null
+          event_type: string
+          id: string
+          location: string | null
+          notes: string | null
+          revenue_cents: number | null
+          start_time: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attendees?: string[] | null
+          content_opportunities?: string[] | null
+          cost_cents?: number | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_type: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          revenue_cents?: number | null
+          start_time: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attendees?: string[] | null
+          content_opportunities?: string[] | null
+          cost_cents?: number | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_type?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          revenue_cents?: number | null
+          start_time?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           amount_cents: number | null
@@ -418,6 +762,89 @@ export type Database = {
           },
         ]
       }
+      livestream_schedules: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          average_viewers: number | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          max_viewers: number | null
+          notes: string | null
+          platform_id: string | null
+          revenue_generated_cents: number | null
+          scheduled_end: string | null
+          scheduled_start: string
+          status: string | null
+          stream_key: string | null
+          stream_url: string | null
+          tags: string[] | null
+          title: string
+          total_followers_gained: number | null
+          total_messages: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          average_viewers?: number | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          max_viewers?: number | null
+          notes?: string | null
+          platform_id?: string | null
+          revenue_generated_cents?: number | null
+          scheduled_end?: string | null
+          scheduled_start: string
+          status?: string | null
+          stream_key?: string | null
+          stream_url?: string | null
+          tags?: string[] | null
+          title: string
+          total_followers_gained?: number | null
+          total_messages?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          average_viewers?: number | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          max_viewers?: number | null
+          notes?: string | null
+          platform_id?: string | null
+          revenue_generated_cents?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string
+          status?: string | null
+          stream_key?: string | null
+          stream_url?: string | null
+          tags?: string[] | null
+          title?: string
+          total_followers_gained?: number | null
+          total_messages?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livestream_schedules_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "content_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           content: string
@@ -654,6 +1081,66 @@ export type Database = {
           priority?: string | null
           status?: string
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      travel_schedules: {
+        Row: {
+          accommodation: string | null
+          actual_cost_cents: number | null
+          budget_cents: number | null
+          collaborators: string[] | null
+          content_planned: string[] | null
+          created_at: string
+          currency: string | null
+          destination: string
+          end_date: string
+          id: string
+          notes: string | null
+          purpose: string | null
+          start_date: string
+          title: string
+          transportation: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accommodation?: string | null
+          actual_cost_cents?: number | null
+          budget_cents?: number | null
+          collaborators?: string[] | null
+          content_planned?: string[] | null
+          created_at?: string
+          currency?: string | null
+          destination: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          start_date: string
+          title: string
+          transportation?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accommodation?: string | null
+          actual_cost_cents?: number | null
+          budget_cents?: number | null
+          collaborators?: string[] | null
+          content_planned?: string[] | null
+          created_at?: string
+          currency?: string | null
+          destination?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          start_date?: string
+          title?: string
+          transportation?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -19,6 +19,7 @@ import BusinessPage from "./pages/BusinessPage";
 import ProfessionalPage from "./pages/ProfessionalPage";
 import SocialPage from "./pages/SocialPage";
 import LovePage from "./pages/LovePage";
+import CreatorsPage from "./pages/CreatorsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,9 +44,9 @@ const App = () => (
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/business" element={<BusinessPage />} />
             <Route path="/professional" element={<ProfessionalPage />} />
-            {/* Placeholder routes for remaining categories */}
             <Route path="/social" element={<SocialPage />} />
             <Route path="/love" element={<LovePage />} />
+            <Route path="/creators" element={<CreatorsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

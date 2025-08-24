@@ -14,7 +14,8 @@ import {
   LogOut,
   BarChart3,
   Clock,
-  Bell
+  Bell,
+  Video
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -44,6 +45,7 @@ const lifeCategories = [
   { title: 'Love', url: '/love', icon: Heart },
   { title: 'Business', url: '/business', icon: Briefcase },
   { title: 'Professional', url: '/professional', icon: User },
+  { title: 'Creators', url: '/creators', icon: Video },
   { title: 'Calendar', url: '/calendar', icon: Calendar },
 ];
 

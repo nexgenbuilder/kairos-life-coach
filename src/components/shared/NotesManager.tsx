@@ -31,7 +31,7 @@ interface Person {
 }
 
 interface NotesManagerProps {
-  module: 'social' | 'love' | 'business' | 'professional';
+  module: 'social' | 'love' | 'business' | 'professional' | 'creators';
   personId?: string | null;
   refreshTrigger?: number;
 }
@@ -84,7 +84,8 @@ const NotesManager: React.FC<NotesManagerProps> = ({ module, personId, refreshTr
         social: ['friend', 'colleague', 'acquaintance'],
         love: ['family', 'partner', 'spouse', 'relative'],
         business: ['client', 'supplier', 'partner', 'vendor'],
-        professional: ['colleague', 'manager', 'hr', 'client']
+        professional: ['colleague', 'manager', 'hr', 'client'],
+        creators: ['collaborator', 'sponsor', 'client', 'vendor']
       };
 
       const { data: peopleData, error: peopleError } = await supabase
@@ -193,7 +194,8 @@ const NotesManager: React.FC<NotesManagerProps> = ({ module, personId, refreshTr
       social: 'bg-blue-100 text-blue-800',
       love: 'bg-pink-100 text-pink-800',
       business: 'bg-green-100 text-green-800',
-      professional: 'bg-purple-100 text-purple-800'
+      professional: 'bg-purple-100 text-purple-800',
+      creators: 'bg-orange-100 text-orange-800'
     };
     return colors[module as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
