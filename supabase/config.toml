@@ -2,3 +2,6 @@ project_id = "fqppatxeddglmklobzow"
 
 [functions.beta-signup]
 verify_jwt = false
+
+[functions.crypto-prices]
+verify_jwt = true

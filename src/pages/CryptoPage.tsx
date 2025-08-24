@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, TrendingUp, TrendingDown, DollarSign, Edit, Trash2, Bitcoin, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,8 +64,10 @@ const CryptoPage = () => {
 
       if (error) throw error;
       setHoldings(data || []);
-      // Update prices after loading holdings
-      updatePrices();
+      // Only update prices if we have holdings
+      if (data && data.length > 0) {
+        updatePrices();
+      }
     } catch (error) {
       console.error('Error loading crypto holdings:', error);
       toast({
@@ -315,6 +317,9 @@ const CryptoPage = () => {
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>{editingHolding ? 'Edit' : 'Add'} Crypto Holding</DialogTitle>
+                    <DialogDescription>
+                      {editingHolding ? 'Update your crypto holding information' : 'Add a new cryptocurrency to your portfolio'}
+                    </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
