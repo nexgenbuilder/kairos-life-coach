@@ -62,15 +62,16 @@ IMPORTANT: You do not have access to real-time information like current movie sh
     }
 
     console.log('Sending request to OpenAI with message:', message);
-    console.log('Using model: gpt-5-2025-08-07');
+    console.log('Using model: gpt-4o-mini (fallback from gpt-5)');
 
     const requestBody = {
-      model: 'gpt-5-2025-08-07',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
       ],
-      max_completion_tokens: 1000,
+      max_tokens: 1000,
+      temperature: 0.7,
     };
     
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
@@ -96,13 +97,17 @@ IMPORTANT: You do not have access to real-time information like current movie sh
 
     const data = await response.json();
     console.log('OpenAI response received:', JSON.stringify(data, null, 2));
-    let aiResponse = data.choices?.[0]?.message?.content || '';
     
-    if (!aiResponse) {
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid OpenAI response structure:', data);
+      throw new Error('Invalid response from OpenAI API');
+    }
+    
+    let aiResponse = data.choices[0].message.content || '';
+    
+    if (!aiResponse || aiResponse.trim() === '') {
       console.error('Empty response from OpenAI. Full data:', data);
-      console.error('Choices array:', data.choices);
-      console.error('Available data keys:', Object.keys(data));
-      aiResponse = "I'm having trouble generating a response right now. Please try again.";
+      throw new Error('OpenAI returned an empty response');
     }
 
     // Check if the user is asking to create a task and we have a user ID
