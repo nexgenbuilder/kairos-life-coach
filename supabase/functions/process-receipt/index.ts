@@ -48,19 +48,20 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini-2025-08-07',
         messages: [
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Analyze this receipt and extract individual items with their amounts. Return a JSON array with objects containing:
+                text: `Analyze this receipt and extract individual items with their amounts. Return ONLY a valid JSON array with objects containing:
                 - description: string (item name/description)
                 - amount: number (item price)
                 - category: string (one of: "Food & Dining", "Transportation", "Shopping", "Entertainment", "Bills & Utilities", "Healthcare", "Travel", "Education", "Groceries", "Other")
                 
-                Only return the JSON array, no additional text. If you cannot read the receipt clearly, return an empty array.`
+                Return only the JSON array, no markdown formatting, no additional text. Example format:
+                [{"description": "Coffee", "amount": 4.50, "category": "Food & Dining"}]`
               },
               {
                 type: 'image_url',
@@ -71,7 +72,7 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 1000
+        max_completion_tokens: 1000
       }),
     });
 
