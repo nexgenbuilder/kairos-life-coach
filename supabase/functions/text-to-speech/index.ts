@@ -12,10 +12,12 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice } = await req.json()
+    const body = await req.json().catch(() => ({}))
+    const { text, voice } = body
 
-    if (!text) {
-      throw new Error('Text is required')
+    if (!text || typeof text !== 'string' || text.trim() === '') {
+      console.error('Invalid or missing text parameter:', text)
+      throw new Error('Text is required and must be a non-empty string')
     }
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -45,9 +47,16 @@ serve(async (req) => {
     }
 
     const arrayBuffer = await response.arrayBuffer()
-    const base64Audio = btoa(
-      String.fromCharCode(...new Uint8Array(arrayBuffer))
-    )
+    
+    // Convert arrayBuffer to base64 in chunks to avoid call stack issues
+    const uint8Array = new Uint8Array(arrayBuffer)
+    let base64Audio = ''
+    const chunkSize = 8192
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize)
+      base64Audio += btoa(String.fromCharCode.apply(null, Array.from(chunk)))
+    }
 
     console.log('Speech generated successfully');
 
