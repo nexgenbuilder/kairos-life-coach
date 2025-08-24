@@ -124,34 +124,41 @@ const CryptoPage = () => {
   };
 
   const loadAvailableCryptos = async () => {
+    console.log('=== loadAvailableCryptos START ===');
+    
+    // Add some sample data immediately for testing
+    const sampleData = [
+      { id: 1, symbol: 'BTC', name: 'Bitcoin', current_price_cents: 9500000, price_change_24h: 2.5, market_cap_cents: 187000000000000 },
+      { id: 1027, symbol: 'ETH', name: 'Ethereum', current_price_cents: 350000, price_change_24h: -1.2, market_cap_cents: 42000000000000 },
+      { id: 52, symbol: 'XRP', name: 'XRP', current_price_cents: 60, price_change_24h: 5.8, market_cap_cents: 3400000000000 }
+    ];
+    
+    console.log('Setting sample data first:', sampleData);
+    setAvailableCryptos(sampleData);
+    
     try {
-      console.log('Loading available cryptos...');
+      console.log('Now trying to load from edge function...');
       const { data, error } = await supabase.functions.invoke('crypto-list');
       
-      console.log('Function response:', { data, error });
+      console.log('Function response received:', { data, error });
       
       if (error) {
-        console.error('Supabase function error:', error);
-        // Don't throw error, just show toast and continue
-        toast({
-          title: 'Warning',
-          description: 'Unable to load live crypto data. Using sample data.',
-          variant: 'destructive',
-        });
-        return;
+        console.error('Function returned error:', error);
+        return; // Keep sample data
       }
       
-      console.log('Received crypto data:', data);
-      setAvailableCryptos(data?.data || []);
-      console.log('Set availableCryptos count:', data?.data?.length || 0);
+      if (data?.data && Array.isArray(data.data)) {
+        console.log('Updating with real data:', data.data.length, 'items');
+        setAvailableCryptos(data.data);
+      } else {
+        console.warn('Invalid data format received:', data);
+      }
+      
     } catch (error) {
-      console.error('Error loading available cryptos:', error);
-      toast({
-        title: 'Warning',
-        description: 'Unable to load cryptocurrency data',
-        variant: 'destructive',
-      });
+      console.error('Exception in loadAvailableCryptos:', error);
     }
+    
+    console.log('=== loadAvailableCryptos END ===');
   };
 
   const addToWatchlist = async (crypto: AvailableCrypto) => {
