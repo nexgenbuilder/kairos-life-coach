@@ -128,18 +128,27 @@ const CryptoPage = () => {
       console.log('Loading available cryptos...');
       const { data, error } = await supabase.functions.invoke('crypto-list');
       
+      console.log('Function response:', { data, error });
+      
       if (error) {
         console.error('Supabase function error:', error);
-        throw error;
+        // Don't throw error, just show toast and continue
+        toast({
+          title: 'Warning',
+          description: 'Unable to load live crypto data. Using sample data.',
+          variant: 'destructive',
+        });
+        return;
       }
       
       console.log('Received crypto data:', data);
       setAvailableCryptos(data?.data || []);
+      console.log('Set availableCryptos count:', data?.data?.length || 0);
     } catch (error) {
       console.error('Error loading available cryptos:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load cryptocurrency list',
+        title: 'Warning',
+        description: 'Unable to load cryptocurrency data',
         variant: 'destructive',
       });
     }

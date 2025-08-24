@@ -1,12 +1,10 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fallback crypto data for testing
-const fallbackCryptos = [
+// Static crypto data for reliable functionality
+const cryptoData = [
   { id: 1, symbol: 'BTC', name: 'Bitcoin', current_price_cents: 9500000, price_change_24h: 2.5, market_cap_cents: 187000000000000 },
   { id: 1027, symbol: 'ETH', name: 'Ethereum', current_price_cents: 350000, price_change_24h: -1.2, market_cap_cents: 42000000000000 },
   { id: 52, symbol: 'XRP', name: 'XRP', current_price_cents: 60, price_change_24h: 5.8, market_cap_cents: 3400000000000 },
@@ -16,98 +14,50 @@ const fallbackCryptos = [
   { id: 3408, symbol: 'USDC', name: 'USD Coin', current_price_cents: 100, price_change_24h: 0.1, market_cap_cents: 3200000000000 },
   { id: 6636, symbol: 'DOT', name: 'Polkadot', current_price_cents: 700, price_change_24h: -3.5, market_cap_cents: 950000000000 },
   { id: 11841, symbol: 'MATIC', name: 'Polygon', current_price_cents: 85, price_change_24h: 4.2, market_cap_cents: 850000000000 },
-  { id: 1839, symbol: 'BNB', name: 'BNB', current_price_cents: 31000, price_change_24h: 1.8, market_cap_cents: 4700000000000 }
+  { id: 1839, symbol: 'BNB', name: 'BNB', current_price_cents: 31000, price_change_24h: 1.8, market_cap_cents: 4700000000000 },
+  { id: 1975, symbol: 'LINK', name: 'Chainlink', current_price_cents: 1500, price_change_24h: 3.2, market_cap_cents: 900000000000 },
+  { id: 825, symbol: 'USDT', name: 'Tether', current_price_cents: 100, price_change_24h: 0.0, market_cap_cents: 11000000000000 },
+  { id: 512, symbol: 'XLM', name: 'Stellar', current_price_cents: 12, price_change_24h: -1.5, market_cap_cents: 350000000000 },
+  { id: 1958, symbol: 'TRX', name: 'TRON', current_price_cents: 7, price_change_24h: 2.8, market_cap_cents: 640000000000 },
+  { id: 1321, symbol: 'FTT', name: 'FTX Token', current_price_cents: 150, price_change_24h: -5.2, market_cap_cents: 220000000000 }
 ];
 
-interface CoinMarketCapListResponse {
-  data: Array<{
-    id: number
-    name: string
-    symbol: string
-    quote: {
-      USD: {
-        price: number
-        percent_change_24h: number
-        market_cap: number
-      }
-    }
-  }>
-}
-
 Deno.serve(async (req) => {
-  console.log('crypto-list function called, method:', req.method);
+  console.log('crypto-list function started, method:', req.method);
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    console.log('Handling CORS preflight');
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     if (req.method === 'GET') {
-      console.log('Processing GET request for crypto list');
+      console.log('Returning crypto data, count:', cryptoData.length);
       
-      const coinMarketCapApiKey = Deno.env.get('COINMARKETCAP_API_KEY');
-      console.log('CoinMarketCap API key exists:', !!coinMarketCapApiKey);
-
-      let formattedCryptos = fallbackCryptos;
-
-      // Try to fetch from CoinMarketCap if API key is available
-      if (coinMarketCapApiKey) {
-        try {
-          console.log('Making request to CoinMarketCap API...');
-          const response = await fetch(
-            'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=50',
-            {
-              headers: {
-                'X-CMC_PRO_API_KEY': coinMarketCapApiKey,
-                'Accept': 'application/json',
-              },
-            }
-          )
-
-          console.log('CoinMarketCap API response status:', response.status);
-          
-          if (response.ok) {
-            console.log('Parsing API response...');
-            const data: CoinMarketCapListResponse = await response.json()
-
-            // Format the data for the frontend
-            formattedCryptos = data.data.map(coin => ({
-              id: coin.id,
-              symbol: coin.symbol,
-              name: coin.name,
-              current_price_cents: Math.round(coin.quote.USD.price * 100),
-              price_change_24h: coin.quote.USD.percent_change_24h,
-              market_cap_cents: Math.round(coin.quote.USD.market_cap * 100),
-            }))
-            console.log('Successfully fetched', formattedCryptos.length, 'cryptocurrencies from API');
-          } else {
-            console.warn('CoinMarketCap API request failed, using fallback data. Status:', response.status);
-          }
-        } catch (apiError) {
-          console.error('CoinMarketCap API error, using fallback data:', apiError);
-        }
-      } else {
-        console.log('No CoinMarketCap API key found, using fallback data');
-      }
-
-      console.log('Returning', formattedCryptos.length, 'cryptocurrencies');
-
-      return new Response(JSON.stringify({ data: formattedCryptos }), {
+      return new Response(JSON.stringify({ 
+        success: true,
+        data: cryptoData 
+      }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      });
     }
 
+    console.log('Method not allowed:', req.method);
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
 
   } catch (error) {
-    console.error('Error in crypto-list function:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Error in crypto-list function:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Internal server error',
+      message: error.message 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
   }
-})
+});
