@@ -40,6 +40,19 @@ serve(async (req) => {
       const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
       const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-auth`
       
+      console.log('Google Client ID available:', !!clientId)
+      console.log('Supabase URL:', Deno.env.get('SUPABASE_URL'))
+      
+      if (!clientId) {
+        return new Response(
+          JSON.stringify({ error: 'Google Client ID not configured' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${clientId}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
