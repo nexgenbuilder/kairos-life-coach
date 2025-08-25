@@ -12,23 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
-
-    // Handle OAuth callback from Google (GET request with code parameter)
+    // Handle OAuth callback from Google first (GET request with code parameter)
     const url = new URL(req.url)
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state') // This contains the user ID
     
     if (req.method === 'GET' && code && state) {
-      // This is the OAuth callback from Google
+      // This is the OAuth callback from Google - no auth needed
       const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
       const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')
       const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-auth`
@@ -86,6 +76,16 @@ serve(async (req) => {
     }
 
     // For POST requests, we need authentication
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    )
+
     const { data: { user } } = await supabaseClient.auth.getUser()
 
     if (!user) {
