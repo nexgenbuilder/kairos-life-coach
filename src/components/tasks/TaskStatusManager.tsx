@@ -62,7 +62,7 @@ const TaskStatusManager: React.FC<TaskStatusManagerProps> = ({ refreshTrigger })
         updated_at: new Date().toISOString()
       };
 
-      if (newStatus === 'active') {
+      if (newStatus === 'in-progress') {
         updates.activated_at = new Date().toISOString();
       } else if (newStatus === 'completed') {
         updates.completed_at = new Date().toISOString();
@@ -144,12 +144,11 @@ const TaskStatusManager: React.FC<TaskStatusManagerProps> = ({ refreshTrigger })
   };
 
   const getTaskStats = () => {
-    const inactive = getTasksByStatus('inactive').length;
-    const active = getTasksByStatus('active').length;
+    const todo = getTasksByStatus('todo').length;
+    const inProgress = getTasksByStatus('in-progress').length;
     const completed = getTasksByStatus('completed').length;
-    const todo = getTasksByStatus('todo').length; // legacy status
     
-    return { inactive: inactive + todo, active, completed };
+    return { todo, inProgress, completed };
   };
 
   const TaskCard = ({ task }: { task: Task }) => (
@@ -184,18 +183,18 @@ const TaskStatusManager: React.FC<TaskStatusManagerProps> = ({ refreshTrigger })
         </div>
         
         <div className="flex gap-2">
-          {task.status === 'inactive' && (
+          {task.status === 'todo' && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => updateTaskStatus(task.id, 'active')}
+              onClick={() => updateTaskStatus(task.id, 'in-progress')}
             >
               <Play className="h-4 w-4 mr-1" />
-              Activate
+              Start
             </Button>
           )}
           
-          {task.status === 'active' && (
+          {task.status === 'in-progress' && (
             <Button
               variant="outline"
               size="sm"
@@ -229,11 +228,11 @@ const TaskStatusManager: React.FC<TaskStatusManagerProps> = ({ refreshTrigger })
         <div className="flex gap-4 text-sm">
           <div className="flex items-center gap-1">
             <Clock className="h-4 w-4" />
-            <span>{stats.inactive} Inactive</span>
+            <span>{stats.todo} Todo</span>
           </div>
           <div className="flex items-center gap-1">
             <Play className="h-4 w-4" />
-            <span>{stats.active} Active</span>
+            <span>{stats.inProgress} In Progress</span>
           </div>
           <div className="flex items-center gap-1">
             <CheckCircle className="h-4 w-4" />
@@ -242,31 +241,31 @@ const TaskStatusManager: React.FC<TaskStatusManagerProps> = ({ refreshTrigger })
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="inactive" className="w-full">
+        <Tabs defaultValue="todo" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="inactive">Inactive ({stats.inactive})</TabsTrigger>
-            <TabsTrigger value="active">Active ({stats.active})</TabsTrigger>
+            <TabsTrigger value="todo">Todo ({stats.todo})</TabsTrigger>
+            <TabsTrigger value="in-progress">In Progress ({stats.inProgress})</TabsTrigger>
             <TabsTrigger value="completed">Completed ({stats.completed})</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="inactive" className="space-y-4 mt-4">
-            {getTasksByStatus('inactive').concat(getTasksByStatus('todo')).map((task) => (
+          <TabsContent value="todo" className="space-y-4 mt-4">
+            {getTasksByStatus('todo').map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
-            {getTasksByStatus('inactive').length === 0 && getTasksByStatus('todo').length === 0 && (
+            {getTasksByStatus('todo').length === 0 && (
               <div className="text-center text-muted-foreground py-8">
-                No inactive tasks
+                No todo tasks
               </div>
             )}
           </TabsContent>
           
-          <TabsContent value="active" className="space-y-4 mt-4">
-            {getTasksByStatus('active').map((task) => (
+          <TabsContent value="in-progress" className="space-y-4 mt-4">
+            {getTasksByStatus('in-progress').map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
-            {getTasksByStatus('active').length === 0 && (
+            {getTasksByStatus('in-progress').length === 0 && (
               <div className="text-center text-muted-foreground py-8">
-                No active tasks
+                No tasks in progress
               </div>
             )}
           </TabsContent>
