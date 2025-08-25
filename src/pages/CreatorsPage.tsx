@@ -24,7 +24,8 @@ import {
   Camera,
   Plane,
   CalendarDays,
-  BarChart3
+  BarChart3,
+  Edit
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
@@ -93,6 +94,7 @@ const CreatorsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [contentFormOpen, setContentFormOpen] = useState(false);
   const [platformFormOpen, setPlatformFormOpen] = useState(false);
+  const [editingPlatform, setEditingPlatform] = useState<ContentPlatform | null>(null);
 
   const fetchCreatorStats = async () => {
     if (!user) return;
@@ -364,24 +366,38 @@ const CreatorsPage = () => {
                       </div>
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Followers:</span>
-                      <span className="font-medium">{platform.followers_count.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Posts:</span>
-                      <span className="font-medium">{platform.total_posts}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Total Likes:</span>
-                      <span className="font-medium">{platform.total_likes.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Comments:</span>
-                      <span className="font-medium">{platform.total_comments.toLocaleString()}</span>
-                    </div>
-                  </CardContent>
+                   <CardContent className="space-y-2">
+                     <div className="flex justify-between">
+                       <span className="text-sm text-muted-foreground">Followers:</span>
+                       <span className="font-medium">{platform.followers_count.toLocaleString()}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-sm text-muted-foreground">Posts:</span>
+                       <span className="font-medium">{platform.total_posts}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-sm text-muted-foreground">Total Likes:</span>
+                       <span className="font-medium">{platform.total_likes.toLocaleString()}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-sm text-muted-foreground">Comments:</span>
+                       <span className="font-medium">{platform.total_comments.toLocaleString()}</span>
+                     </div>
+                     <div className="pt-2">
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         onClick={() => {
+                           setEditingPlatform(platform);
+                           setPlatformFormOpen(true);
+                         }}
+                         className="w-full"
+                       >
+                         <Edit className="h-4 w-4 mr-2" />
+                         Edit Account
+                       </Button>
+                     </div>
+                   </CardContent>
                 </Card>
               ))}
             </div>
@@ -509,11 +525,18 @@ const CreatorsPage = () => {
         onSuccess={fetchCreatorStats}
       />
       
-      <PlatformForm 
-        open={platformFormOpen}
-        onOpenChange={setPlatformFormOpen}
-        onSuccess={fetchCreatorStats}
-      />
+        <PlatformForm 
+          open={platformFormOpen} 
+          onOpenChange={(open) => {
+            setPlatformFormOpen(open);
+            if (!open) setEditingPlatform(null);
+          }}
+          onSuccess={() => {
+            fetchCreatorStats();
+            setEditingPlatform(null);
+          }}
+          platform={editingPlatform}
+        />
     </AppLayout>
   );
 };

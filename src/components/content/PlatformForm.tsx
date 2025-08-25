@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,47 +13,42 @@ interface PlatformFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  platform?: {
+    id: string;
+    platform_name: string;
+    account_handle: string;
+    account_display_name?: string;
+    account_url?: string;
+    followers_count: number;
+    is_active: boolean;
+  };
 }
 
-const PlatformForm: React.FC<PlatformFormProps> = ({ open, onOpenChange, onSuccess }) => {
+const PlatformForm: React.FC<PlatformFormProps> = ({ open, onOpenChange, onSuccess, platform }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    platform_name: '',
-    account_handle: '',
-    account_display_name: '',
-    account_url: '',
-    followers_count: 0,
-    is_active: true
+    platform_name: platform?.platform_name || '',
+    account_handle: platform?.account_handle || '',
+    account_display_name: platform?.account_display_name || '',
+    account_url: platform?.account_url || '',
+    followers_count: platform?.followers_count || 0,
+    is_active: platform?.is_active ?? true
   });
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !formData.platform_name || !formData.account_handle) return;
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('content_platforms')
-        .insert({
-          user_id: user.id,
-          platform_name: formData.platform_name,
-          account_handle: formData.account_handle,
-          account_display_name: formData.account_display_name || null,
-          account_url: formData.account_url || null,
-          followers_count: formData.followers_count,
-          is_active: formData.is_active
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Account Added",
-        description: "Your platform account has been added successfully.",
+  // Update form data when platform prop changes
+  useEffect(() => {
+    if (platform) {
+      setFormData({
+        platform_name: platform.platform_name,
+        account_handle: platform.account_handle,
+        account_display_name: platform.account_display_name || '',
+        account_url: platform.account_url || '',
+        followers_count: platform.followers_count,
+        is_active: platform.is_active
       });
-
-      // Reset form
+    } else {
       setFormData({
         platform_name: '',
         account_handle: '',
@@ -62,6 +57,68 @@ const PlatformForm: React.FC<PlatformFormProps> = ({ open, onOpenChange, onSucce
         followers_count: 0,
         is_active: true
       });
+    }
+  }, [platform]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !formData.platform_name || !formData.account_handle) return;
+
+    setLoading(true);
+    try {
+      if (platform) {
+        // Update existing platform
+        const { error } = await supabase
+          .from('content_platforms')
+          .update({
+            platform_name: formData.platform_name,
+            account_handle: formData.account_handle,
+            account_display_name: formData.account_display_name || null,
+            account_url: formData.account_url || null,
+            followers_count: formData.followers_count,
+            is_active: formData.is_active
+          })
+          .eq('id', platform.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Account Updated",
+          description: "Your platform account has been updated successfully.",
+        });
+      } else {
+        // Create new platform
+        const { error } = await supabase
+          .from('content_platforms')
+          .insert({
+            user_id: user.id,
+            platform_name: formData.platform_name,
+            account_handle: formData.account_handle,
+            account_display_name: formData.account_display_name || null,
+            account_url: formData.account_url || null,
+            followers_count: formData.followers_count,
+            is_active: formData.is_active
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Account Added",
+          description: "Your platform account has been added successfully.",
+        });
+      }
+
+      // Reset form only if not editing
+      if (!platform) {
+        setFormData({
+          platform_name: '',
+          account_handle: '',
+          account_display_name: '',
+          account_url: '',
+          followers_count: 0,
+          is_active: true
+        });
+      }
 
       onSuccess();
       onOpenChange(false);
@@ -80,9 +137,12 @@ const PlatformForm: React.FC<PlatformFormProps> = ({ open, onOpenChange, onSucce
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Platform Account</DialogTitle>
+          <DialogTitle>{platform ? 'Edit Platform Account' : 'Add New Platform Account'}</DialogTitle>
           <DialogDescription>
-            Connect a new social media account to track your content across multiple accounts
+            {platform 
+              ? 'Update your platform account details and metrics'
+              : 'Connect a new social media account to track your content across multiple accounts'
+            }
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -168,7 +228,10 @@ const PlatformForm: React.FC<PlatformFormProps> = ({ open, onOpenChange, onSucce
               Cancel
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Adding...' : 'Add Platform'}
+              {loading 
+                ? (platform ? 'Updating...' : 'Adding...') 
+                : (platform ? 'Update Account' : 'Add Platform')
+              }
             </Button>
           </div>
         </form>
