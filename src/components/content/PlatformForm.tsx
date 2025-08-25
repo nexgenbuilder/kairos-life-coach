@@ -49,8 +49,8 @@ const PlatformForm: React.FC<PlatformFormProps> = ({ open, onOpenChange, onSucce
       if (error) throw error;
 
       toast({
-        title: "Platform Added",
-        description: "Your platform has been added successfully.",
+        title: "Account Added",
+        description: "Your platform account has been added successfully.",
       });
 
       // Reset form
@@ -68,7 +68,7 @@ const PlatformForm: React.FC<PlatformFormProps> = ({ open, onOpenChange, onSucce
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add platform. Please try again.",
+        description: "Failed to add platform account. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -80,9 +80,9 @@ const PlatformForm: React.FC<PlatformFormProps> = ({ open, onOpenChange, onSucce
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Platform</DialogTitle>
+          <DialogTitle>Add New Platform Account</DialogTitle>
           <DialogDescription>
-            Connect a new social media platform to track your content
+            Connect a new social media account to track your content across multiple accounts
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

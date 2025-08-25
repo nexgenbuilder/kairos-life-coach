@@ -338,10 +338,10 @@ const CreatorsPage = () => {
 
           <TabsContent value="platforms" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Platform Management</h2>
+              <h2 className="text-2xl font-semibold">Platform Accounts</h2>
               <Button onClick={() => setPlatformFormOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Platform
+                Add Account
               </Button>
             </div>
 
@@ -355,7 +355,14 @@ const CreatorsPage = () => {
                         {platform.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
-                    <CardDescription>@{platform.account_handle}</CardDescription>
+                    <CardDescription>
+                      <div className="space-y-1">
+                        <div>@{platform.account_handle}</div>
+                        {platform.account_display_name && (
+                          <div className="text-sm font-medium">{platform.account_display_name}</div>
+                        )}
+                      </div>
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <div className="flex justify-between">
@@ -370,9 +377,55 @@ const CreatorsPage = () => {
                       <span className="text-sm text-muted-foreground">Total Likes:</span>
                       <span className="font-medium">{platform.total_likes.toLocaleString()}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Comments:</span>
+                      <span className="font-medium">{platform.total_comments.toLocaleString()}</span>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
+            </div>
+
+            {/* Platform Summary by Type */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Platform Summary</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(
+                  platforms.reduce((acc, platform) => {
+                    const key = platform.platform_name;
+                    if (!acc[key]) {
+                      acc[key] = {
+                        count: 0,
+                        totalFollowers: 0,
+                        totalLikes: 0,
+                        totalComments: 0,
+                      };
+                    }
+                    acc[key].count += 1;
+                    acc[key].totalFollowers += platform.followers_count;
+                    acc[key].totalLikes += platform.total_likes;
+                    acc[key].totalComments += platform.total_comments;
+                    return acc;
+                  }, {} as Record<string, { count: number; totalFollowers: number; totalLikes: number; totalComments: number }>)
+                ).map(([platformName, data]) => (
+                  <Card key={platformName}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm capitalize">{platformName}</CardTitle>
+                      <CardDescription>{data.count} account{data.count > 1 ? 's' : ''}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Followers:</span>
+                        <span className="font-medium">{data.totalFollowers.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Engagement:</span>
+                        <span className="font-medium">{(data.totalLikes + data.totalComments).toLocaleString()}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </TabsContent>
 
