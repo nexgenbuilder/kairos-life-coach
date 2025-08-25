@@ -22,6 +22,70 @@ serve(async (req) => {
       }
     )
 
+    // Handle OAuth callback from Google (GET request with code parameter)
+    const url = new URL(req.url)
+    const code = url.searchParams.get('code')
+    const state = url.searchParams.get('state') // This contains the user ID
+    
+    if (req.method === 'GET' && code && state) {
+      // This is the OAuth callback from Google
+      const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
+      const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')
+      const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-auth`
+
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: clientId!,
+          client_secret: clientSecret!,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
+        }),
+      })
+
+      const tokens = await tokenResponse.json()
+
+      if (tokens.error) {
+        throw new Error(tokens.error_description || tokens.error)
+      }
+
+      // Store tokens in database using service role key for admin access
+      const adminClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      
+      const expiresAt = new Date(Date.now() + tokens.expires_in * 1000)
+      
+      const { error } = await adminClient
+        .from('user_google_tokens')
+        .upsert({
+          user_id: state, // The user ID from the state parameter
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: expiresAt.toISOString(),
+          scope: 'https://www.googleapis.com/auth/calendar',
+        })
+
+      if (error) {
+        throw error
+      }
+
+      // Redirect back to the app with success
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          'Location': `${Deno.env.get('SUPABASE_URL').replace('.supabase.co', '')}.lovable.app/calendar?google_auth=success`
+        }
+      })
+    }
+
+    // For POST requests, we need authentication
     const { data: { user } } = await supabaseClient.auth.getUser()
 
     if (!user) {
@@ -34,7 +98,7 @@ serve(async (req) => {
       )
     }
 
-    const { action, code } = await req.json()
+    const { action, code: requestCode } = await req.json()
 
     if (action === 'getAuthUrl') {
       // Try different possible environment variable names
