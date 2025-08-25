@@ -11,6 +11,7 @@ import NotesManager from '@/components/shared/NotesManager';
 import ContentForm from '@/components/content/ContentForm';
 import PlatformForm from '@/components/content/PlatformForm';
 import SchedulePostForm from '@/components/content/SchedulePostForm';
+import ContentEditForm from '@/components/content/ContentEditForm';
 import { 
   Video, 
   Calendar, 
@@ -102,6 +103,8 @@ const CreatorsPage = () => {
   const [platformFormOpen, setPlatformFormOpen] = useState(false);
   const [editingPlatform, setEditingPlatform] = useState<ContentPlatform | null>(null);
   const [schedulePostOpen, setSchedulePostOpen] = useState(false);
+  const [contentEditOpen, setContentEditOpen] = useState(false);
+  const [editingContent, setEditingContent] = useState<ContentItem | null>(null);
 
   const fetchCreatorStats = async () => {
     if (!user) return;
@@ -351,36 +354,49 @@ const CreatorsPage = () => {
               {recentContent.map((content) => (
                 <Card key={content.id}>
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        {getContentTypeIcon(content.content_type)}
-                        <div>
-                          <h3 className="font-medium">{content.title}</h3>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {content.content_type} • {content.platform?.platform_name || 'No platform'}
-                          </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          {getContentTypeIcon(content.content_type)}
+                          <div>
+                            <h3 className="font-medium">{content.title}</h3>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {content.content_type} • {content.platform?.platform_name || 'No platform'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                            <Eye className="h-4 w-4" />
+                            <span>{content.view_count}</span>
+                            <Heart className="h-4 w-4" />
+                            <span>{content.like_count}</span>
+                            <MessageCircle className="h-4 w-4" />
+                            <span>{content.comment_count}</span>
+                            {content.ad_spend_cents > 0 && (
+                              <>
+                                <DollarSign className="h-4 w-4" />
+                                <span>{formatCurrency(content.ad_spend_cents / 100)}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setEditingContent(content);
+                                setContentEditOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Badge className={getStatusColor(content.status)}>
+                              {content.status}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                          <Eye className="h-4 w-4" />
-                          <span>{content.view_count}</span>
-                          <Heart className="h-4 w-4" />
-                          <span>{content.like_count}</span>
-                          <MessageCircle className="h-4 w-4" />
-                          <span>{content.comment_count}</span>
-                          {content.ad_spend_cents > 0 && (
-                            <>
-                              <DollarSign className="h-4 w-4" />
-                              <span>{formatCurrency(content.ad_spend_cents / 100)}</span>
-                            </>
-                          )}
-                        </div>
-                        <Badge className={getStatusColor(content.status)}>
-                          {content.status}
-                        </Badge>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -650,6 +666,20 @@ const CreatorsPage = () => {
           open={schedulePostOpen}
           onOpenChange={setSchedulePostOpen}
           onSuccess={fetchCreatorStats}
+          platforms={platforms}
+        />
+
+        <ContentEditForm
+          open={contentEditOpen}
+          onOpenChange={(open) => {
+            setContentEditOpen(open);
+            if (!open) setEditingContent(null);
+          }}
+          onSuccess={() => {
+            fetchCreatorStats();
+            setEditingContent(null);
+          }}
+          content={editingContent}
           platforms={platforms}
         />
 

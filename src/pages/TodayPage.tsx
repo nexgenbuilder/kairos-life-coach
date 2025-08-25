@@ -3,7 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckSquare, Clock, Calendar, Heart, Dumbbell, DollarSign } from 'lucide-react';
+import { CheckSquare, Clock, Calendar, Heart, Dumbbell, DollarSign, Video } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -12,12 +12,14 @@ import { format, isToday, startOfDay, endOfDay } from 'date-fns';
 interface TodayItem {
   id: string;
   title: string;
-  type: 'task' | 'event' | 'expense' | 'income' | 'workout' | 'meal';
+  type: 'task' | 'event' | 'expense' | 'income' | 'workout' | 'meal' | 'content';
   status?: string;
   time?: string;
   completed?: boolean;
   priority?: string;
   amount?: number;
+  platform?: string;
+  contentType?: string;
 }
 
 const TodayPage = () => {
@@ -109,6 +111,20 @@ const TodayPage = () => {
 
       if (healthError) throw healthError;
 
+      // Load today's scheduled content
+      const { data: scheduledContent, error: contentError } = await supabase
+        .from('content_catalog')
+        .select(`
+          *,
+          platform:content_platforms(platform_name)
+        `)
+        .eq('user_id', user?.id)
+        .eq('status', 'scheduled')
+        .gte('scheduled_date', startDay.toISOString())
+        .lte('scheduled_date', endDay.toISOString());
+
+      if (contentError) throw contentError;
+
       // Load scheduled workouts from localStorage (for future workouts)
       const storedWorkouts = localStorage.getItem(`scheduled_workouts_${user?.id}`);
       const scheduledWorkouts = storedWorkouts ? JSON.parse(storedWorkouts) : [];
@@ -161,6 +177,15 @@ const TodayPage = () => {
           type: 'meal' as const,
           status: 'logged',
           time: undefined
+        })),
+        ...(scheduledContent || []).map(content => ({
+          id: content.id,
+          title: content.title,
+          type: 'content' as const,
+          status: 'scheduled',
+          time: content.scheduled_date ? format(new Date(content.scheduled_date), 'HH:mm') : undefined,
+          platform: content.platform?.platform_name,
+          contentType: content.content_type
         })),
         ...todayScheduledWorkouts.map((workout: any) => ({
           id: workout.id,
@@ -238,6 +263,7 @@ const TodayPage = () => {
       case 'income': return DollarSign;
       case 'workout': return Dumbbell;
       case 'meal': return Heart;
+      case 'content': return Video;
       default: return Clock;
     }
   };
@@ -250,6 +276,7 @@ const TodayPage = () => {
       case 'income': return 'bg-green-500/10 text-green-700';
       case 'workout': return 'bg-green-500/10 text-green-700';
       case 'meal': return 'bg-orange-500/10 text-orange-700';
+      case 'content': return 'bg-indigo-500/10 text-indigo-700';
       default: return 'bg-gray-500/10 text-gray-700';
     }
   };
@@ -328,6 +355,16 @@ const TodayPage = () => {
                             {item.priority && (
                               <Badge variant="outline" className={getPriorityColor(item.priority)}>
                                 {item.priority}
+                              </Badge>
+                            )}
+                            {item.platform && (
+                              <Badge variant="outline">
+                                {item.platform}
+                              </Badge>
+                            )}
+                            {item.contentType && (
+                              <Badge variant="outline">
+                                {item.contentType}
                               </Badge>
                             )}
                             {item.time && (
