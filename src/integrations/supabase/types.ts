@@ -177,6 +177,7 @@ export type Database = {
       }
       content_catalog: {
         Row: {
+          ad_spend_cents: number | null
           comment_count: number | null
           content_type: string
           content_url: string | null
@@ -204,6 +205,7 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          ad_spend_cents?: number | null
           comment_count?: number | null
           content_type: string
           content_url?: string | null
@@ -231,6 +233,7 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          ad_spend_cents?: number | null
           comment_count?: number | null
           content_type?: string
           content_url?: string | null
@@ -410,6 +413,7 @@ export type Database = {
           account_display_name: string | null
           account_handle: string
           account_url: string | null
+          ad_spend_cents: number | null
           created_at: string
           followers_count: number | null
           following_count: number | null
@@ -427,6 +431,7 @@ export type Database = {
           account_display_name?: string | null
           account_handle: string
           account_url?: string | null
+          ad_spend_cents?: number | null
           created_at?: string
           followers_count?: number | null
           following_count?: number | null
@@ -444,6 +449,7 @@ export type Database = {
           account_display_name?: string | null
           account_handle?: string
           account_url?: string | null
+          ad_spend_cents?: number | null
           created_at?: string
           followers_count?: number | null
           following_count?: number | null

@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import NotesManager from '@/components/shared/NotesManager';
 import ContentForm from '@/components/content/ContentForm';
 import PlatformForm from '@/components/content/PlatformForm';
+import SchedulePostForm from '@/components/content/SchedulePostForm';
 import { 
   Video, 
   Calendar, 
@@ -40,6 +41,7 @@ interface ContentPlatform {
   total_likes: number;
   total_comments: number;
   is_active: boolean;
+  ad_spend_cents: number;
 }
 
 interface ContentItem {
@@ -54,6 +56,7 @@ interface ContentItem {
   comment_count: number;
   engagement_rate: number;
   revenue_generated_cents: number;
+  ad_spend_cents: number;
   platform?: ContentPlatform;
 }
 
@@ -68,6 +71,7 @@ interface CreatorStats {
   monthlyRevenue: number;
   monthlyExpenses: number;
   totalEngagement: number;
+  totalAdSpend: number;
   upcomingLivestreams: number;
   upcomingTravel: number;
 }
@@ -86,6 +90,7 @@ const CreatorsPage = () => {
     monthlyRevenue: 0,
     monthlyExpenses: 0,
     totalEngagement: 0,
+    totalAdSpend: 0,
     upcomingLivestreams: 0,
     upcomingTravel: 0,
   });
@@ -95,6 +100,7 @@ const CreatorsPage = () => {
   const [contentFormOpen, setContentFormOpen] = useState(false);
   const [platformFormOpen, setPlatformFormOpen] = useState(false);
   const [editingPlatform, setEditingPlatform] = useState<ContentPlatform | null>(null);
+  const [schedulePostOpen, setSchedulePostOpen] = useState(false);
 
   const fetchCreatorStats = async () => {
     if (!user) return;
@@ -154,6 +160,8 @@ const CreatorsPage = () => {
       // Calculate stats
       const totalFollowers = platformsData?.reduce((sum, p) => sum + p.followers_count, 0) || 0;
       const totalEngagement = contentData?.reduce((sum, c) => sum + c.like_count + c.comment_count, 0) || 0;
+      const totalAdSpend = (contentData?.reduce((sum, c) => sum + (c.ad_spend_cents || 0), 0) || 0) + 
+                          (platformsData?.reduce((sum, p) => sum + (p.ad_spend_cents || 0), 0) || 0);
       const monthlyRevenue = incomeData?.reduce((sum, i) => sum + i.amount_cents, 0) || 0;
       const monthlyExpenses = expenseData?.reduce((sum, e) => sum + e.amount_cents, 0) || 0;
 
@@ -168,6 +176,7 @@ const CreatorsPage = () => {
         monthlyRevenue: monthlyRevenue / 100,
         monthlyExpenses: monthlyExpenses / 100,
         totalEngagement,
+        totalAdSpend: totalAdSpend / 100,
         upcomingLivestreams: livestreamData?.length || 0,
         upcomingTravel: travelData?.length || 0,
       });
@@ -230,7 +239,7 @@ const CreatorsPage = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Followers</CardTitle>
@@ -282,6 +291,19 @@ const CreatorsPage = () => {
               </p>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ad Spend</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(stats.totalAdSpend)}</div>
+              <p className="text-xs text-muted-foreground">
+                Total advertising investment
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content Tabs */}
@@ -298,10 +320,16 @@ const CreatorsPage = () => {
           <TabsContent value="content" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Content Catalog</h2>
-              <Button onClick={() => setContentFormOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Content
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setSchedulePostOpen(true)} variant="outline">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule Post
+                </Button>
+                <Button onClick={() => setContentFormOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Content
+                </Button>
+              </div>
             </div>
 
             <div className="grid gap-4">
@@ -326,6 +354,12 @@ const CreatorsPage = () => {
                           <span>{content.like_count}</span>
                           <MessageCircle className="h-4 w-4" />
                           <span>{content.comment_count}</span>
+                          {content.ad_spend_cents > 0 && (
+                            <>
+                              <DollarSign className="h-4 w-4" />
+                              <span>{formatCurrency(content.ad_spend_cents / 100)}</span>
+                            </>
+                          )}
                         </div>
                         <Badge className={getStatusColor(content.status)}>
                           {content.status}
@@ -383,6 +417,12 @@ const CreatorsPage = () => {
                        <span className="text-sm text-muted-foreground">Comments:</span>
                        <span className="font-medium">{platform.total_comments.toLocaleString()}</span>
                      </div>
+                     {platform.ad_spend_cents > 0 && (
+                       <div className="flex justify-between">
+                         <span className="text-sm text-muted-foreground">Ad Spend:</span>
+                         <span className="font-medium">{formatCurrency(platform.ad_spend_cents / 100)}</span>
+                       </div>
+                     )}
                      <div className="pt-2">
                        <Button 
                          variant="outline" 
@@ -525,6 +565,13 @@ const CreatorsPage = () => {
         onSuccess={fetchCreatorStats}
       />
       
+        <SchedulePostForm
+          open={schedulePostOpen}
+          onOpenChange={setSchedulePostOpen}
+          onSuccess={fetchCreatorStats}
+          platforms={platforms}
+        />
+
         <PlatformForm 
           open={platformFormOpen} 
           onOpenChange={(open) => {
