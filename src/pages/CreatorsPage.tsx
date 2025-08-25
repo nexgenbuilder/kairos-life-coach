@@ -96,6 +96,7 @@ const CreatorsPage = () => {
   });
   const [platforms, setPlatforms] = useState<ContentPlatform[]>([]);
   const [recentContent, setRecentContent] = useState<ContentItem[]>([]);
+  const [scheduledContent, setScheduledContent] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [contentFormOpen, setContentFormOpen] = useState(false);
   const [platformFormOpen, setPlatformFormOpen] = useState(false);
@@ -126,6 +127,20 @@ const CreatorsPage = () => {
         .limit(10);
 
       setRecentContent(contentData || []);
+
+      // Fetch scheduled content specifically
+      const { data: scheduledData } = await supabase
+        .from('content_catalog')
+        .select(`
+          *,
+          platform:content_platforms(*)
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'scheduled')
+        .gte('scheduled_date', new Date().toISOString())
+        .order('scheduled_date', { ascending: true });
+
+      setScheduledContent(scheduledData || []);
 
       // Fetch income/expenses for current month
       const currentMonth = new Date().toISOString().slice(0, 7);
@@ -498,11 +513,22 @@ const CreatorsPage = () => {
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <DashboardCard 
+                title="Scheduled Posts" 
+                description="Content ready to publish"
+                icon={Calendar}
+              >
+                <div className="text-center py-4">
+                  <div className="text-2xl font-bold">{scheduledContent.length}</div>
+                  <p className="text-sm text-muted-foreground">Posts scheduled</p>
+                </div>
+              </DashboardCard>
+
               <DashboardCard 
                 title="Upcoming Livestreams" 
                 description="Scheduled live content"
-                icon={Calendar}
+                icon={Video}
               >
                 <div className="text-center py-4">
                   <div className="text-2xl font-bold">{stats.upcomingLivestreams}</div>
@@ -521,6 +547,61 @@ const CreatorsPage = () => {
                 </div>
               </DashboardCard>
             </div>
+
+            {/* Scheduled Content Posts */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Scheduled Content</CardTitle>
+                    <CardDescription>Posts waiting to be published</CardDescription>
+                  </div>
+                  <Button onClick={() => setSchedulePostOpen(true)} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Schedule Post
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {scheduledContent.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No scheduled content yet</p>
+                    <p className="text-sm">Click "Schedule Post" to plan your content</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {scheduledContent.map((content) => (
+                      <div key={content.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          {getContentTypeIcon(content.content_type)}
+                          <div>
+                            <h4 className="font-medium">{content.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {content.platform?.platform_name || 'No platform'} • {content.content_type}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Scheduled: {new Date(content.scheduled_date!).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          {content.ad_spend_cents > 0 && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <DollarSign className="h-4 w-4 mr-1" />
+                              <span>{formatCurrency(content.ad_spend_cents / 100)}</span>
+                            </div>
+                          )}
+                          <Badge variant="secondary">
+                            {new Date(content.scheduled_date!) > new Date() ? 'Scheduled' : 'Due'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="finances" className="space-y-6">
