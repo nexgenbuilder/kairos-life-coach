@@ -40,7 +40,9 @@ serve(async (req) => {
       const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
       const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-auth`
       
+      console.log('Available env keys:', Object.keys(Deno.env.toObject()).filter(k => k.includes('GOOGLE')))
       console.log('Google Client ID available:', !!clientId)
+      console.log('Google Client ID length:', clientId?.length || 0)
       console.log('Supabase URL:', Deno.env.get('SUPABASE_URL'))
       
       if (!clientId) {
