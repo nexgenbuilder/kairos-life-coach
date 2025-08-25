@@ -37,17 +37,30 @@ serve(async (req) => {
     const { action, code } = await req.json()
 
     if (action === 'getAuthUrl') {
-      const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
+      // Try different possible environment variable names
+      let clientId = Deno.env.get('GOOGLE_CLIENT_ID') || 
+                     Deno.env.get('GOOGLE_CLIENT_SECRET') || // In case you mixed them up
+                     Deno.env.get('google_client_id') ||
+                     Deno.env.get('google_client_secret');
+      
       const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-auth`
       
-      console.log('Available env keys:', Object.keys(Deno.env.toObject()).filter(k => k.includes('GOOGLE')))
-      console.log('Google Client ID available:', !!clientId)
-      console.log('Google Client ID length:', clientId?.length || 0)
-      console.log('Supabase URL:', Deno.env.get('SUPABASE_URL'))
+      console.log('All env vars:', JSON.stringify(Object.keys(Deno.env.toObject()).sort()));
+      console.log('Looking for Google Client ID...');
+      console.log('GOOGLE_CLIENT_ID:', Deno.env.get('GOOGLE_CLIENT_ID') ? 'EXISTS' : 'MISSING');
+      console.log('GOOGLE_CLIENT_SECRET:', Deno.env.get('GOOGLE_CLIENT_SECRET') ? 'EXISTS' : 'MISSING');
+      console.log('Final clientId used:', clientId ? 'EXISTS' : 'MISSING');
+      console.log('Supabase URL:', Deno.env.get('SUPABASE_URL'));
       
       if (!clientId) {
         return new Response(
-          JSON.stringify({ error: 'Google Client ID not configured' }),
+          JSON.stringify({ 
+            error: 'Google Client ID not configured',
+            debug: {
+              availableEnvVars: Object.keys(Deno.env.toObject()).filter(k => k.toLowerCase().includes('google')),
+              allEnvKeys: Object.keys(Deno.env.toObject()).length
+            }
+          }),
           { 
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
