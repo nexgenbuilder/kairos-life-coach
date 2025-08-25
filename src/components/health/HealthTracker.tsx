@@ -79,6 +79,8 @@ const HealthTracker: React.FC = () => {
   const addMetric = async () => {
     if (!newMetric.value || !user) return;
 
+    console.log('Adding health metric:', { user_id: user.id, ...newMetric });
+
     try {
       const { data, error } = await supabase
         .from('health_metrics')
@@ -91,7 +93,12 @@ const HealthTracker: React.FC = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      console.log('Health metric insert result:', { data, error });
+
+      if (error) {
+        console.error('Health metric insert error:', error);
+        throw error;
+      }
 
       if (data) {
         setMetrics([data, ...metrics]);
@@ -102,9 +109,10 @@ const HealthTracker: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('Error adding health metric:', error);
       toast({
         title: "Error",
-        description: "Failed to add health metric. Please try again.",
+        description: `Failed to add health metric: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -112,6 +120,8 @@ const HealthTracker: React.FC = () => {
 
   const addMedication = async () => {
     if (!newMedication.name || !newMedication.frequency || !user) return;
+
+    console.log('Adding medication:', { user_id: user.id, ...newMedication });
 
     try {
       const { data, error } = await supabase
@@ -127,7 +137,12 @@ const HealthTracker: React.FC = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      console.log('Medication insert result:', { data, error });
+
+      if (error) {
+        console.error('Medication insert error:', error);
+        throw error;
+      }
 
       if (data) {
         setMedications([data, ...medications]);
@@ -138,9 +153,10 @@ const HealthTracker: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('Error adding medication:', error);
       toast({
         title: "Error",
-        description: "Failed to add medication. Please try again.",
+        description: `Failed to add medication: ${error.message}`,
         variant: "destructive",
       });
     }
