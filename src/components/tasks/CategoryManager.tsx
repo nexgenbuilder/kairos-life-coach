@@ -110,10 +110,10 @@ export const CategoryManager = () => {
         
         stats[categoryId].total++;
         switch (task.status) {
-          case 'active':
+          case 'in-progress':
             stats[categoryId].active++;
             break;
-          case 'inactive':
+          case 'todo':
             stats[categoryId].inactive++;
             break;
           case 'completed':
