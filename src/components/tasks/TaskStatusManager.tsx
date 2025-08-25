@@ -8,6 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, Play, CheckCircle, Clock, Archive } from 'lucide-react';
 
+interface TaskCategory {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface Task {
   id: string;
   title: string;
@@ -19,6 +25,8 @@ interface Task {
   activated_at: string | null;
   completed_at: string | null;
   updated_at: string;
+  category_id: string | null;
+  task_categories?: TaskCategory;
 }
 
 interface TaskStatusManagerProps {
@@ -37,7 +45,14 @@ const TaskStatusManager: React.FC<TaskStatusManagerProps> = ({ refreshTrigger })
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .select('*')
+        .select(`
+          *,
+          task_categories (
+            id,
+            name,
+            color
+          )
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -164,6 +179,18 @@ const TaskStatusManager: React.FC<TaskStatusManagerProps> = ({ refreshTrigger })
           {task.priority && (
             <Badge variant={getPriorityColor(task.priority)}>
               {task.priority}
+            </Badge>
+          )}
+          {task.task_categories && (
+            <Badge 
+              variant="outline" 
+              className="text-xs"
+              style={{ 
+                borderColor: task.task_categories.color,
+                color: task.task_categories.color 
+              }}
+            >
+              {task.task_categories.name}
             </Badge>
           )}
           <Button
