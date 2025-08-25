@@ -89,7 +89,7 @@ export const TaskForm = ({ onTaskCreated }: TaskFormProps) => {
           priority,
           category_id: categoryId || null,
           due_date: dueDate || null,
-          status: "inactive",
+          status: "todo",
         });
 
       if (error) throw error;
