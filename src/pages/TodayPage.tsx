@@ -53,12 +53,12 @@ const TodayPage = () => {
       const startDay = startOfDay(today);
       const endDay = endOfDay(today);
 
-      // Load active tasks
+      // Load tasks due today or in progress
       const { data: tasks, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('status', 'active');
+        .or(`status.eq.in-progress,due_date.gte.${startDay.toISOString()},due_date.lte.${endDay.toISOString()}`);
 
       if (tasksError) throw tasksError;
 
@@ -203,7 +203,7 @@ const TodayPage = () => {
 
   const toggleTaskCompletion = async (taskId: string, currentStatus: string) => {
     try {
-      const newStatus = currentStatus === 'completed' ? 'active' : 'completed';
+      const newStatus = currentStatus === 'completed' ? 'in-progress' : 'completed';
       const { error } = await supabase
         .from('tasks')
         .update({ 
@@ -348,7 +348,7 @@ const TodayPage = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => toggleTaskCompletion(item.id, item.status || 'active')}
+                          onClick={() => toggleTaskCompletion(item.id, item.status || 'todo')}
                           className={item.completed ? 'text-green-600' : ''}
                         >
                           {item.completed ? 'Completed' : 'Mark Complete'}
