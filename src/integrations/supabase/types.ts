@@ -617,6 +617,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          actual_revenue_cents: number | null
           amount_cents: number | null
           close_date: string | null
           created_at: string | null
@@ -631,6 +632,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actual_revenue_cents?: number | null
           amount_cents?: number | null
           close_date?: string | null
           created_at?: string | null
@@ -645,6 +647,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actual_revenue_cents?: number | null
           amount_cents?: number | null
           close_date?: string | null
           created_at?: string | null

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Target, TrendingUp, Calendar, CheckCircle, Edit, Trash2, Clock, Users } from 'lucide-react';
+import { Plus, Target, TrendingUp, Calendar, CheckCircle, Edit, Trash2, Clock, Users, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ interface Deal {
   probability: number;
   close_date: string;
   notes: string;
+  actual_revenue_cents?: number;
   person?: {
     full_name: string;
     email: string;
@@ -67,6 +68,9 @@ const ProfessionalPage = () => {
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [isPersonDialogOpen, setIsPersonDialogOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [closingDeal, setClosingDeal] = useState<Deal | null>(null);
+  const [actualRevenue, setActualRevenue] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -263,21 +267,66 @@ const ProfessionalPage = () => {
     }
   };
 
+  const handleCloseDeal = (deal: Deal) => {
+    setClosingDeal(deal);
+    setActualRevenue((deal.amount_cents / 100).toString());
+    setCloseDialogOpen(true);
+  };
+
+  const handleCloseSubmit = async (won: boolean) => {
+    if (!closingDeal) return;
+    
+    try {
+      const updateData = {
+        stage: won ? 'won' : 'lost',
+        actual_revenue_cents: won ? parseInt(actualRevenue) * 100 : 0,
+      };
+
+      const { error } = await supabase
+        .from('deals')
+        .update(updateData)
+        .eq('id', closingDeal.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `Opportunity marked as ${won ? 'won' : 'lost'}`,
+      });
+
+      setCloseDialogOpen(false);
+      setClosingDeal(null);
+      setActualRevenue('');
+      loadData();
+    } catch (error) {
+      console.error('Error closing deal:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to close opportunity',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStageColor = (stage: string) => {
     const colors = {
+      new: 'bg-slate-100 text-slate-800',
       prospect: 'bg-gray-100 text-gray-800',
+      qualified: 'bg-cyan-100 text-cyan-800',
       meeting: 'bg-blue-100 text-blue-800',
       proposal: 'bg-yellow-100 text-yellow-800',
+      negotiation: 'bg-purple-100 text-purple-800',
       commit: 'bg-orange-100 text-orange-800',
       won: 'bg-green-100 text-green-800',
       lost: 'bg-red-100 text-red-800',
+      closed: 'bg-green-100 text-green-800',
     };
     return colors[stage as keyof typeof colors] || colors.prospect;
   };
 
   // Calculate KPIs
   const activePipeline = deals.filter(deal => !['won', 'lost'].includes(deal.stage));
-  const totalPipelineValue = activePipeline.reduce((sum, deal) => sum + (deal.amount_cents * deal.probability / 100), 0);
+  const totalPipelineValue = activePipeline.reduce((sum, deal) => sum + deal.amount_cents, 0);
   
   const wonDeals = deals.filter(deal => deal.stage === 'won');
   const thisMonthWon = wonDeals.filter(deal => {
@@ -286,7 +335,7 @@ const ProfessionalPage = () => {
     return dealDate.getMonth() === now.getMonth() && dealDate.getFullYear() === now.getFullYear();
   });
   
-  const monthlyRevenue = thisMonthWon.reduce((sum, deal) => sum + deal.amount_cents, 0);
+  const monthlyRevenue = thisMonthWon.reduce((sum, deal) => sum + (deal.actual_revenue_cents || deal.amount_cents), 0);
   const totalDeals = deals.filter(deal => deal.stage !== 'lost').length;
   const conversionRate = totalDeals > 0 ? (wonDeals.length / totalDeals) * 100 : 0;
 
@@ -385,12 +434,16 @@ const ProfessionalPage = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="new">New</SelectItem>
                         <SelectItem value="prospect">Prospect</SelectItem>
+                        <SelectItem value="qualified">Qualified</SelectItem>
                         <SelectItem value="meeting">Meeting</SelectItem>
                         <SelectItem value="proposal">Proposal</SelectItem>
+                        <SelectItem value="negotiation">Negotiation</SelectItem>
                         <SelectItem value="commit">Commit</SelectItem>
                         <SelectItem value="won">Won</SelectItem>
                         <SelectItem value="lost">Lost</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -453,8 +506,56 @@ const ProfessionalPage = () => {
                 </div>
               </form>
              </DialogContent>
-           </Dialog>
-         </div>
+            </Dialog>
+
+            {/* Close Deal Dialog */}
+            <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Close Opportunity</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Mark "{closingDeal?.title}" as won or lost.
+                  </p>
+                  
+                  <div>
+                    <Label htmlFor="actualRevenue">Actual Revenue (if won)</Label>
+                    <Input
+                      id="actualRevenue"
+                      type="number"
+                      value={actualRevenue}
+                      onChange={(e) => setActualRevenue(e.target.value)}
+                      placeholder="Enter actual revenue amount"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCloseDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => handleCloseSubmit(false)}
+                    >
+                      Mark as Lost
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleCloseSubmit(true)}
+                    >
+                      Mark as Won
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Main Content Tabs */}
@@ -476,7 +577,7 @@ const ProfessionalPage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(totalPipelineValue / 100)}</div>
-              <p className="text-xs text-muted-foreground">Weighted forecast</p>
+              <p className="text-xs text-muted-foreground">Projected value</p>
             </CardContent>
           </Card>
 
@@ -603,6 +704,11 @@ const ProfessionalPage = () => {
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(deal)}>
                           <Edit className="h-4 w-4" />
                         </Button>
+                        {!['won', 'lost'].includes(deal.stage) && (
+                          <Button variant="ghost" size="sm" onClick={() => handleCloseDeal(deal)}>
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(deal.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
