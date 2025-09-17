@@ -112,17 +112,21 @@ export function AppSidebar() {
             <SidebarMenu>
               {lifeCategories
                 .filter(item => {
-                  // Show all items during loading or if no organization
-                  if (orgLoading || !hasModuleAccess) return true;
+                  // Don't show any modules during loading
+                  if (orgLoading) return false;
                   
                   // Map routes to module names
                   const moduleMap: Record<string, string> = {
+                    '/today': 'today',
                     '/professional': 'professional',
                     '/tasks': 'tasks',
                     '/calendar': 'calendar',
                     '/money': 'money',
                     '/health': 'health',
                     '/fitness': 'fitness',
+                    '/social': 'social',
+                    '/love': 'love',
+                    '/business': 'business',
                     '/creators': 'creators',
                     '/crypto': 'crypto',
                     '/stocks': 'stocks',
@@ -130,7 +134,10 @@ export function AppSidebar() {
                   };
                   
                   const moduleName = moduleMap[item.url];
-                  return !moduleName || hasModuleAccess(moduleName);
+                  // If no module mapping, show it (like dashboard items)
+                  if (!moduleName) return true;
+                  // Otherwise check if user has access
+                  return hasModuleAccess(moduleName);
                 })
                 .map((item) => (
                 <SidebarMenuItem key={item.title}>
