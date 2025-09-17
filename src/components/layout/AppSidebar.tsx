@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useOrganization } from '@/hooks/useOrganization';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -68,6 +69,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
+  const { hasModuleAccess, loading: orgLoading } = useOrganization();
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
@@ -109,7 +111,29 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {lifeCategories.map((item) => (
+              {lifeCategories
+                .filter(item => {
+                  // Show all items during loading or if no organization
+                  if (orgLoading || !hasModuleAccess) return true;
+                  
+                  // Map routes to module names
+                  const moduleMap: Record<string, string> = {
+                    '/professional': 'professional',
+                    '/tasks': 'tasks',
+                    '/calendar': 'calendar',
+                    '/money': 'money',
+                    '/health': 'health',
+                    '/fitness': 'fitness',
+                    '/creators': 'creators',
+                    '/crypto': 'crypto',
+                    '/stocks': 'stocks',
+                    '/news': 'news',
+                  };
+                  
+                  const moduleName = moduleMap[item.url];
+                  return !moduleName || hasModuleAccess(moduleName);
+                })
+                .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 

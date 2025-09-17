@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { HeroSection } from '@/components/HeroSection';
 import { SmartChatInterface } from '@/components/chat/SmartChatInterface';
+import { OrganizationSetup } from '@/components/organization/OrganizationSetup';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganization } from '@/hooks/useOrganization';
 
 const Index = () => {
   const { user, loading } = useAuth();
+  const { organization, loading: orgLoading } = useOrganization();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,7 +18,7 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
+  if (loading || orgLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -28,6 +31,11 @@ const Index = () => {
 
   if (!user) {
     return null; // Will redirect to auth
+  }
+
+  // Show organization setup if user doesn't have an organization
+  if (user && !organization) {
+    return <OrganizationSetup onComplete={() => window.location.reload()} />;
   }
 
   return (
