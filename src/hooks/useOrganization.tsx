@@ -187,6 +187,10 @@ export const useOrganization = () => {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      // Ensure user is authenticated
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('User not authenticated');
+
       // Create group
       const { data: groupData, error: groupError } = await supabase
         .from('organizations')
@@ -194,7 +198,7 @@ export const useOrganization = () => {
           name,
           type,
           description,
-          created_by: user.id,
+          created_by: currentUser.id,
         })
         .select()
         .single();

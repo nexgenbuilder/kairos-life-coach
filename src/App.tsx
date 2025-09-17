@@ -26,6 +26,7 @@ import CryptoPage from "./pages/CryptoPage";
 import StocksPage from "./pages/StocksPage";
 import NewsPage from "./pages/NewsPage";
 import LandingPage from "./pages/LandingPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,9 +41,9 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/dashboard" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/dashboard" element={<Index />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/today" element={<TodayPage />} />
             <Route path="/money" element={<MoneyPage />} />
             <Route path="/health" element={<HealthPage />} />

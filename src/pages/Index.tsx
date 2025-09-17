@@ -4,7 +4,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { HeroSection } from '@/components/HeroSection';
 import { SmartChatInterface } from '@/components/chat/SmartChatInterface';
 import { OrganizationSetup } from '@/components/organization/OrganizationSetup';
-import { SharedSpacesOnboarding } from '@/components/organization/SharedSpacesOnboarding';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
 
@@ -36,7 +35,8 @@ const Index = () => {
 
   // Show shared spaces onboarding if user doesn't have an active context
   if (user && !activeContext && !orgLoading) {
-    return <SharedSpacesOnboarding onComplete={() => window.location.reload()} />;
+    navigate("/onboarding");
+    return null;
   }
 
   return (
