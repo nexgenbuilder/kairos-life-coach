@@ -155,14 +155,15 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
 
   if (step === 1) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl">Welcome to Kairos</CardTitle>
-            <CardDescription className="text-lg">
-              Choose how you'd like to use Kairos
-            </CardDescription>
-          </CardHeader>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="max-w-4xl mx-auto p-6">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl">Welcome to Kairos</CardTitle>
+              <CardDescription className="text-lg">
+                Choose how you'd like to use Kairos
+              </CardDescription>
+            </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {GROUP_TYPES.map((type) => (
@@ -183,6 +184,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
@@ -191,7 +193,8 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     const selectedTypeInfo = GROUP_TYPES.find(t => t.value === selectedType)!;
     
     return (
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="max-w-2xl mx-auto p-6">
         <Card>
           <CardHeader className="text-center">
             <div className={`w-16 h-16 ${selectedTypeInfo.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
@@ -242,12 +245,14 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="max-w-4xl mx-auto p-6">
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Choose Your Modules</CardTitle>
@@ -322,6 +327,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
