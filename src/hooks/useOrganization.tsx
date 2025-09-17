@@ -29,6 +29,9 @@ interface ModuleSetting {
   module_name: string;
   is_enabled: boolean;
   is_shared: boolean;
+  can_view?: boolean;
+  can_edit?: boolean;
+  can_admin?: boolean;
   visibility: 'all_members' | 'admin_only' | 'private';
   settings: any;
 }
@@ -120,7 +123,10 @@ export const useOrganization = () => {
               ...setting,
               group_id: setting.organization_id,
               visibility: (setting.visibility as ModuleSetting['visibility']) || 'all_members',
-              is_shared: setting.is_shared ?? true
+              is_shared: setting.is_shared ?? true,
+              can_view: setting.can_view ?? true,
+              can_edit: setting.can_edit ?? true,
+              can_admin: setting.can_admin ?? false
             })));
           }
         }

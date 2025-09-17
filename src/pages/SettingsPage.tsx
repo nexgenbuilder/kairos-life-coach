@@ -6,6 +6,9 @@ import { GoogleCalendarSettings } from '@/components/settings/GoogleCalendarSett
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { SecurityDashboard } from '@/components/security/SecurityDashboard';
 import { OrganizationManagement } from '@/components/organization/OrganizationManagement';
+import { InvitationManager } from '@/components/organization/InvitationManager';
+import { ModulePermissionsManager } from '@/components/organization/ModulePermissionsManager';
+import { PendingInvitations } from '@/components/organization/PendingInvitations';
 import { 
   Settings as SettingsIcon, 
   Bell, 
@@ -27,6 +30,9 @@ const SettingsPage = () => {
             Manage your account preferences and integrations
           </p>
         </div>
+         
+        {/* Show pending invitations for all users */}
+        <PendingInvitations />
 
         <Tabs defaultValue={activeContext?.type === 'individual' ? 'general' : 'organization'} className="space-y-6">
           <TabsList className={`grid w-full ${activeContext?.type === 'individual' ? 'grid-cols-4' : 'grid-cols-5'}`}>
@@ -57,7 +63,11 @@ const SettingsPage = () => {
           {activeContext?.type !== 'individual' && (
             <TabsContent value="organization" className="space-y-6">
               {isAdmin() ? (
-                <OrganizationManagement />
+                <div className="space-y-6">
+                  <InvitationManager />
+                  <ModulePermissionsManager />
+                  <OrganizationManagement />
+                </div>
               ) : (
                 <Card>
                   <CardHeader>

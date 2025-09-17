@@ -1239,6 +1239,9 @@ export type Database = {
       }
       module_permissions: {
         Row: {
+          can_admin: boolean | null
+          can_edit: boolean | null
+          can_view: boolean | null
           created_at: string
           id: string
           is_enabled: boolean
@@ -1250,6 +1253,9 @@ export type Database = {
           visibility: string | null
         }
         Insert: {
+          can_admin?: boolean | null
+          can_edit?: boolean | null
+          can_view?: boolean | null
           created_at?: string
           id?: string
           is_enabled?: boolean
@@ -1261,6 +1267,9 @@ export type Database = {
           visibility?: string | null
         }
         Update: {
+          can_admin?: boolean | null
+          can_edit?: boolean | null
+          can_view?: boolean | null
           created_at?: string
           id?: string
           is_enabled?: boolean
@@ -1380,10 +1389,63 @@ export type Database = {
           },
         ]
       }
+      organization_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_memberships: {
         Row: {
           created_at: string
           id: string
+          invitation_accepted_at: string | null
+          invited_at: string | null
           is_active: boolean
           joined_at: string
           organization_id: string
@@ -1394,6 +1456,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          invitation_accepted_at?: string | null
+          invited_at?: string | null
           is_active?: boolean
           joined_at?: string
           organization_id: string
@@ -1404,6 +1468,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          invitation_accepted_at?: string | null
+          invited_at?: string | null
           is_active?: boolean
           joined_at?: string
           organization_id?: string
@@ -2195,6 +2261,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_organization_invitation: {
+        Args: { invitation_id: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           p_endpoint: string
@@ -2228,6 +2298,19 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: string
       }
+      get_user_pending_invitations: {
+        Args: { user_uuid?: string }
+        Returns: {
+          created_at: string
+          expires_at: string
+          id: string
+          invited_by_name: string
+          organization_id: string
+          organization_name: string
+          organization_type: string
+          role: string
+        }[]
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: string
@@ -2252,7 +2335,14 @@ export type Database = {
         Returns: boolean
       }
       user_has_context_module_access: {
-        Args: { context_id?: string; module_name: string; user_uuid?: string }
+        Args:
+          | {
+              context_id?: string
+              module_name: string
+              permission_type?: string
+              user_uuid?: string
+            }
+          | { context_id?: string; module_name: string; user_uuid?: string }
         Returns: boolean
       }
       user_has_module_access: {
