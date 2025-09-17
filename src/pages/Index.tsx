@@ -35,7 +35,7 @@ const Index = () => {
   }
 
   // Show shared spaces onboarding if user doesn't have an active context
-  if (user && !activeContext) {
+  if (user && !activeContext && !orgLoading) {
     return <SharedSpacesOnboarding onComplete={() => window.location.reload()} />;
   }
 

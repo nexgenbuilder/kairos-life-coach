@@ -247,13 +247,37 @@ export const useOrganization = () => {
     }
 
     try {
-      const { error } = await supabase
+      // Check if permission exists
+      const { data: existingPermission } = await supabase
         .from('module_permissions')
-        .upsert({
-          organization_id: activeContext.id,
-          module_name: moduleName,
-          ...settings,
-        });
+        .select('id')
+        .eq('organization_id', activeContext.id)
+        .eq('module_name', moduleName)
+        .single();
+
+      let error;
+      if (existingPermission) {
+        // Update existing permission
+        const { error: updateError } = await supabase
+          .from('module_permissions')
+          .update(settings)
+          .eq('organization_id', activeContext.id)
+          .eq('module_name', moduleName);
+        error = updateError;
+      } else {
+        // Insert new permission
+        const { error: insertError } = await supabase
+          .from('module_permissions')
+          .insert({
+            organization_id: activeContext.id,
+            module_name: moduleName,
+            is_enabled: true,
+            is_shared: true,
+            visibility: 'all_members',
+            ...settings,
+          });
+        error = insertError;
+      }
 
       if (error) throw error;
 
