@@ -24,6 +24,7 @@ import CreatorsPage from "./pages/CreatorsPage";
 import CryptoPage from "./pages/CryptoPage";
 import StocksPage from "./pages/StocksPage";
 import NewsPage from "./pages/NewsPage";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
           <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/landing" element={<LandingPage />} />
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/today" element={<TodayPage />} />

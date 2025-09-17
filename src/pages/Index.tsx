@@ -41,16 +41,8 @@ const Index = () => {
 
   return (
     <AppLayout>
-      <div className="flex flex-col h-full">
-        {/* Hero section for first-time visitors */}
-        <div className="border-b border-border">
-          <HeroSection />
-        </div>
-        
-        {/* Main chat interface */}
-        <div className="flex-1 min-h-[500px]">
-          <SmartChatInterface />
-        </div>
+      <div className="flex-1 min-h-[500px]">
+        <SmartChatInterface />
       </div>
     </AppLayout>
   );

@@ -135,6 +135,9 @@ export const useOrganization = () => {
   }, [user]);
 
   const hasModuleAccess = (moduleName: string) => {
+    if (!activeContext) return true; // Show all when no context
+    if (loading) return false; // Hide all during loading to prevent flash
+    
     const setting = moduleSettings.find(s => s.module_name === moduleName);
     if (!setting) return false;
     
