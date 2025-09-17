@@ -3,7 +3,11 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, LogIn, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export function HeroSection() {
+interface HeroSectionProps {
+  onStartChat?: () => void;
+}
+
+export function HeroSection({ onStartChat }: HeroSectionProps) {
   const navigate = useNavigate();
 
   return (
@@ -71,21 +75,36 @@ export function HeroSection() {
           <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
               size="lg"
-              onClick={() => navigate('/auth')}
+              onClick={onStartChat || (() => navigate('/auth'))}
               className="bg-primary-gradient hover:opacity-90 transition-smooth shadow-glow-primary text-lg px-8 py-6 rounded-xl"
             >
-              Start with Kairos
+              {onStartChat ? 'Start with Chat' : 'Start with Kairos'}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <div className="text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Button 
-                variant="link" 
-                onClick={() => navigate('/auth')}
-                className="p-0 h-auto text-primary hover:text-primary/80"
-              >
-                Sign in here
-              </Button>
+              {onStartChat ? (
+                <>
+                  Want to save your progress?{' '}
+                  <Button 
+                    variant="link" 
+                    onClick={() => navigate('/auth')}
+                    className="p-0 h-auto text-primary hover:text-primary/80"
+                  >
+                    Sign up here
+                  </Button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <Button 
+                    variant="link" 
+                    onClick={() => navigate('/auth')}
+                    className="p-0 h-auto text-primary hover:text-primary/80"
+                  >
+                    Sign in here
+                  </Button>
+                </>
+              )}
             </div>
           </div>
           

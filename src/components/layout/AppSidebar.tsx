@@ -57,7 +57,6 @@ const lifeCategories = [
 ];
 
 const bottomItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
   { title: 'Notifications', url: '/notifications', icon: Bell },
   { title: 'Settings', url: '/settings', icon: Settings },
 ];
@@ -87,7 +86,7 @@ export function AppSidebar() {
     >
       <SidebarHeader className="border-b border-border p-4">
         <NavLink 
-          to="/" 
+          to="/dashboard" 
           className="flex items-center space-x-3 group"
         >
           <div className="w-8 h-8 bg-primary-gradient rounded-lg flex items-center justify-center shadow-glow-soft">

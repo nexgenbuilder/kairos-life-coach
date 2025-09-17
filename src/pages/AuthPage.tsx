@@ -24,7 +24,7 @@ const AuthPage = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        navigate("/");
+        navigate("/dashboard");
       }
     };
     checkUser();
@@ -108,7 +108,7 @@ const AuthPage = () => {
           description: "You've been signed in successfully.",
         });
         // Force page reload for clean state
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       }
     } catch (error: any) {
       toast({

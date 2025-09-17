@@ -1,34 +1,55 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HeroSection } from '@/components/HeroSection';
-import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { SmartChatInterface } from '@/components/chat/SmartChatInterface';
+import { useAuth } from '@/hooks/useAuth';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const scrollToChat = () => {
+    const chatElement = document.getElementById('chat-section');
+    if (chatElement) {
+      chatElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      {/* Header */}
-      <header className="p-4 border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary-gradient rounded-lg flex items-center justify-center shadow-glow-soft">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <h1 className="font-bold text-lg bg-hero-gradient bg-clip-text text-transparent">
-              Kairos
-            </h1>
-          </div>
-          <Button onClick={() => navigate('/auth')} variant="outline">
-            Sign In
-          </Button>
-        </div>
-      </header>
-
       {/* Hero section */}
       <div className="border-b border-border">
-        <HeroSection />
+        <HeroSection onStartChat={scrollToChat} />
+      </div>
+
+      {/* Chat section */}
+      <div id="chat-section" className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto p-6">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-bold mb-2">Try Kairos AI</h2>
+            <p className="text-muted-foreground">
+              Experience the power of conversational AI for managing your life
+            </p>
+          </div>
+          <SmartChatInterface />
+        </div>
       </div>
 
       {/* Footer */}
