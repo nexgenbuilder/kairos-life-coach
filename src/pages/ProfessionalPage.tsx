@@ -100,39 +100,43 @@ const ProfessionalPage = () => {
     try {
       setIsLoading(true);
       
-      // Create base filters
-      const baseFilter = { user_id: user!.id };
-      const contextFilter = activeContext ? { organization_id: activeContext.id } : { organization_id: null };
-      const combinedFilter = { ...baseFilter, ...contextFilter };
-
-      // Load deals with simple approach
-      const dealsQuery = supabase
-        .from('deals')
-        .select('*')
-        .match(combinedFilter)
-        .order('created_at', { ascending: false });
-
-      const { data: dealsData, error: dealsError } = await dealsQuery;
+      // Create base filters for queries
+      const contextId = activeContext?.id;
       
-      if (dealsError) {
-        console.error('Error loading deals:', dealsError);
+      // Load deals with simple filtering approach
+      const dealsQuery = supabase.from('deals').select('*').eq('user_id', user!.id);
+      
+      let dealsResult;
+      if (contextId) {
+        dealsResult = await dealsQuery.eq('organization_id', contextId);
       } else {
-        setDeals(dealsData || []);
+        dealsResult = await dealsQuery.is('organization_id', null);
+      }
+      
+      if (dealsResult.error) {
+        console.error('Error loading deals:', dealsResult.error);
+      } else {
+        setDeals(dealsResult.data || []);
       }
 
-      // Load people with simple approach
+      // Load people with simple filtering approach
       const peopleQuery = supabase
         .from('people')
         .select('*')
-        .match(combinedFilter)
+        .eq('user_id', user!.id)
         .in('type', ['colleague', 'manager', 'hr', 'client']);
-
-      const { data: peopleData, error: peopleError } = await peopleQuery;
       
-      if (peopleError) {
-        console.error('Error loading people:', peopleError);
+      let peopleResult;
+      if (contextId) {
+        peopleResult = await peopleQuery.eq('organization_id', contextId);
       } else {
-        const formattedPeople = (peopleData || []).map(person => ({
+        peopleResult = await peopleQuery.is('organization_id', null);
+      }
+      
+      if (peopleResult.error) {
+        console.error('Error loading people:', peopleResult.error);
+      } else {
+        const formattedPeople = (peopleResult.data || []).map(person => ({
           ...person,
           tags: person.tags || [],
           social_media_links: typeof person.social_media_links === 'object' && person.social_media_links !== null 
