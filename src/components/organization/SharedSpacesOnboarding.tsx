@@ -86,9 +86,10 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [moduleSharing, setModuleSharing] = useState<Record<string, boolean>>({});
   const [isCreating, setIsCreating] = useState(false);
   
-  const { createGroup } = useOrganization();
+  const { createGroup, updateModuleSetting } = useOrganization();
   const { toast } = useToast();
 
   const handleTypeSelection = (type: GroupType) => {
@@ -97,6 +98,20 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     // Set default modules based on type
     const defaultModules = getDefaultModulesForType(type);
     setSelectedModules(defaultModules);
+    
+    // Set default sharing for modules based on type
+    const defaultSharing: Record<string, boolean> = {};
+    defaultModules.forEach(module => {
+      // Default sharing based on type and module
+      if (type === 'individual') {
+        defaultSharing[module] = false; // Individual = private by default
+      } else if (type === 'family') {
+        defaultSharing[module] = !['health'].includes(module); // Health is private by default
+      } else {
+        defaultSharing[module] = true; // Teams/orgs share by default
+      }
+    });
+    setModuleSharing(defaultSharing);
     
     if (type === 'individual') {
       // Skip name/description for individual
@@ -107,11 +122,28 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   };
 
   const handleModuleToggle = (moduleName: string) => {
-    setSelectedModules(prev => 
-      prev.includes(moduleName)
+    setSelectedModules(prev => {
+      const newModules = prev.includes(moduleName)
         ? prev.filter(m => m !== moduleName)
-        : [...prev, moduleName]
-    );
+        : [...prev, moduleName];
+      
+      // When adding a module, set default sharing
+      if (!prev.includes(moduleName)) {
+        setModuleSharing(prevSharing => ({
+          ...prevSharing,
+          [moduleName]: selectedType !== 'individual'
+        }));
+      }
+      
+      return newModules;
+    });
+  };
+
+  const handleSharingToggle = (moduleName: string) => {
+    setModuleSharing(prev => ({
+      ...prev,
+      [moduleName]: !prev[moduleName]
+    }));
   };
 
   const handleCreateGroup = async () => {
@@ -130,10 +162,32 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
           description: "Please enter a name for your group.",
           variant: "destructive",
         });
+        setIsCreating(false);
         return;
       }
 
-      await createGroup(groupName, selectedType, groupDescription);
+      // Create the group first
+      const group = await createGroup(groupName, selectedType, groupDescription);
+      
+      // Wait a moment for the group to be fully created and context to be established
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Then update module settings with sharing preferences
+      try {
+        for (const moduleName of selectedModules) {
+          await updateModuleSetting(moduleName, {
+            is_enabled: true,
+            is_shared: moduleSharing[moduleName] || false,
+            can_view: true,
+            can_edit: true,
+            can_admin: false,
+            visibility: moduleSharing[moduleName] ? 'all_members' : 'admin_only'
+          });
+        }
+      } catch (moduleError) {
+        console.error('Error setting module permissions:', moduleError);
+        // Don't fail the whole process if module settings fail
+      }
       
       toast({
         title: "Group created successfully!",
@@ -261,27 +315,45 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {AVAILABLE_MODULES.map((module) => (
               <div
                 key={module.name}
-                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                className={`p-4 border rounded-lg transition-colors ${
                   selectedModules.includes(module.name)
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:border-primary/50'
                 }`}
-                onClick={() => handleModuleToggle(module.name)}
               >
-                <div className="flex items-start space-x-3">
-                  <Checkbox
-                    checked={selectedModules.includes(module.name)}
-                    onChange={() => handleModuleToggle(module.name)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-medium">{module.label}</h3>
-                    <p className="text-sm text-muted-foreground">{module.description}</p>
+                <div className="space-y-3">
+                  <div 
+                    className="flex items-start space-x-3 cursor-pointer"
+                    onClick={() => handleModuleToggle(module.name)}
+                  >
+                    <Checkbox
+                      checked={selectedModules.includes(module.name)}
+                      onChange={() => handleModuleToggle(module.name)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-medium">{module.label}</h3>
+                      <p className="text-sm text-muted-foreground">{module.description}</p>
+                    </div>
                   </div>
+                  
+                  {selectedModules.includes(module.name) && selectedType !== 'individual' && (
+                    <div className="ml-6 pl-3 border-l">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={moduleSharing[module.name] || false}
+                          onCheckedChange={() => handleSharingToggle(module.name)}
+                        />
+                        <Label className="text-sm text-muted-foreground">
+                          Share with {selectedType} members
+                        </Label>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -294,10 +366,21 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
                 <div className="flex flex-wrap gap-2 mt-2">
                   {selectedModules.map((moduleName) => {
                     const module = AVAILABLE_MODULES.find(m => m.name === moduleName);
+                    const isShared = moduleSharing[moduleName];
                     return (
-                      <Badge key={moduleName} variant="secondary">
-                        {module?.label}
-                      </Badge>
+                      <div key={moduleName} className="flex items-center gap-1">
+                        <Badge variant="secondary">
+                          {module?.label}
+                        </Badge>
+                        {selectedType !== 'individual' && (
+                          <Badge 
+                            variant={isShared ? "default" : "outline"}
+                            className="text-xs"
+                          >
+                            {isShared ? "Shared" : "Private"}
+                          </Badge>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
