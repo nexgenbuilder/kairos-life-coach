@@ -37,7 +37,7 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
               <span>Sign In</span>
             </Button>
             <Button 
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/signup')}
               className="flex items-center space-x-2"
             >
               <UserPlus className="h-4 w-4" />
@@ -75,7 +75,7 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
           <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
               size="lg"
-              onClick={onStartChat || (() => navigate('/auth'))}
+              onClick={onStartChat || (() => navigate('/signup'))}
               className="bg-primary-gradient hover:opacity-90 transition-smooth shadow-glow-primary text-lg px-8 py-6 rounded-xl"
             >
               {onStartChat ? 'Start with Chat' : 'Start with Kairos'}
@@ -85,13 +85,13 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
               {onStartChat ? (
                 <>
                   Want to save your progress?{' '}
-                  <Button 
-                    variant="link" 
-                    onClick={() => navigate('/auth')}
-                    className="p-0 h-auto text-primary hover:text-primary/80"
-                  >
-                    Sign up here
-                  </Button>
+                   <Button 
+                     variant="link" 
+                     onClick={() => navigate('/signup')}
+                     className="p-0 h-auto text-primary hover:text-primary/80"
+                   >
+                     Sign up here
+                   </Button>
                 </>
               ) : (
                 <>

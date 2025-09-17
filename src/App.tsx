@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ui/error-boundary";
 import Index from "./pages/Index";
+import SignupPage from "./pages/SignupPage";
 import AuthPage from "./pages/AuthPage";
 import MoneyPage from "./pages/MoneyPage";
 import HealthPage from "./pages/HealthPage";
@@ -39,6 +40,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/signup" element={<SignupPage />} />
             <Route path="/dashboard" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/today" element={<TodayPage />} />

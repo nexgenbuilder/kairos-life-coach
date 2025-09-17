@@ -16,7 +16,7 @@ import {
 import { useOrganization } from '@/hooks/useOrganization';
 
 const SettingsPage = () => {
-  const { isAdmin } = useOrganization();
+  const { activeContext, isAdmin } = useOrganization();
 
   return (
     <AppLayout>
@@ -28,12 +28,14 @@ const SettingsPage = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="organization" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="organization" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Organization
-            </TabsTrigger>
+        <Tabs defaultValue={activeContext?.type === 'individual' ? 'general' : 'organization'} className="space-y-6">
+          <TabsList className={`grid w-full ${activeContext?.type === 'individual' ? 'grid-cols-4' : 'grid-cols-5'}`}>
+            {activeContext?.type !== 'individual' && (
+              <TabsTrigger value="organization" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                {activeContext?.type === 'organization' ? 'Organization' : 'Group'}
+              </TabsTrigger>
+            )}
             <TabsTrigger value="integrations" className="flex items-center gap-2">
               <Link className="h-4 w-4" />
               Integrations
@@ -52,25 +54,27 @@ const SettingsPage = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="organization" className="space-y-6">
-            {isAdmin() ? (
-              <OrganizationManagement />
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Organization Settings</CardTitle>
-                  <CardDescription>
-                    Only organization administrators can manage these settings.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Contact your organization administrator to make changes to organization settings.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+          {activeContext?.type !== 'individual' && (
+            <TabsContent value="organization" className="space-y-6">
+              {isAdmin() ? (
+                <OrganizationManagement />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{activeContext?.type === 'organization' ? 'Organization' : 'Group'} Settings</CardTitle>
+                    <CardDescription>
+                      Only {activeContext?.type === 'organization' ? 'organization' : 'group'} administrators can manage these settings.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      Contact your {activeContext?.type === 'organization' ? 'organization' : 'group'} administrator to make changes to these settings.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
           <TabsContent value="integrations" className="space-y-6">
             <GoogleCalendarSettings />
