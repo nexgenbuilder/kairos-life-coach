@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Target, TrendingUp, Calendar, CheckCircle, Edit, Trash2, Clock, Users, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import PersonForm from '@/components/shared/PersonForm';
@@ -21,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Deal {
   id: string;
+  user_id: string;
   title: string;
   amount_cents: number;
   currency: string;
@@ -38,6 +40,7 @@ interface Deal {
 
 interface Person {
   id: string;
+  user_id: string;
   full_name: string;
   email: string;
   phone: string;
@@ -61,6 +64,7 @@ interface Task {
 
 const ProfessionalPage = () => {
   const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,8 +95,8 @@ const ProfessionalPage = () => {
 
   const loadData = async () => {
     try {
-      // Load professional opportunities (reusing deals table with different stages)
-      const { data: dealsData, error: dealsError } = await supabase
+      // Load professional opportunities (admin sees all, others see only their own)
+      let dealsQuery = supabase
         .from('deals')
         .select(`
           *,
@@ -101,19 +105,29 @@ const ProfessionalPage = () => {
             full_name,
             email
           )
-        `)
-        .eq('user_id', user!.id)
+        `);
+      
+      if (!isAdmin) {
+        dealsQuery = dealsQuery.eq('user_id', user!.id);
+      }
+      
+      const { data: dealsData, error: dealsError } = await dealsQuery
         .order('created_at', { ascending: false });
 
       if (dealsError) throw dealsError;
 
       // Load people (prospects, clients, coworkers)
-      const { data: peopleData, error: peopleError } = await supabase
+      let peopleQuery = supabase
         .from('people')
         .select('*')
-        .eq('user_id', user!.id)
         .in('type', ['colleague', 'manager', 'hr', 'client']);
+      
+      if (!isAdmin) {
+        peopleQuery = peopleQuery.eq('user_id', user!.id);
+      }
 
+      const { data: peopleData, error: peopleError } = await peopleQuery;
+      
       if (peopleError) throw peopleError;
 
       setDeals(dealsData || []);
@@ -568,6 +582,19 @@ const ProfessionalPage = () => {
           </TabsList>
 
           <TabsContent value="opportunities" className="space-y-6">
+            {isAdmin && (
+              <Card className="bg-muted/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span className="text-sm font-medium">Admin View - All Team Data</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You're viewing opportunities and contacts from all team members
+                  </p>
+                </CardContent>
+              </Card>
+            )}
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
@@ -755,37 +782,46 @@ const ProfessionalPage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {people.map((person) => (
-                      <TableRow key={person.id}>
-                        <TableCell className="font-medium">{person.full_name}</TableCell>
-                        <TableCell>{person.company || '-'}</TableCell>
-                        <TableCell>{person.position || '-'}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {person.type.charAt(0).toUpperCase() + person.type.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{person.email || '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handlePersonEdit(person)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handlePersonDelete(person.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                     {people.map((person) => (
+                       <TableRow key={person.id}>
+                         <TableCell className="font-medium">
+                           <div>
+                             <div>{person.full_name}</div>
+                             {isAdmin && person.user_id !== user?.id && (
+                               <div className="text-xs text-muted-foreground">
+                                 Added by: Sales Agent
+                               </div>
+                             )}
+                           </div>
+                         </TableCell>
+                         <TableCell>{person.company || '-'}</TableCell>
+                         <TableCell>{person.position || '-'}</TableCell>
+                         <TableCell>
+                           <Badge variant="outline">
+                             {person.type.charAt(0).toUpperCase() + person.type.slice(1)}
+                           </Badge>
+                         </TableCell>
+                         <TableCell>{person.email || '-'}</TableCell>
+                         <TableCell>
+                           <div className="flex space-x-2">
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handlePersonEdit(person)}
+                             >
+                               <Edit className="h-4 w-4" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handlePersonDelete(person.id)}
+                             >
+                               <Trash2 className="h-4 w-4" />
+                             </Button>
+                           </div>
+                         </TableCell>
+                       </TableRow>
+                     ))}
                   </TableBody>
                 </Table>
               </CardContent>
