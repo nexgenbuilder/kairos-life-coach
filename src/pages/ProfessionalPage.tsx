@@ -98,58 +98,49 @@ const ProfessionalPage = () => {
 
   const loadData = async () => {
     try {
-      // Load professional opportunities with context filtering
-      let dealsData: any[] = [];
-      let dealsError = null;
+      setIsLoading(true);
       
-      if (activeContext) {
-        const result = await supabase
-          .from('deals')
-          .select('*')
-          .eq('user_id', user!.id)
-          .eq('organization_id', activeContext.id)
-          .order('created_at', { ascending: false });
-        dealsData = result.data || [];
-        dealsError = result.error;
-      } else {
-        const result = await supabase
-          .from('deals')
-          .select('*')
-          .eq('user_id', user!.id)
-          .is('organization_id', null)
-          .order('created_at', { ascending: false });
-        dealsData = result.data || [];
-        dealsError = result.error;
-      }
+      // Create base filters
+      const baseFilter = { user_id: user!.id };
+      const contextFilter = activeContext ? { organization_id: activeContext.id } : { organization_id: null };
+      const combinedFilter = { ...baseFilter, ...contextFilter };
 
+      // Load deals with simple approach
+      const dealsQuery = supabase
+        .from('deals')
+        .select('*')
+        .match(combinedFilter)
+        .order('created_at', { ascending: false });
+
+      const { data: dealsData, error: dealsError } = await dealsQuery;
+      
       if (dealsError) {
         console.error('Error loading deals:', dealsError);
-        throw dealsError;
+      } else {
+        setDeals(dealsData || []);
       }
 
-      // Load people (prospects, clients, coworkers) with context filtering
-      const organizationFilter = activeContext 
-        ? { organization_id: activeContext.id }
-        : { organization_id: null };
-      
-      const { data: peopleData, error: peopleError } = await supabase
+      // Load people with simple approach
+      const peopleQuery = supabase
         .from('people')
         .select('*')
-        .eq('user_id', user!.id)
-        .in('type', ['colleague', 'manager', 'hr', 'client'])
-        .match(organizationFilter);
+        .match(combinedFilter)
+        .in('type', ['colleague', 'manager', 'hr', 'client']);
+
+      const { data: peopleData, error: peopleError } = await peopleQuery;
       
       if (peopleError) {
         console.error('Error loading people:', peopleError);
-        throw peopleError;
+      } else {
+        const formattedPeople = (peopleData || []).map(person => ({
+          ...person,
+          tags: person.tags || [],
+          social_media_links: typeof person.social_media_links === 'object' && person.social_media_links !== null 
+            ? person.social_media_links as Record<string, string>
+            : {}
+        }));
+        setPeople(formattedPeople as Person[]);
       }
-
-      setDeals(dealsData || []);
-      setPeople((peopleData || []).map(person => ({
-        ...person,
-        tags: person.tags || [],
-        social_media_links: person.social_media_links || {}
-      })) as Person[]);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -524,7 +515,7 @@ const ProfessionalPage = () => {
                     id="notes"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={3}
+                    placeholder="Additional details about this opportunity"
                   />
                 </div>
 
@@ -533,64 +524,15 @@ const ProfessionalPage = () => {
                     Cancel
                   </Button>
                   <Button type="submit">
-                    {editingDeal ? 'Update' : 'Create'}
+                    {editingDeal ? 'Update' : 'Create'} Opportunity
                   </Button>
                 </div>
               </form>
-             </DialogContent>
-            </Dialog>
-
-            {/* Close Deal Dialog */}
-            <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Close Opportunity</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Mark "{closingDeal?.title}" as won or lost.
-                  </p>
-                  
-                  <div>
-                    <Label htmlFor="actualRevenue">Actual Revenue (if won)</Label>
-                    <Input
-                      id="actualRevenue"
-                      type="number"
-                      value={actualRevenue}
-                      onChange={(e) => setActualRevenue(e.target.value)}
-                      placeholder="Enter actual revenue amount"
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setCloseDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => handleCloseSubmit(false)}
-                    >
-                      Mark as Lost
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => handleCloseSubmit(true)}
-                    >
-                      Mark as Won
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
+            </DialogContent>
             </Dialog>
           </div>
         </div>
 
-        {/* Main Content Tabs */}
         <Tabs defaultValue="opportunities" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
@@ -600,252 +542,229 @@ const ProfessionalPage = () => {
           </TabsList>
 
           <TabsContent value="opportunities" className="space-y-6">
-            {isAdmin && (
-              <Card className="bg-muted/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span className="text-sm font-medium">Admin View - All Team Data</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    You're viewing opportunities and contacts from all team members
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Pipeline</CardTitle>
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatCurrency(totalPipelineValue / 100)}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {activePipeline.length} active opportunities
                   </p>
                 </CardContent>
               </Card>
-            )}
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalPipelineValue / 100)}</div>
-              <p className="text-xs text-muted-foreground">Projected value</p>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(monthlyRevenue / 100)}</div>
-              <p className="text-xs text-muted-foreground">This month</p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatCurrency(monthlyRevenue / 100)}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {thisMonthWon.length} deals won this month
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{conversionRate.toFixed(1)}%</div>
-              <p className="text-xs text-muted-foreground">Success rate</p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{conversionRate.toFixed(1)}%</div>
+                  <p className="text-xs text-muted-foreground">
+                    {wonDeals.length} of {totalDeals} deals won
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Opportunities</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activePipeline.length}</div>
-              <p className="text-xs text-muted-foreground">In progress</p>
-            </CardContent>
-          </Card>
-        </div>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Opportunities</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{activePipeline.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    In sales pipeline
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Professional Contacts */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Professional Contacts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {people.map((person) => (
-                  <TableRow key={person.id}>
-                    <TableCell className="font-medium">{person.full_name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {person.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{person.company || '-'}</TableCell>
-                    <TableCell>{person.email || '-'}</TableCell>
-                    <TableCell>{person.phone || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => handlePersonEdit(person)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handlePersonDelete(person.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {people.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
-                      No contacts yet. Add your first professional contact to get started.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Opportunities Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Pipeline</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Opportunity</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Stage</TableHead>
-                  <TableHead>Probability</TableHead>
-                  <TableHead>Close Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deals.map((deal) => (
-                  <TableRow key={deal.id}>
-                    <TableCell className="font-medium">{deal.title}</TableCell>
-                    <TableCell>{deal.person?.full_name || 'No contact'}</TableCell>
-                    <TableCell>{formatCurrency(deal.amount_cents / 100)}</TableCell>
-                    <TableCell>
-                      <Badge className={getStageColor(deal.stage)}>
-                        {deal.stage}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{deal.probability}%</TableCell>
-                    <TableCell>{deal.close_date ? new Date(deal.close_date).toLocaleDateString() : '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(deal)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {!['won', 'lost'].includes(deal.stage) && (
-                          <Button variant="ghost" size="sm" onClick={() => handleCloseDeal(deal)}>
-                            <DollarSign className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(deal.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {deals.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      No opportunities yet. Create your first opportunity to get started.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+            {/* Sales Pipeline Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Sales Pipeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Opportunity</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Stage</TableHead>
+                      <TableHead>Probability</TableHead>
+                      <TableHead>Close Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deals.map((deal) => (
+                      <TableRow key={deal.id}>
+                        <TableCell className="font-medium">{deal.title}</TableCell>
+                        <TableCell>{formatCurrency(deal.amount_cents / 100)}</TableCell>
+                        <TableCell>
+                          <Badge className={getStageColor(deal.stage)}>
+                            {deal.stage}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{deal.probability}%</TableCell>
+                        <TableCell>
+                          {deal.close_date ? new Date(deal.close_date).toLocaleDateString() : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            {!['won', 'lost'].includes(deal.stage) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCloseDeal(deal)}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(deal)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDelete(deal.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="schedule" className="space-y-6">
+          <TabsContent value="schedule">
             <WorkScheduleManager />
           </TabsContent>
 
-          <TabsContent value="pto" className="space-y-6">
+          <TabsContent value="pto">
             <PTOManager />
           </TabsContent>
 
           <TabsContent value="contacts" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Professional Contacts</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Professional Contacts
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
                       <TableHead>Company</TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                     {people.map((person) => (
-                       <TableRow key={person.id}>
-                         <TableCell className="font-medium">
-                           <div>
-                             <div>{person.full_name}</div>
-                             {isAdmin && person.user_id !== user?.id && (
-                               <div className="text-xs text-muted-foreground">
-                                 Added by: Sales Agent
-                               </div>
-                             )}
-                           </div>
-                         </TableCell>
-                         <TableCell>{person.company || '-'}</TableCell>
-                         <TableCell>{person.position || '-'}</TableCell>
-                         <TableCell>
-                           <Badge variant="outline">
-                             {person.type.charAt(0).toUpperCase() + person.type.slice(1)}
-                           </Badge>
-                         </TableCell>
-                         <TableCell>{person.email || '-'}</TableCell>
-                         <TableCell>
-                           <div className="flex space-x-2">
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               onClick={() => handlePersonEdit(person)}
-                             >
-                               <Edit className="h-4 w-4" />
-                             </Button>
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               onClick={() => handlePersonDelete(person.id)}
-                             >
-                               <Trash2 className="h-4 w-4" />
-                             </Button>
-                           </div>
-                         </TableCell>
-                       </TableRow>
-                     ))}
+                    {people.map((person) => (
+                      <TableRow key={person.id}>
+                        <TableCell className="font-medium">{person.full_name}</TableCell>
+                        <TableCell>{person.email}</TableCell>
+                        <TableCell>{person.company}</TableCell>
+                        <TableCell>{person.position}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{person.type}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePersonEdit(person)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePersonDelete(person.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Close Deal Dialog */}
+        <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Close Opportunity</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p>How did this opportunity conclude?</p>
+              
+              <div>
+                <Label htmlFor="actual_revenue">Actual Revenue</Label>
+                <Input
+                  id="actual_revenue"
+                  type="number"
+                  value={actualRevenue}
+                  onChange={(e) => setActualRevenue(e.target.value)}
+                  placeholder="Enter actual revenue amount"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => handleCloseSubmit(false)}
+                >
+                  Mark as Lost
+                </Button>
+                <Button onClick={() => handleCloseSubmit(true)}>
+                  Mark as Won
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
