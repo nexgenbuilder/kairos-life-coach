@@ -216,13 +216,21 @@ export const useOrganization = () => {
 
       if (membershipError) throw membershipError;
 
-      // Add to user contexts
+      // Set all other contexts to inactive first
+      const { error: deactivateError } = await supabase
+        .from('user_contexts')
+        .update({ is_active: false })
+        .eq('user_id', user.id);
+
+      if (deactivateError) throw deactivateError;
+
+      // Add to user contexts and set as active
       const { error: contextError } = await supabase
         .from('user_contexts')
         .insert({
           user_id: user.id,
           group_id: groupData.id,
-          is_active: false,
+          is_active: true,
         });
 
       if (contextError) throw contextError;
