@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
@@ -14,7 +13,9 @@ import {
   Briefcase, 
   FolderOpen,
   ArrowRight,
-  Check
+  Check,
+  Share,
+  Lock
 } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/components/ui/use-toast';
@@ -86,10 +87,10 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
-  const [moduleSharing, setModuleSharing] = useState<Record<string, boolean>>({});
+  const [moduleSettings, setModuleSettings] = useState<Record<string, { shared: boolean; visibility: string }>>({});
   const [isCreating, setIsCreating] = useState(false);
   
-  const { createGroup, updateModuleSetting } = useOrganization();
+  const { createGroup } = useOrganization();
   const { toast } = useToast();
 
   const handleTypeSelection = (type: GroupType) => {
@@ -99,19 +100,13 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     const defaultModules = getDefaultModulesForType(type);
     setSelectedModules(defaultModules);
     
-    // Set default sharing for modules based on type
-    const defaultSharing: Record<string, boolean> = {};
-    defaultModules.forEach(module => {
-      // Default sharing based on type and module
-      if (type === 'individual') {
-        defaultSharing[module] = false; // Individual = private by default
-      } else if (type === 'family') {
-        defaultSharing[module] = !['health'].includes(module); // Health is private by default
-      } else {
-        defaultSharing[module] = true; // Teams/orgs share by default
-      }
+    // Set default module settings based on type
+    const defaultSettings: Record<string, { shared: boolean; visibility: string }> = {};
+    defaultModules.forEach(moduleName => {
+      const moduleDefaults = getDefaultModuleSettingsForType(type, moduleName);
+      defaultSettings[moduleName] = moduleDefaults;
     });
-    setModuleSharing(defaultSharing);
+    setModuleSettings(defaultSettings);
     
     if (type === 'individual') {
       // Skip name/description for individual
@@ -127,22 +122,33 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         ? prev.filter(m => m !== moduleName)
         : [...prev, moduleName];
       
-      // When adding a module, set default sharing
+      // Set default settings for newly added modules
       if (!prev.includes(moduleName)) {
-        setModuleSharing(prevSharing => ({
-          ...prevSharing,
-          [moduleName]: selectedType !== 'individual'
+        const moduleDefaults = getDefaultModuleSettingsForType(selectedType, moduleName);
+        setModuleSettings(prevSettings => ({
+          ...prevSettings,
+          [moduleName]: moduleDefaults
         }));
+      } else {
+        // Remove settings for removed modules
+        setModuleSettings(prevSettings => {
+          const newSettings = { ...prevSettings };
+          delete newSettings[moduleName];
+          return newSettings;
+        });
       }
       
       return newModules;
     });
   };
 
-  const handleSharingToggle = (moduleName: string) => {
-    setModuleSharing(prev => ({
+  const handleModuleSettingChange = (moduleName: string, setting: 'shared' | 'visibility', value: boolean | string) => {
+    setModuleSettings(prev => ({
       ...prev,
-      [moduleName]: !prev[moduleName]
+      [moduleName]: {
+        ...prev[moduleName],
+        [setting]: value
+      }
     }));
   };
 
@@ -162,32 +168,10 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
           description: "Please enter a name for your group.",
           variant: "destructive",
         });
-        setIsCreating(false);
         return;
       }
 
-      // Create the group first
-      const group = await createGroup(groupName, selectedType, groupDescription);
-      
-      // Wait a moment for the group to be fully created and context to be established
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Then update module settings with sharing preferences
-      try {
-        for (const moduleName of selectedModules) {
-          await updateModuleSetting(moduleName, {
-            is_enabled: true,
-            is_shared: moduleSharing[moduleName] || false,
-            can_view: true,
-            can_edit: true,
-            can_admin: false,
-            visibility: moduleSharing[moduleName] ? 'all_members' : 'admin_only'
-          });
-        }
-      } catch (moduleError) {
-        console.error('Error setting module permissions:', moduleError);
-        // Don't fail the whole process if module settings fail
-      }
+      await createGroup(groupName, selectedType, groupDescription);
       
       toast({
         title: "Group created successfully!",
@@ -218,26 +202,26 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
                 Choose how you'd like to use Kairos
               </CardDescription>
             </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {GROUP_TYPES.map((type) => (
-                <Card
-                  key={type.value}
-                  className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary"
-                  onClick={() => handleTypeSelection(type.value)}
-                >
-                  <CardContent className="p-6 text-center">
-                    <div className={`w-16 h-16 ${type.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                      <type.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">{type.label}</h3>
-                    <p className="text-muted-foreground text-sm">{type.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {GROUP_TYPES.map((type) => (
+                  <Card
+                    key={type.value}
+                    className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary"
+                    onClick={() => handleTypeSelection(type.value)}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <div className={`w-16 h-16 ${type.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                        <type.icon className="w-8 h-8 text-white" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-2">{type.label}</h3>
+                      <p className="text-muted-foreground text-sm">{type.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -249,56 +233,56 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="max-w-2xl mx-auto p-6">
-        <Card>
-          <CardHeader className="text-center">
-            <div className={`w-16 h-16 ${selectedTypeInfo.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
-              <selectedTypeInfo.icon className="w-8 h-8 text-white" />
-            </div>
-            <CardTitle className="text-2xl">{selectedTypeInfo.label}</CardTitle>
-            <CardDescription>
-              Set up your {selectedType} details
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="groupName">{selectedType === 'family' ? 'Family Name' : 'Group Name'}</Label>
-              <Input
-                id="groupName"
-                placeholder={`Enter your ${selectedType} name`}
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="groupDescription">Description (Optional)</Label>
-              <Textarea
-                id="groupDescription"
-                placeholder="Describe your group's purpose"
-                value={groupDescription}
-                onChange={(e) => setGroupDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
+          <Card>
+            <CardHeader className="text-center">
+              <div className={`w-16 h-16 ${selectedTypeInfo.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                <selectedTypeInfo.icon className="w-8 h-8 text-white" />
+              </div>
+              <CardTitle className="text-2xl">{selectedTypeInfo.label}</CardTitle>
+              <CardDescription>
+                Set up your {selectedType} details
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="groupName">{selectedType === 'family' ? 'Family Name' : 'Group Name'}</Label>
+                <Input
+                  id="groupName"
+                  placeholder={`Enter your ${selectedType} name`}
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="groupDescription">Description (Optional)</Label>
+                <Textarea
+                  id="groupDescription"
+                  placeholder="Describe your group's purpose"
+                  value={groupDescription}
+                  onChange={(e) => setGroupDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
 
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setStep(1)}
-              >
-                Back
-              </Button>
-              <Button
-                onClick={() => setStep(3)}
-                disabled={!groupName.trim()}
-                className="px-8"
-              >
-                Next
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => setStep(3)}
+                  disabled={!groupName.trim()}
+                  className="px-8"
+                >
+                  Next
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -307,109 +291,120 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="max-w-4xl mx-auto p-6">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Choose Your Modules</CardTitle>
-          <CardDescription>
-            Select the features you need. You can always change these later.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-4">
-            {AVAILABLE_MODULES.map((module) => (
-              <div
-                key={module.name}
-                className={`p-4 border rounded-lg transition-colors ${
-                  selectedModules.includes(module.name)
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <div className="space-y-3">
-                  <div 
-                    className="flex items-start space-x-3 cursor-pointer"
-                    onClick={() => handleModuleToggle(module.name)}
-                  >
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Choose Your Modules</CardTitle>
+            <CardDescription>
+              Select the features you need and configure sharing settings. You can always change these later.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 gap-4">
+              {AVAILABLE_MODULES.map((module) => (
+                <div
+                  key={module.name}
+                  className={`p-4 border rounded-lg transition-colors ${
+                    selectedModules.includes(module.name)
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border'
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
                     <Checkbox
                       checked={selectedModules.includes(module.name)}
-                      onChange={() => handleModuleToggle(module.name)}
+                      onCheckedChange={() => handleModuleToggle(module.name)}
                       className="mt-1"
                     />
                     <div className="flex-1">
                       <h3 className="font-medium">{module.label}</h3>
-                      <p className="text-sm text-muted-foreground">{module.description}</p>
+                      <p className="text-sm text-muted-foreground mb-3">{module.description}</p>
+                      
+                      {/* Module sharing settings - only show for non-individual types */}
+                      {selectedModules.includes(module.name) && selectedType !== 'individual' && (
+                        <div className="space-y-3 pt-3 border-t">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={moduleSettings[module.name]?.shared || false}
+                              onCheckedChange={(checked) => handleModuleSettingChange(module.name, 'shared', checked)}
+                            />
+                            <Label className="text-sm flex items-center gap-2">
+                              <Share className="w-3 h-3" />
+                              Shared with all members
+                            </Label>
+                          </div>
+                          
+                          {!moduleSettings[module.name]?.shared && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Lock className="w-3 h-3" />
+                              <span>Private to admins only</span>
+                            </div>
+                          )}
+                          
+                          {moduleSettings[module.name]?.shared && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Label>Visibility:</Label>
+                              <select
+                                value={moduleSettings[module.name]?.visibility || 'all_members'}
+                                onChange={(e) => handleModuleSettingChange(module.name, 'visibility', e.target.value)}
+                                className="border rounded px-2 py-1 text-sm bg-background"
+                              >
+                                <option value="all_members">All Members</option>
+                                <option value="admin_only">Admins Only</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  
-                  {selectedModules.includes(module.name) && selectedType !== 'individual' && (
-                    <div className="ml-6 pl-3 border-l">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={moduleSharing[module.name] || false}
-                          onCheckedChange={() => handleSharingToggle(module.name)}
-                        />
-                        <Label className="text-sm text-muted-foreground">
-                          Share with {selectedType} members
-                        </Label>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="border-t pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Selected Modules</h4>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedModules.map((moduleName) => {
-                    const module = AVAILABLE_MODULES.find(m => m.name === moduleName);
-                    const isShared = moduleSharing[moduleName];
-                    return (
-                      <div key={moduleName} className="flex items-center gap-1">
-                        <Badge variant="secondary">
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Selected Modules</h4>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedModules.map((moduleName) => {
+                      const module = AVAILABLE_MODULES.find(m => m.name === moduleName);
+                      const isShared = moduleSettings[moduleName]?.shared;
+                      return (
+                        <Badge key={moduleName} variant="secondary" className="flex items-center gap-1">
                           {module?.label}
+                          {selectedType !== 'individual' && (
+                            isShared ? <Share className="w-3 h-3" /> : <Lock className="w-3 h-3" />
+                          )}
                         </Badge>
-                        {selectedType !== 'individual' && (
-                          <Badge 
-                            variant={isShared ? "default" : "outline"}
-                            className="text-xs"
-                          >
-                            {isShared ? "Shared" : "Private"}
-                          </Badge>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => selectedType === 'individual' ? setStep(1) : setStep(2)}
-            >
-              Back
-            </Button>
-            <Button
-              onClick={handleCreateGroup}
-              disabled={isCreating || selectedModules.length === 0}
-              className="px-8"
-            >
-              {isCreating ? 'Creating...' : (
-                <>
-                  <Check className="w-4 h-4 mr-2" />
-                  {selectedType === 'individual' ? 'Continue' : 'Create Group'}
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={() => selectedType === 'individual' ? setStep(1) : setStep(2)}
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleCreateGroup}
+                disabled={isCreating || selectedModules.length === 0}
+                className="px-8"
+              >
+                {isCreating ? 'Creating...' : (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    {selectedType === 'individual' ? 'Continue' : 'Create Group'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -428,5 +423,40 @@ function getDefaultModulesForType(type: GroupType): string[] {
       return ['today', 'tasks', 'calendar', 'professional', 'business', 'money', 'creators'];
     default:
       return ['today', 'tasks', 'calendar'];
+  }
+}
+
+function getDefaultModuleSettingsForType(type: GroupType, moduleName: string): { shared: boolean; visibility: string } {
+  switch (type) {
+    case 'individual':
+      return { shared: false, visibility: 'private' };
+    
+    case 'family':
+      // Family groups share most modules
+      if (['money', 'fitness', 'news'].includes(moduleName)) {
+        return { shared: true, visibility: 'all_members' };
+      }
+      return { shared: false, visibility: 'private' };
+    
+    case 'team':
+    case 'project':
+      // Team/project groups share work-related modules
+      if (['tasks', 'calendar', 'professional', 'creators', 'business'].includes(moduleName)) {
+        return { shared: true, visibility: 'all_members' };
+      }
+      return { shared: false, visibility: 'private' };
+    
+    case 'organization':
+      // Organizations have admin-controlled sharing
+      if (['tasks', 'calendar', 'creators'].includes(moduleName)) {
+        return { shared: true, visibility: 'all_members' };
+      }
+      if (['professional', 'business', 'money', 'crypto', 'stocks'].includes(moduleName)) {
+        return { shared: true, visibility: 'admin_only' };
+      }
+      return { shared: false, visibility: 'private' };
+    
+    default:
+      return { shared: true, visibility: 'all_members' };
   }
 }
