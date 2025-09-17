@@ -109,11 +109,31 @@ export const OrganizationManagement: React.FC = () => {
     if (!inviteEmail || !organization) return;
 
     try {
-      // For now, we'll just show a success message
-      // In a real implementation, you'd send an invitation email
+      const { error } = await supabase
+        .from('organization_invitations')
+        .insert({
+          organization_id: organization.id,
+          email: inviteEmail.trim().toLowerCase(),
+          role: 'member',
+          invited_by: (await supabase.auth.getUser()).data.user?.id
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast({
+            title: "Invitation already sent",
+            description: "This user has already been invited to this organization.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
       toast({
         title: 'Invitation sent',
-        description: `An invitation has been sent to ${inviteEmail}.`,
+        description: `${inviteEmail} has been invited. They can accept it in their Settings page when they sign up or log in.`,
       });
       setInviteEmail('');
     } catch (error) {
