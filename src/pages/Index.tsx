@@ -15,8 +15,10 @@ const Index = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
+    } else if (!orgLoading && user && !activeContext) {
+      navigate("/onboarding");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, orgLoading, activeContext]);
 
   if (loading || orgLoading) {
     return (
@@ -33,9 +35,8 @@ const Index = () => {
     return null; // Will redirect to auth
   }
 
-  // Show shared spaces onboarding if user doesn't have an active context
-  if (user && !activeContext && !orgLoading) {
-    navigate("/onboarding");
+  // Navigation is handled in useEffect above
+  if (!user || orgLoading || !activeContext) {
     return null;
   }
 
