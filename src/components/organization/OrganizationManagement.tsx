@@ -11,12 +11,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 const AVAILABLE_MODULES = [
-  { name: 'professional', label: 'Professional CRM', description: 'Sales pipeline and contact management' },
+  { name: 'today', label: 'Today Dashboard', description: 'Daily overview and quick actions' },
   { name: 'tasks', label: 'Task Management', description: 'Todo lists and project tracking' },
   { name: 'calendar', label: 'Calendar', description: 'Event scheduling and planning' },
   { name: 'money', label: 'Personal Finance', description: 'Income and expense tracking' },
   { name: 'health', label: 'Health Tracker', description: 'Medical records and health metrics' },
   { name: 'fitness', label: 'Fitness Tracker', description: 'Workout and exercise logging' },
+  { name: 'social', label: 'Social Network', description: 'Social connections and interactions' },
+  { name: 'love', label: 'Relationships', description: 'Personal relationship management' },
+  { name: 'business', label: 'Business Management', description: 'Business operations and tracking' },
+  { name: 'professional', label: 'Professional CRM', description: 'Sales pipeline and contact management' },
   { name: 'creators', label: 'Content Creation', description: 'Creator tools and analytics' },
   { name: 'crypto', label: 'Crypto Portfolio', description: 'Cryptocurrency tracking' },
   { name: 'stocks', label: 'Stock Portfolio', description: 'Stock market investments' },

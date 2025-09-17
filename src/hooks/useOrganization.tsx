@@ -313,6 +313,7 @@ export const useOrganization = () => {
 
 function getDefaultModulesForType(type: Group['type']) {
   const baseModules = [
+    { name: 'today', shared: true, visibility: 'all_members' },
     { name: 'tasks', shared: true, visibility: 'all_members' },
     { name: 'calendar', shared: true, visibility: 'all_members' },
   ];
@@ -324,6 +325,8 @@ function getDefaultModulesForType(type: Group['type']) {
         { name: 'money', shared: false, visibility: 'private' },
         { name: 'health', shared: false, visibility: 'private' },
         { name: 'fitness', shared: false, visibility: 'private' },
+        { name: 'social', shared: false, visibility: 'private' },
+        { name: 'love', shared: false, visibility: 'private' },
         { name: 'creators', shared: false, visibility: 'private' },
         { name: 'crypto', shared: false, visibility: 'private' },
         { name: 'stocks', shared: false, visibility: 'private' },
@@ -336,6 +339,7 @@ function getDefaultModulesForType(type: Group['type']) {
         { name: 'money', shared: true, visibility: 'all_members' },
         { name: 'health', shared: false, visibility: 'private' },
         { name: 'fitness', shared: true, visibility: 'all_members' },
+        { name: 'social', shared: true, visibility: 'all_members' },
         { name: 'news', shared: true, visibility: 'all_members' },
       ];
     
@@ -345,12 +349,14 @@ function getDefaultModulesForType(type: Group['type']) {
         ...baseModules,
         { name: 'professional', shared: true, visibility: 'all_members' },
         { name: 'creators', shared: true, visibility: 'all_members' },
+        { name: 'business', shared: true, visibility: 'all_members' },
       ];
     
     case 'organization':
       return [
         ...baseModules,
         { name: 'professional', shared: true, visibility: 'admin_only' },
+        { name: 'business', shared: true, visibility: 'admin_only' },
         { name: 'money', shared: true, visibility: 'admin_only' },
         { name: 'creators', shared: true, visibility: 'all_members' },
         { name: 'crypto', shared: true, visibility: 'admin_only' },

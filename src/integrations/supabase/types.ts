@@ -2247,12 +2247,20 @@ export type Database = {
         Args: { new_context_id: string; user_uuid?: string }
         Returns: boolean
       }
+      user_can_access_organization: {
+        Args: { org_id: string; user_uuid?: string }
+        Returns: boolean
+      }
       user_has_context_module_access: {
         Args: { context_id?: string; module_name: string; user_uuid?: string }
         Returns: boolean
       }
       user_has_module_access: {
         Args: { module_name: string; user_uuid?: string }
+        Returns: boolean
+      }
+      user_is_org_admin: {
+        Args: { org_id: string; user_uuid?: string }
         Returns: boolean
       }
     }

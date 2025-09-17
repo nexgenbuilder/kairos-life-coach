@@ -60,12 +60,16 @@ const GROUP_TYPES = [
 ];
 
 const AVAILABLE_MODULES = [
+  { name: 'today', label: 'Today Dashboard', description: 'Daily overview and quick actions' },
   { name: 'tasks', label: 'Task Management', description: 'Todo lists and project tracking' },
   { name: 'calendar', label: 'Calendar', description: 'Event scheduling and planning' },
-  { name: 'professional', label: 'Professional CRM', description: 'Sales pipeline and contact management' },
-  { name: 'money', label: 'Finance Tracking', description: 'Income and expense tracking' },
+  { name: 'money', label: 'Personal Finance', description: 'Income and expense tracking' },
   { name: 'health', label: 'Health Tracker', description: 'Medical records and health metrics' },
   { name: 'fitness', label: 'Fitness Tracker', description: 'Workout and exercise logging' },
+  { name: 'social', label: 'Social Network', description: 'Social connections and interactions' },
+  { name: 'love', label: 'Relationships', description: 'Personal relationship management' },
+  { name: 'business', label: 'Business Management', description: 'Business operations and tracking' },
+  { name: 'professional', label: 'Professional CRM', description: 'Sales pipeline and contact management' },
   { name: 'creators', label: 'Content Creation', description: 'Creator tools and analytics' },
   { name: 'crypto', label: 'Crypto Portfolio', description: 'Cryptocurrency tracking' },
   { name: 'stocks', label: 'Stock Portfolio', description: 'Stock market investments' },
@@ -325,15 +329,15 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
 function getDefaultModulesForType(type: GroupType): string[] {
   switch (type) {
     case 'individual':
-      return ['tasks', 'calendar', 'money', 'health', 'fitness', 'news'];
+      return ['today', 'tasks', 'calendar', 'money', 'health', 'fitness', 'news'];
     case 'family':
-      return ['tasks', 'calendar', 'money', 'fitness', 'news'];
+      return ['today', 'tasks', 'calendar', 'money', 'fitness', 'news'];
     case 'team':
     case 'project':
-      return ['tasks', 'calendar', 'professional', 'creators'];
+      return ['today', 'tasks', 'calendar', 'professional', 'creators'];
     case 'organization':
-      return ['tasks', 'calendar', 'professional', 'money', 'creators'];
+      return ['today', 'tasks', 'calendar', 'professional', 'business', 'money', 'creators'];
     default:
-      return ['tasks', 'calendar'];
+      return ['today', 'tasks', 'calendar'];
   }
 }
