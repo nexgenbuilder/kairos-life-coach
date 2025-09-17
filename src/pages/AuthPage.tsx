@@ -126,11 +126,14 @@ const AuthPage = () => {
       <div className="flex flex-col lg:flex-row gap-8 w-full max-w-6xl">
         <Card className="w-full max-w-md mx-auto">
           <CardHeader className="text-center">
+            <div className="w-12 h-12 bg-primary-gradient rounded-lg flex items-center justify-center mx-auto mb-4 shadow-glow-soft">
+              <span className="text-white font-bold text-xl">K</span>
+            </div>
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Welcome to Kairos
             </CardTitle>
             <CardDescription>
-              Sign in to your account or create a new one
+              Your AI-powered life operating system
             </CardDescription>
           </CardHeader>
         <CardContent>
@@ -171,18 +174,29 @@ const AuthPage = () => {
             </TabsContent>
             
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                 <div className="space-y-2">
-                   <Label htmlFor="signup-beta">Beta Access Code</Label>
-                   <Input
-                     id="signup-beta"
-                     type="password"
-                     placeholder="Enter beta access code"
-                     value={betaPassword}
-                     onChange={(e) => setBetaPassword(e.target.value)}
-                     required
-                   />
-                 </div>
+              <div className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm">
+                  <p className="font-medium text-blue-900 dark:text-blue-100 mb-2">🚀 Beta Access Required</p>
+                  <p className="text-blue-700 dark:text-blue-300">
+                    Kairos is currently in private beta. You need a beta access code to create an account.
+                  </p>
+                  <p className="text-blue-700 dark:text-blue-300 mt-2">
+                    Don't have a code? Request access below.
+                  </p>
+                </div>
+                
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-beta">Beta Access Code</Label>
+                    <Input
+                      id="signup-beta"
+                      type="password"
+                      placeholder="Enter your beta access code"
+                      value={betaPassword}
+                      onChange={(e) => setBetaPassword(e.target.value)}
+                      required
+                    />
+                  </div>
                  <div className="space-y-2">
                    <Label htmlFor="signup-name">Full Name</Label>
                    <Input
@@ -216,10 +230,11 @@ const AuthPage = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating account..." : "Sign Up"}
-                </Button>
-              </form>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Creating account..." : "Create Account"}
+                  </Button>
+                </form>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
