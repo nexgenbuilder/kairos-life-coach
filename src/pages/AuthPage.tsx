@@ -67,8 +67,8 @@ const AuthPage = () => {
       if (error) throw error;
 
       toast({
-        title: "Success!",
-        description: "Please check your email to confirm your account.",
+        title: "Account created successfully!",
+        description: "Please check your email to confirm your account before signing in.",
       });
     } catch (error: any) {
       toast({
@@ -107,8 +107,8 @@ const AuthPage = () => {
           title: "Welcome back!",
           description: "You've been signed in successfully.",
         });
-        // Force page reload for clean state
-        window.location.href = '/dashboard';
+        // Navigate to dashboard - let the routing handle the onboarding flow
+        navigate('/dashboard');
       }
     } catch (error: any) {
       toast({
