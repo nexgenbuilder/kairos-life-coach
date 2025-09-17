@@ -1,8 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SharedSpacesOnboarding } from '@/components/organization/SharedSpacesOnboarding';
 
 const OnboardingPage = () => {
-  return <SharedSpacesOnboarding onComplete={() => window.location.reload()} />;
+  const navigate = useNavigate();
+  
+  return <SharedSpacesOnboarding onComplete={() => navigate('/')} />;
 };
 
 export default OnboardingPage;

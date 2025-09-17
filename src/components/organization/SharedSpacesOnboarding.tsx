@@ -171,14 +171,18 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         return;
       }
 
-      await createGroup(groupName, selectedType, groupDescription);
+      const newGroup = await createGroup(groupName, selectedType, groupDescription);
+      
+      // Wait a moment for the database to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
         title: "Group created successfully!",
         description: `Your ${selectedType} is ready to use.`,
       });
       
-      onComplete();
+      // Navigate directly instead of reloading
+      window.location.href = '/';
     } catch (error) {
       console.error('Error creating group:', error);
       toast({
