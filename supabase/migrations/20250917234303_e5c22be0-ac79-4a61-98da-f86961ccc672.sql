@@ -1,0 +1,12 @@
+-- Add organization_id to remaining tables that need it
+ALTER TABLE public.income ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.work_schedules ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.task_categories ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.notes ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.interactions ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.fitness_goals ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.business_revenue ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.creator_events ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.inventory ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.news_feed ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.relationship_rules ADD COLUMN organization_id UUID REFERENCES public.organizations(id);
