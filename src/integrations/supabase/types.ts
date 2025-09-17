@@ -624,6 +624,7 @@ export type Database = {
           currency: string | null
           id: string
           notes: string | null
+          organization_id: string | null
           person_id: string | null
           probability: number | null
           stage: string | null
@@ -639,6 +640,7 @@ export type Database = {
           currency?: string | null
           id?: string
           notes?: string | null
+          organization_id?: string | null
           person_id?: string | null
           probability?: number | null
           stage?: string | null
@@ -654,6 +656,7 @@ export type Database = {
           currency?: string | null
           id?: string
           notes?: string | null
+          organization_id?: string | null
           person_id?: string | null
           probability?: number | null
           stage?: string | null
@@ -662,6 +665,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "deals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "deals_person_id_fkey"
             columns: ["person_id"]
@@ -1604,6 +1621,7 @@ export type Database = {
           id: string
           last_interaction_at: string | null
           notes: string | null
+          organization_id: string | null
           phone: string | null
           position: string | null
           social_media_links: Json | null
@@ -1622,6 +1640,7 @@ export type Database = {
           id?: string
           last_interaction_at?: string | null
           notes?: string | null
+          organization_id?: string | null
           phone?: string | null
           position?: string | null
           social_media_links?: Json | null
@@ -1640,6 +1659,7 @@ export type Database = {
           id?: string
           last_interaction_at?: string | null
           notes?: string | null
+          organization_id?: string | null
           phone?: string | null
           position?: string | null
           social_media_links?: Json | null
@@ -1648,7 +1668,22 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "people_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
