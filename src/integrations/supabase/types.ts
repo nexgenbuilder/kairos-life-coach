@@ -1242,30 +1242,43 @@ export type Database = {
           created_at: string
           id: string
           is_enabled: boolean
+          is_shared: boolean | null
           module_name: string
           organization_id: string
           settings: Json | null
           updated_at: string
+          visibility: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           is_enabled?: boolean
+          is_shared?: boolean | null
           module_name: string
           organization_id: string
           settings?: Json | null
           updated_at?: string
+          visibility?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           is_enabled?: boolean
+          is_shared?: boolean | null
           module_name?: string
           organization_id?: string
           settings?: Json | null
           updated_at?: string
+          visibility?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "module_permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "module_permissions_organization_id_fkey"
             columns: ["organization_id"]
@@ -1403,6 +1416,13 @@ export type Database = {
             foreignKeyName: "organization_memberships_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1411,29 +1431,35 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          created_by: string | null
           description: string | null
           id: string
           logo_url: string | null
           name: string
           settings: Json | null
+          type: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name: string
           settings?: Json | null
+          type?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           settings?: Json | null
+          type?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1590,6 +1616,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_organization_id_fkey"
             columns: ["organization_id"]
@@ -1900,6 +1933,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_contexts: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          is_active: boolean
+          last_accessed: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          is_active?: boolean
+          last_accessed?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_active?: boolean
+          last_accessed?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_contexts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_contexts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_google_tokens: {
         Row: {
           access_token: string
@@ -1983,7 +2058,141 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      group_memberships: {
+        Row: {
+          created_at: string | null
+          group_id: string | null
+          id: string | null
+          is_active: boolean | null
+          joined_at: string | null
+          role: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          joined_at?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          joined_at?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_memberships_organization_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_memberships_organization_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          settings: Json | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          settings?: Json | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          settings?: Json | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      module_settings: {
+        Row: {
+          created_at: string | null
+          group_id: string | null
+          id: string | null
+          is_enabled: boolean | null
+          is_shared: boolean | null
+          module_name: string | null
+          settings: Json | null
+          updated_at: string | null
+          visibility: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string | null
+          is_enabled?: boolean | null
+          is_shared?: boolean | null
+          module_name?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          visibility?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string | null
+          is_enabled?: boolean | null
+          is_shared?: boolean | null
+          module_name?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          visibility?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_permissions_organization_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_permissions_organization_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_rate_limit: {
@@ -1997,6 +2206,19 @@ export type Database = {
       cleanup_security_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_user_active_context: {
+        Args: { user_uuid?: string }
+        Returns: string
+      }
+      get_user_contexts: {
+        Args: { user_uuid?: string }
+        Returns: {
+          group_id: string
+          group_name: string
+          group_type: string
+          role: string
+        }[]
       }
       get_user_organization_id: {
         Args: { user_uuid?: string }
@@ -2020,6 +2242,14 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: string
+      }
+      switch_user_context: {
+        Args: { new_context_id: string; user_uuid?: string }
+        Returns: boolean
+      }
+      user_has_context_module_access: {
+        Args: { context_id?: string; module_name: string; user_uuid?: string }
+        Returns: boolean
       }
       user_has_module_access: {
         Args: { module_name: string; user_uuid?: string }
