@@ -98,7 +98,8 @@ const PersonForm: React.FC<PersonFormProps> = ({ person, module, onSave, onCance
           { value: 'colleague', label: 'Colleague' },
           { value: 'manager', label: 'Manager' },
           { value: 'hr', label: 'HR Contact' },
-          { value: 'client', label: 'Professional Client' }
+          { value: 'client', label: 'Professional Client' },
+          { value: 'prospect', label: 'Prospect' }
         ];
       default:
         return [{ value: 'contact', label: 'Contact' }];
