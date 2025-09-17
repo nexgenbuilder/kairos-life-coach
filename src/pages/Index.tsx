@@ -4,12 +4,13 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { HeroSection } from '@/components/HeroSection';
 import { SmartChatInterface } from '@/components/chat/SmartChatInterface';
 import { OrganizationSetup } from '@/components/organization/OrganizationSetup';
+import { SharedSpacesOnboarding } from '@/components/organization/SharedSpacesOnboarding';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const { organization, loading: orgLoading } = useOrganization();
+  const { activeContext, loading: orgLoading } = useOrganization();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,9 +34,9 @@ const Index = () => {
     return null; // Will redirect to auth
   }
 
-  // Show organization setup if user doesn't have an organization
-  if (user && !organization) {
-    return <OrganizationSetup onComplete={() => window.location.reload()} />;
+  // Show shared spaces onboarding if user doesn't have an active context
+  if (user && !activeContext) {
+    return <SharedSpacesOnboarding onComplete={() => window.location.reload()} />;
   }
 
   return (

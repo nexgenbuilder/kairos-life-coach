@@ -4,33 +4,41 @@ import { useAuth } from './useAuth';
 
 export const useUserRole = () => {
   const { user } = useAuth();
-  const [role, setRole] = useState<string>('sales_agent');
-  const [organizationRole, setOrganizationRole] = useState<string>('sales_agent');
+  const [role, setRole] = useState<string>('member');
+  const [activeContextRole, setActiveContextRole] = useState<string>('member');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserRole = async () => {
       if (!user) {
-        setRole('sales_agent');
-        setOrganizationRole('sales_agent');
+        setRole('member');
+        setActiveContextRole('member');
         setLoading(false);
         return;
       }
 
       try {
-        // Get organization role from membership
-        const { data: membershipData, error: membershipError } = await supabase
-          .from('organization_memberships')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .single();
+        // Get active context role
+        const { data: activeContextId, error: activeError } = await supabase
+          .rpc('get_user_active_context', { user_uuid: user.id });
 
-        if (membershipError) {
-          console.error('Error fetching organization role:', membershipError);
-          setOrganizationRole('sales_agent');
-        } else {
-          setOrganizationRole(membershipData?.role || 'sales_agent');
+        if (activeError) {
+          console.error('Error fetching active context:', activeError);
+        } else if (activeContextId) {
+          const { data: membershipData, error: membershipError } = await supabase
+            .from('organization_memberships')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('organization_id', activeContextId)
+            .eq('is_active', true)
+            .single();
+
+          if (membershipError) {
+            console.error('Error fetching active context role:', membershipError);
+            setActiveContextRole('member');
+          } else {
+            setActiveContextRole(membershipData?.role || 'member');
+          }
         }
 
         // Get profile role (legacy support)
@@ -42,14 +50,14 @@ export const useUserRole = () => {
 
         if (profileError) {
           console.error('Error fetching profile role:', profileError);
-          setRole('sales_agent');
+          setRole('member');
         } else {
-          setRole(profileData?.role || 'sales_agent');
+          setRole(profileData?.role || 'member');
         }
       } catch (error) {
         console.error('Error fetching user role:', error);
-        setRole('sales_agent');
-        setOrganizationRole('sales_agent');
+        setRole('member');
+        setActiveContextRole('member');
       } finally {
         setLoading(false);
       }
@@ -60,9 +68,12 @@ export const useUserRole = () => {
 
   return { 
     role, 
-    organizationRole,
+    activeContextRole,
     loading, 
-    isAdmin: role === 'admin' || organizationRole === 'admin',
-    isOrgAdmin: organizationRole === 'admin'
+    isAdmin: role === 'admin' || activeContextRole === 'admin' || activeContextRole === 'owner',
+    isContextAdmin: activeContextRole === 'admin' || activeContextRole === 'owner',
+    // Legacy support
+    organizationRole: activeContextRole,
+    isOrgAdmin: activeContextRole === 'admin' || activeContextRole === 'owner'
   };
 };
