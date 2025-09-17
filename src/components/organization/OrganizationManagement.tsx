@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Users, Settings, Shield, Plus } from 'lucide-react';
+import { Users, Settings, Shield, Plus, Trash2 } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -43,6 +43,7 @@ export const OrganizationManagement: React.FC = () => {
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -145,6 +146,42 @@ export const OrganizationManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteOrganization = async () => {
+    if (!organization) return;
+
+    try {
+      // First delete all related data
+      await Promise.all([
+        supabase.from('organization_memberships').delete().eq('organization_id', organization.id),
+        supabase.from('organization_invitations').delete().eq('organization_id', organization.id),
+        supabase.from('module_permissions').delete().eq('organization_id', organization.id),
+        supabase.from('user_contexts').delete().eq('group_id', organization.id)
+      ]);
+
+      // Then delete the organization
+      const { error } = await supabase
+        .from('organizations')
+        .delete()
+        .eq('id', organization.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Organization deleted',
+        description: 'The organization has been permanently deleted.',
+      });
+
+      // Reload the page to update the context
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: 'Error deleting organization',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!organization) {
     return (
       <Card>
@@ -182,6 +219,47 @@ export const OrganizationManagement: React.FC = () => {
               <p className="text-muted-foreground">{organization.description}</p>
             </div>
           )}
+          
+          {/* Danger Zone */}
+          <div className="pt-6 border-t border-destructive/20">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-destructive">Danger Zone</Label>
+                <p className="text-sm text-muted-foreground">
+                  Permanently delete this organization and all its data.
+                </p>
+              </div>
+              {!showDeleteConfirm ? (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Organization
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-destructive font-medium">
+                    Are you sure? This action cannot be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDeleteOrganization}
+                    >
+                      Yes, Delete Forever
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
