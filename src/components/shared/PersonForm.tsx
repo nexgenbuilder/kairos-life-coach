@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganization } from '@/hooks/useOrganization';
 import { toast } from '@/hooks/use-toast';
 
 interface Person {
@@ -35,6 +36,7 @@ interface PersonFormProps {
 
 const PersonForm: React.FC<PersonFormProps> = ({ person, module, onSave, onCancel }) => {
   const { user } = useAuth();
+  const { activeContext } = useOrganization();
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -151,6 +153,7 @@ const PersonForm: React.FC<PersonFormProps> = ({ person, module, onSave, onCance
     try {
       const personData = {
         user_id: user.id,
+        organization_id: activeContext?.id || null,
         full_name: formData.full_name,
         email: formData.email || null,
         phone: formData.phone || null,

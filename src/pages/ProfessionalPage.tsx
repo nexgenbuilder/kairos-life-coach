@@ -13,9 +13,11 @@ import { Plus, Target, TrendingUp, Calendar, CheckCircle, Edit, Trash2, Clock, U
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useOrganization } from '@/hooks/useOrganization';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import PersonForm from '@/components/shared/PersonForm';
+import { ContextIndicator } from '@/components/shared/ContextIndicator';
 import { WorkScheduleManager } from '@/components/professional/WorkScheduleManager';
 import { PTOManager } from '@/components/professional/PTOManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -65,6 +67,7 @@ interface Task {
 const ProfessionalPage = () => {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
+  const { activeContext } = useOrganization();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,44 +94,55 @@ const ProfessionalPage = () => {
     if (user) {
       loadData();
     }
-  }, [user]);
+  }, [user, activeContext]);
 
   const loadData = async () => {
     try {
-      // Load professional opportunities (admin sees all, others see only their own)
-      let dealsQuery = supabase
-        .from('deals')
-        .select(`
-          *,
-          person:person_id (
-            id,
-            full_name,
-            email
-          )
-        `);
+      // Load professional opportunities with context filtering
+      let dealsData: any[] = [];
+      let dealsError = null;
       
-      if (!isAdmin) {
-        dealsQuery = dealsQuery.eq('user_id', user!.id);
+      if (activeContext) {
+        const result = await supabase
+          .from('deals')
+          .select('*')
+          .eq('user_id', user!.id)
+          .eq('organization_id', activeContext.id)
+          .order('created_at', { ascending: false });
+        dealsData = result.data || [];
+        dealsError = result.error;
+      } else {
+        const result = await supabase
+          .from('deals')
+          .select('*')
+          .eq('user_id', user!.id)
+          .is('organization_id', null)
+          .order('created_at', { ascending: false });
+        dealsData = result.data || [];
+        dealsError = result.error;
       }
+
+      if (dealsError) {
+        console.error('Error loading deals:', dealsError);
+        throw dealsError;
+      }
+
+      // Load people (prospects, clients, coworkers) with context filtering
+      const organizationFilter = activeContext 
+        ? { organization_id: activeContext.id }
+        : { organization_id: null };
       
-      const { data: dealsData, error: dealsError } = await dealsQuery
-        .order('created_at', { ascending: false });
-
-      if (dealsError) throw dealsError;
-
-      // Load people (prospects, clients, coworkers)
-      let peopleQuery = supabase
+      const { data: peopleData, error: peopleError } = await supabase
         .from('people')
         .select('*')
-        .in('type', ['colleague', 'manager', 'hr', 'client']);
+        .eq('user_id', user!.id)
+        .in('type', ['colleague', 'manager', 'hr', 'client'])
+        .match(organizationFilter);
       
-      if (!isAdmin) {
-        peopleQuery = peopleQuery.eq('user_id', user!.id);
+      if (peopleError) {
+        console.error('Error loading people:', peopleError);
+        throw peopleError;
       }
-
-      const { data: peopleData, error: peopleError } = await peopleQuery;
-      
-      if (peopleError) throw peopleError;
 
       setDeals(dealsData || []);
       setPeople((peopleData || []).map(person => ({
@@ -154,6 +168,7 @@ const ProfessionalPage = () => {
     try {
       const dealData = {
         user_id: user!.id,
+        organization_id: activeContext?.id || null,
         title: formData.title,
         amount_cents: parseInt(formData.amount_cents) * 100,
         currency: formData.currency,
@@ -368,6 +383,9 @@ const ProfessionalPage = () => {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex justify-between items-center">
           <div>
+            <div className="flex items-center gap-4 mb-2">
+              <ContextIndicator />
+            </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Professional
             </h1>
