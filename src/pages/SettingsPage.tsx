@@ -34,12 +34,18 @@ const SettingsPage = () => {
         {/* Show pending invitations for all users */}
         <PendingInvitations />
 
-        <Tabs defaultValue={activeContext?.type === 'individual' ? 'general' : 'organization'} className="space-y-6">
-          <TabsList className={`grid w-full ${activeContext?.type === 'individual' ? 'grid-cols-4' : 'grid-cols-5'}`}>
+        <Tabs defaultValue={activeContext?.type === 'individual' ? 'modules' : 'organization'} className="space-y-6">
+          <TabsList className={`grid w-full ${activeContext?.type === 'individual' ? 'grid-cols-5' : 'grid-cols-5'}`}>
             {activeContext?.type !== 'individual' && (
               <TabsTrigger value="organization" className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
                 {activeContext?.type === 'organization' ? 'Organization' : 'Group'}
+              </TabsTrigger>
+            )}
+            {activeContext?.type === 'individual' && (
+              <TabsTrigger value="modules" className="flex items-center gap-2">
+                <SettingsIcon className="h-4 w-4" />
+                Modules
               </TabsTrigger>
             )}
             <TabsTrigger value="integrations" className="flex items-center gap-2">
@@ -59,6 +65,12 @@ const SettingsPage = () => {
               General
             </TabsTrigger>
           </TabsList>
+
+          {activeContext?.type === 'individual' && (
+            <TabsContent value="modules" className="space-y-6">
+              <ModulePermissionsManager />
+            </TabsContent>
+          )}
 
           {activeContext?.type !== 'individual' && (
             <TabsContent value="organization" className="space-y-6">

@@ -71,7 +71,9 @@ export const ModulePermissionsManager: React.FC = () => {
     field: keyof ModulePermission, 
     value: boolean | string
   ) => {
-    if (!isAdmin()) return;
+    // Individual users can manage their own modules, organization users need admin role
+    const canManage = activeContext?.type === 'individual' || isAdmin();
+    if (!canManage) return;
 
     try {
       await updateModuleSetting(moduleName, { [field]: value });
@@ -98,7 +100,10 @@ export const ModulePermissionsManager: React.FC = () => {
     }
   };
 
-  if (!activeContext || !isAdmin()) {
+  // Individual users can manage their own modules, organization users need admin role  
+  const canManageModules = activeContext?.type === 'individual' || isAdmin();
+  
+  if (!activeContext || !canManageModules) {
     return null;
   }
 
@@ -116,15 +121,20 @@ export const ModulePermissionsManager: React.FC = () => {
     );
   }
 
+  const isIndividualMode = activeContext?.type === 'individual';
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Settings className="w-5 h-5" />
-          Module Permissions
+          {isIndividualMode ? 'Module Settings' : 'Module Permissions'}
         </CardTitle>
         <CardDescription>
-          Control which modules are available and how members can use them
+          {isIndividualMode 
+            ? 'Choose which modules you want to use in your personal workspace'
+            : 'Control which modules are available and how members can use them'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -141,7 +151,7 @@ export const ModulePermissionsManager: React.FC = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-medium">{module.label}</h4>
-                    {permission.is_enabled && (
+                    {permission.is_enabled && !isIndividualMode && (
                       <Badge variant={permission.is_shared ? "default" : "secondary"}>
                         {permission.is_shared ? "Shared" : "Admin Only"}
                       </Badge>
@@ -162,7 +172,7 @@ export const ModulePermissionsManager: React.FC = () => {
                 </div>
               </div>
 
-              {permission.is_enabled && (
+              {permission.is_enabled && !isIndividualMode && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-3 border-t">
                   <div className="flex items-center space-x-2">
                     <Switch
