@@ -157,8 +157,19 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     
     try {
       if (selectedType === 'individual') {
-        // Individual context already created during signup
-        onComplete();
+        // Create individual context - still needs an organization for the app to work
+        const newGroup = await createGroup('Personal Space', 'individual', 'Your personal workspace');
+        
+        // Wait a moment for the database to update
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast({
+          title: "Welcome to Kairos!",
+          description: "Your personal workspace is ready.",
+        });
+        
+        // Navigate directly instead of reloading
+        window.location.href = '/';
         return;
       }
 
