@@ -7,6 +7,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
+import { useChatMode } from '@/hooks/useChatMode';
+import { ModeToggle } from './ModeToggle';
+import { ModeStatusChip } from './ModeStatusChip';
+import { parseSlashCommand } from '@/utils/slashCommandParser';
 import { MentionAutocomplete } from './MentionAutocomplete';
 import { InboxView } from './InboxView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -47,7 +51,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [routingMode, setRoutingMode] = useState<'auto' | 'gpt5' | 'search'>('auto');
+  const { state: modeState, toggleMode, checkQuota, incrementUsage, handleError } = useChatMode();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
@@ -283,7 +287,14 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         return;
       }
 
-      if (routingMode === 'search') {
+      if (modeState.activeMode === 'perplexity') {
+        // Check quota before using Perplexity
+        const canUse = await checkQuota('perplexity');
+        if (!canUse) {
+          setIsLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke('perplexity-search', {
           body: { 
             message: currentInput,
@@ -294,7 +305,13 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           } : {}
         });
 
-        if (error) throw error;
+        if (error) {
+          handleError('Perplexity search failed. Switched to general mode.');
+          setIsLoading(false);
+          return;
+        }
+
+        await incrementUsage('perplexity');
 
         const aiResponseMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -306,26 +323,39 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         
         setMessages(prev => [...prev, aiResponseMessage]);
 
-      } else if (routingMode === 'gpt5') {
+      } else if (modeState.activeMode === 'gemini') {
+        // Check quota before using Gemini
+        const canUse = await checkQuota('gemini');
+        if (!canUse) {
+          setIsLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke('lovable-chat', {
           body: { 
             message: currentInput,
             context: window.location.pathname.slice(1) || 'home',
-            forceGPT5: true
+            model: 'google/gemini-2.5-flash'
           },
           headers: session ? {
             'Authorization': `Bearer ${session.access_token}`
           } : {}
         });
 
-        if (error) throw error;
+        if (error) {
+          handleError('Gemini AI failed. Switched to general mode.');
+          setIsLoading(false);
+          return;
+        }
+
+        await incrementUsage('gemini');
 
         const aiResponseMessage: Message = {
           id: (Date.now() + 1).toString(),
           content: data.response,
           sender: 'kairos',
           timestamp: new Date(),
-          source: 'lovable-ai'
+          source: 'gemini'
         };
         
         setMessages(prev => [...prev, aiResponseMessage]);
@@ -425,11 +455,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           }
         }
       }
-
-      if (routingMode !== 'auto') {
-        setTimeout(() => setRoutingMode('auto'), 100);
-      }
-
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -587,7 +612,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   return (
     <div className={cn("flex flex-col h-full bg-background", className)}>
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chat' | 'inbox')} className="flex-1 flex flex-col">
-        <TabsList className="w-full grid grid-cols-2">
+        <TabsList className="w-full grid grid-cols-2 mb-4">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             AI Chat
@@ -597,6 +622,18 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             Inbox
           </TabsTrigger>
         </TabsList>
+        
+        {activeTab === 'chat' && (
+          <div className="flex items-center justify-between px-4 mb-3">
+            <ModeToggle
+              activeMode={modeState.activeMode}
+              onToggle={toggleMode}
+              allowed={modeState.allowed}
+              quotas={modeState.quotas}
+            />
+            <ModeStatusChip mode={modeState.activeMode} />
+          </div>
+        )}
 
         <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
           {/* Messages */}
@@ -642,18 +679,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
               </div>
             ))}
           </div>
-
-          {/* Routing Mode Indicator */}
-          {routingMode !== 'auto' && (
-            <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
-              <div className="flex items-center justify-center space-x-2 text-sm text-primary">
-                {routingMode === 'gpt5' ? <Sparkles className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-                <span>
-                  {routingMode === 'gpt5' ? 'Lovable AI Mode - Powered by Gemini' : 'Search Mode - Real-time web search capabilities'}
-                </span>
-              </div>
-            </div>
-          )}
 
           {/* Attached Files Display */}
           {attachedFiles.length > 0 && (
@@ -783,26 +808,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 title="Voice input"
               >
                 {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant={routingMode === 'gpt5' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
-                disabled={isLoading}
-                className="shrink-0 h-11 w-11 sm:h-10 sm:w-10"
-                title="GPT-5 Mode"
-              >
-                <Sparkles className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={routingMode === 'search' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
-                disabled={isLoading}
-                className="shrink-0 h-11 w-11 sm:h-10 sm:w-10"
-                title="Web Search Mode"
-              >
-                <Search className="h-4 w-4" />
               </Button>
             </div>
 

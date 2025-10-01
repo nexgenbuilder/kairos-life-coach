@@ -164,10 +164,13 @@ export function useChatMode(threadId?: string) {
   const persistMode = useCallback(async (mode: ChatMode) => {
     if (!threadId) return;
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     await supabase
       .from('chat_threads')
       .upsert({
-        id: threadId,
+        user_id: user.id,
         active_mode: mode,
         updated_at: new Date().toISOString()
       });

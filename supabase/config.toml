@@ -17,3 +17,9 @@ verify_jwt = true
 
 [functions.process-receipt]
 verify_jwt = true
+
+[functions.check-ai-permissions]
+verify_jwt = true
+
+[functions.track-ai-usage]
+verify_jwt = true
