@@ -7,6 +7,7 @@ import { NotificationSettings } from '@/components/notifications/NotificationSet
 import { SecurityDashboard } from '@/components/security/SecurityDashboard';
 import { OrganizationManagement } from '@/components/organization/OrganizationManagement';
 import { InvitationManager } from '@/components/organization/InvitationManager';
+import { JoinRequestsManager } from '@/components/organization/JoinRequestsManager';
 import { ModulePermissionsManager } from '@/components/organization/ModulePermissionsManager';
 import { PendingInvitations } from '@/components/organization/PendingInvitations';
 import { 
@@ -81,6 +82,7 @@ const SettingsPage = () => {
             <TabsContent value="organization" className="space-y-6">
               {isAdmin() ? (
                 <div className="space-y-6">
+                  <JoinRequestsManager />
                   <InvitationManager />
                   <ModulePermissionsManager />
                   <OrganizationManagement />

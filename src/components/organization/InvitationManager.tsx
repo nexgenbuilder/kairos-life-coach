@@ -16,6 +16,7 @@ interface PendingInvitation {
   role: string;
   created_at: string;
   expires_at: string;
+  accepted_at: string | null;
 }
 
 export const InvitationManager: React.FC = () => {
@@ -42,8 +43,6 @@ export const InvitationManager: React.FC = () => {
         .from('organization_invitations')
         .select('*')
         .eq('organization_id', activeContext.id)
-        .is('accepted_at', null)
-        .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -183,32 +182,48 @@ export const InvitationManager: React.FC = () => {
 
         {pendingInvitations.length > 0 && (
           <div className="mt-6">
-            <h4 className="font-medium mb-3">Pending Invitations</h4>
+            <h4 className="font-medium mb-3">Sent Invitations</h4>
             <div className="space-y-2">
-              {pendingInvitations.map((invitation) => (
-                <div
-                  key={invitation.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="font-medium">{invitation.email}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        Expires {new Date(invitation.expires_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <Badge variant="secondary">{invitation.role}</Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCancelInvitation(invitation.id)}
+              {pendingInvitations.map((invitation) => {
+                const isExpired = new Date(invitation.expires_at) < new Date();
+                const isAccepted = invitation.accepted_at !== null;
+                const isPending = !isAccepted && !isExpired;
+                
+                return (
+                  <div
+                    key={invitation.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3 flex-1">
+                      <div>
+                        <p className="font-medium">{invitation.email}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {isAccepted 
+                            ? `Accepted ${new Date(invitation.accepted_at).toLocaleDateString()}`
+                            : isExpired
+                            ? `Expired ${new Date(invitation.expires_at).toLocaleDateString()}`
+                            : `Expires ${new Date(invitation.expires_at).toLocaleDateString()}`
+                          }
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{invitation.role}</Badge>
+                      {isAccepted && <Badge variant="default">Accepted</Badge>}
+                      {isExpired && <Badge variant="destructive">Expired</Badge>}
+                      {isPending && <Badge variant="outline">Pending</Badge>}
+                    </div>
+                    {!isAccepted && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCancelInvitation(invitation.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
