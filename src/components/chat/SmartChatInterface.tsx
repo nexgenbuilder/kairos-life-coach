@@ -30,9 +30,11 @@ interface Member {
 
 interface ChatInterfaceProps {
   className?: string;
+  showHeader?: boolean;
+  forceMode?: 'general' | 'perplexity' | 'gemini';
 }
 
-export function SmartChatInterface({ className }: ChatInterfaceProps) {
+export function SmartChatInterface({ className, showHeader = true, forceMode }: ChatInterfaceProps) {
   const { session } = useAuth();
   const { toast } = useToast();
   const { activeContext } = useOrganization();
@@ -833,3 +835,5 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     </div>
   );
 }
+
+export default SmartChatInterface;

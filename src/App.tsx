@@ -35,6 +35,7 @@ import PublicSpacesPage from "./pages/PublicSpacesPage";
 import SpacesPage from "./pages/SpacesPage";
 import CreateSpacePage from "./pages/CreateSpacePage";
 import AdminPage from './pages/AdminPage';
+import CommandCenterDashboard from './pages/CommandCenterDashboard';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/cloud" element={<ProtectedRoute><CloudPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+            <Route path="/command" element={<ProtectedRoute><CommandCenterDashboard /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
