@@ -124,13 +124,20 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       // If image is provided, try to process it as a receipt
       if (currentImage) {
         try {
+          console.log('Processing receipt image...');
           const { data: receiptData, error: receiptError } = await supabase.functions.invoke('process-receipt', {
             body: {
               image: currentImage
             }
           });
 
+          console.log('Receipt processing response:', { data: receiptData, error: receiptError });
+
           if (receiptError) throw receiptError;
+
+          if (!receiptData || !receiptData.items || receiptData.items.length === 0) {
+            throw new Error('No items extracted from receipt');
+          }
 
           const successMessage: Message = {
             id: (Date.now() + 1).toString(),
@@ -141,19 +148,35 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           
           setMessages(prev => [...prev, successMessage]);
 
+          toast({
+            title: "Receipt Processed",
+            description: `Successfully added ${receiptData.itemsAdded} expense items`,
+          });
+
           // Refresh Today page if it exists
           if ((window as any).refreshTodayPage) {
             (window as any).refreshTodayPage();
           }
 
+          setIsLoading(false);
           return;
         } catch (error) {
           console.error('Receipt processing error:', error);
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: `Sorry, I couldn't process that receipt. ${error instanceof Error ? error.message : 'Please try again with a clearer image.'}`,
+            sender: 'kairos',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          
           toast({
             title: "Receipt Processing Failed",
-            description: "Could not process the receipt image. Please try again.",
+            description: error instanceof Error ? error.message : "Could not process the receipt image. Please try again.",
             variant: "destructive",
           });
+          setIsLoading(false);
+          return;
         }
       }
 
