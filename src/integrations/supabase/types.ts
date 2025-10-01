@@ -2061,43 +2061,61 @@ export type Database = {
       }
       organizations: {
         Row: {
+          category: string | null
           created_at: string
           created_by: string | null
+          currency: string | null
           description: string | null
           discoverable: boolean
           id: string
           join_approval_required: boolean
+          location: string | null
           logo_url: string | null
           name: string
+          price_amount_cents: number | null
+          pricing_type: string | null
           settings: Json | null
+          subscription_interval: string | null
           type: string | null
           updated_at: string
           visibility: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           description?: string | null
           discoverable?: boolean
           id?: string
           join_approval_required?: boolean
+          location?: string | null
           logo_url?: string | null
           name: string
+          price_amount_cents?: number | null
+          pricing_type?: string | null
           settings?: Json | null
+          subscription_interval?: string | null
           type?: string | null
           updated_at?: string
           visibility?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           description?: string | null
           discoverable?: boolean
           id?: string
           join_approval_required?: boolean
+          location?: string | null
           logo_url?: string | null
           name?: string
+          price_amount_cents?: number | null
+          pricing_type?: string | null
           settings?: Json | null
+          subscription_interval?: string | null
           type?: string | null
           updated_at?: string
           visibility?: string

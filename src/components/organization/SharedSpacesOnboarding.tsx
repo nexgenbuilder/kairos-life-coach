@@ -99,6 +99,11 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   const [discoverable, setDiscoverable] = useState(false);
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [moduleSettings, setModuleSettings] = useState<Record<string, { shared: boolean; visibility: string }>>({});
+  const [category, setCategory] = useState<string>('');
+  const [location, setLocation] = useState('');
+  const [pricingType, setPricingType] = useState<'free' | 'paid'>('free');
+  const [priceAmount, setPriceAmount] = useState('');
+  const [subscriptionInterval, setSubscriptionInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isCreating, setIsCreating] = useState(false);
   
   const { createGroup } = useOrganization();
@@ -222,13 +227,18 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
       const newSpace = await createGroup(spaceName, selectedType, spaceDescription);
       
       if (newSpace?.id) {
-        // Update visibility settings for the new space
+        // Update visibility settings and additional fields for the new space
         await supabase
           .from('organizations')
           .update({
             visibility,
             discoverable: visibility === 'public' && discoverable,
             join_approval_required: joinApprovalRequired,
+            category: category || null,
+            location: location || null,
+            pricing_type: pricingType,
+            price_amount_cents: pricingType === 'paid' ? Math.round(parseFloat(priceAmount || '0') * 100) : 0,
+            subscription_interval: pricingType === 'paid' ? subscriptionInterval : null,
           })
           .eq('id', newSpace.id);
       }
@@ -339,6 +349,35 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <select
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                >
+                  <option value="">Select a category</option>
+                  <option value="business">Business</option>
+                  <option value="non_profit">Non-Profit</option>
+                  <option value="church">Church</option>
+                  <option value="community">Community</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="dating">Dating</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location (Optional)</Label>
+                <Input
+                  id="location"
+                  placeholder="City, Country"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+              </div>
+
               <div className="flex justify-between">
                 <Button
                   variant="outline"
@@ -371,7 +410,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     );
   }
 
-  // Visibility settings step (step 4, only for non-individual)
+  // Visibility and pricing settings step (step 4, only for non-individual)
   if (step === 4 && selectedType !== 'individual') {
     const selectedTypeInfo = SPACE_TYPES.find(t => t.value === selectedType)!;
     
@@ -380,9 +419,9 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         <div className="max-w-2xl mx-auto p-6">
           <Card>
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Space Visibility</CardTitle>
+              <CardTitle className="text-2xl">Space Settings</CardTitle>
               <CardDescription>
-                Choose who can discover and join your space
+                Configure visibility and pricing for your space
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -419,29 +458,91 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
               </RadioGroup>
 
               {visibility === 'public' && (
-                <div className="space-y-4 p-4 bg-accent/20 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="discoverable" 
-                      checked={discoverable}
-                      onCheckedChange={(checked) => setDiscoverable(checked as boolean)}
-                    />
-                    <Label htmlFor="discoverable" className="cursor-pointer">
-                      Make this space discoverable in public listings
-                    </Label>
+                <>
+                  <div className="space-y-4 p-4 bg-accent/20 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="discoverable" 
+                        checked={discoverable}
+                        onCheckedChange={(checked) => setDiscoverable(checked as boolean)}
+                      />
+                      <Label htmlFor="discoverable" className="cursor-pointer">
+                        Make this space discoverable in public listings
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="approval" 
+                        checked={joinApprovalRequired}
+                        onCheckedChange={(checked) => setJoinApprovalRequired(checked as boolean)}
+                      />
+                      <Label htmlFor="approval" className="cursor-pointer">
+                        Require approval for join requests
+                      </Label>
+                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="approval" 
-                      checked={joinApprovalRequired}
-                      onCheckedChange={(checked) => setJoinApprovalRequired(checked as boolean)}
-                    />
-                    <Label htmlFor="approval" className="cursor-pointer">
-                      Require approval for join requests
-                    </Label>
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Pricing</Label>
+                    <RadioGroup value={pricingType} onValueChange={(value: any) => setPricingType(value)}>
+                      <div className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-accent/50" onClick={() => setPricingType('free')}>
+                        <RadioGroupItem value="free" id="free" />
+                        <div className="flex-1">
+                          <Label htmlFor="free" className="text-base font-semibold cursor-pointer">
+                            Free
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Anyone can join without payment
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-accent/50" onClick={() => setPricingType('paid')}>
+                        <RadioGroupItem value="paid" id="paid" />
+                        <div className="flex-1">
+                          <Label htmlFor="paid" className="text-base font-semibold cursor-pointer">
+                            Paid
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Charge a membership fee
+                          </p>
+                        </div>
+                      </div>
+                    </RadioGroup>
+
+                    {pricingType === 'paid' && (
+                      <div className="space-y-4 p-4 bg-accent/20 rounded-lg">
+                        <div className="space-y-2">
+                          <Label htmlFor="price">Price (USD)</Label>
+                          <Input
+                            id="price"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="9.99"
+                            value={priceAmount}
+                            onChange={(e) => setPriceAmount(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Billing Interval</Label>
+                          <RadioGroup value={subscriptionInterval} onValueChange={(value: any) => setSubscriptionInterval(value)}>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="monthly" id="monthly" />
+                              <Label htmlFor="monthly" className="cursor-pointer">Monthly</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yearly" id="yearly" />
+                              <Label htmlFor="yearly" className="cursor-pointer">Yearly</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
+                </>
               )}
 
               <div className="flex justify-between pt-4">
