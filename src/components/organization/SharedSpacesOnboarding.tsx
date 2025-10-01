@@ -188,6 +188,8 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
       if (selectedType === 'individual') {
         // For individual, use default name if empty
         const individualName = spaceName.trim() || 'Personal Space';
+        console.log('[Onboarding] Creating individual space with modules:', selectedModules);
+        
         const newSpace = await createGroup(individualName, 'individual', 'Your personal workspace');
         
         if (!newSpace?.id) {
@@ -208,35 +210,35 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         
         if (updateError) {
           console.error('[Onboarding] Error updating visibility:', updateError);
+          throw updateError;
         }
         
-        // Update module permissions with selected modules
+        // Create module permissions with selected modules
         if (selectedModules.length > 0) {
-          const { error: modulesError } = await supabase
+          const { error: insertError } = await supabase
             .from('module_permissions')
-            .delete()
-            .eq('organization_id', newSpace.id);
-
-          if (!modulesError) {
-            await supabase
-              .from('module_permissions')
-              .insert(
-                selectedModules.map(moduleName => ({
-                  organization_id: newSpace.id,
-                  module_name: moduleName,
-                  is_enabled: true,
-                  is_shared: false, // Individual spaces don't share
-                  visibility: 'private',
-                  can_view: true,
-                  can_edit: true,
-                  can_admin: true,
-                }))
-              );
+            .insert(
+              selectedModules.map(moduleName => ({
+                organization_id: newSpace.id,
+                module_name: moduleName,
+                is_enabled: true,
+                is_shared: false,
+                visibility: 'private',
+                can_view: true,
+                can_edit: true,
+                can_admin: true,
+              }))
+            );
+          
+          if (insertError) {
+            console.error('[Onboarding] Error creating module permissions:', insertError);
+            throw insertError;
           }
+          
+          console.log('[Onboarding] Module permissions created');
         }
         
-        // Small delay to ensure DB writes complete
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         toast({
           title: "Welcome to Kairos!",
@@ -258,13 +260,15 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         return;
       }
 
+      console.log('[Onboarding] Creating space:', { spaceName, selectedType, selectedModules });
+
       const newSpace = await createGroup(spaceName.trim(), selectedType, spaceDescription.trim());
       
       if (!newSpace?.id) {
         throw new Error('Failed to create space');
       }
       
-      console.log('[Onboarding] Space created:', newSpace.id);
+      console.log('[Onboarding] Space created successfully:', newSpace.id);
       
       // Update visibility settings and additional fields
       const { error: updateError } = await supabase
@@ -283,43 +287,41 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
       
       if (updateError) {
         console.error('[Onboarding] Error updating space settings:', updateError);
+        throw updateError;
       }
       
-      // Update module permissions with selected modules and settings
+      console.log('[Onboarding] Space settings updated');
+      
+      // Create module permissions with selected modules and settings
       if (selectedModules.length > 0) {
-        // Delete default modules first
-        const { error: deleteError } = await supabase
+        const modulePermissions = selectedModules.map(moduleName => {
+          const settings = moduleSettings[moduleName] || { shared: true, visibility: 'all_members' };
+          return {
+            organization_id: newSpace.id,
+            module_name: moduleName,
+            is_enabled: true,
+            is_shared: settings.shared,
+            visibility: settings.visibility,
+            can_view: true,
+            can_edit: settings.shared,
+            can_admin: settings.visibility === 'admin_only',
+          };
+        });
+        
+        const { error: insertError } = await supabase
           .from('module_permissions')
-          .delete()
-          .eq('organization_id', newSpace.id);
-
-        if (!deleteError) {
-          const { error: insertError } = await supabase
-            .from('module_permissions')
-            .insert(
-              selectedModules.map(moduleName => {
-                const settings = moduleSettings[moduleName] || { shared: true, visibility: 'all_members' };
-                return {
-                  organization_id: newSpace.id,
-                  module_name: moduleName,
-                  is_enabled: true,
-                  is_shared: settings.shared,
-                  visibility: settings.visibility,
-                  can_view: true,
-                  can_edit: settings.shared,
-                  can_admin: settings.visibility === 'admin_only',
-                };
-              })
-            );
-          
-          if (insertError) {
-            console.error('[Onboarding] Error inserting module permissions:', insertError);
-          }
+          .insert(modulePermissions);
+        
+        if (insertError) {
+          console.error('[Onboarding] Error creating module permissions:', insertError);
+          throw insertError;
         }
+        
+        console.log('[Onboarding] Module permissions created:', selectedModules);
       }
       
-      // Small delay to ensure all DB writes complete
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Delay to ensure all DB writes complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
         title: "Space created successfully!",

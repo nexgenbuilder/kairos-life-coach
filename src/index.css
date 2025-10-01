@@ -118,5 +118,17 @@ All colors MUST be HSL.
     background-attachment: fixed;
     background-position: center;
     background-repeat: no-repeat;
+    min-height: 100vh;
+  }
+  
+  /* Ensure main content areas have transparent backgrounds to show body background */
+  #root {
+    background: transparent;
+    min-height: 100vh;
+  }
+  
+  /* Override any opaque backgrounds in main layout areas */
+  .min-h-screen {
+    background: transparent;
   }
 }

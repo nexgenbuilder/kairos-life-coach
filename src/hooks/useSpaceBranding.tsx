@@ -113,6 +113,12 @@ export function useSpaceBranding() {
       if (backgroundImage) {
         console.log('[useSpaceBranding] Setting background image:', backgroundImage);
         root.style.setProperty('--background-image', `url("${backgroundImage}")`);
+        
+        // Verify image loads
+        const img = new Image();
+        img.onload = () => console.log('[useSpaceBranding] Background image loaded successfully');
+        img.onerror = (e) => console.error('[useSpaceBranding] Background image failed to load:', e);
+        img.src = backgroundImage;
       } else {
         console.log('[useSpaceBranding] No background image');
       }

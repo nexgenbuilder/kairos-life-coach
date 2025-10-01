@@ -217,6 +217,8 @@ export const useOrganization = () => {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      console.log('[useOrganization] Creating group:', { name, type, description });
+      
       // Ensure user is authenticated
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error('User not authenticated');
@@ -233,7 +235,12 @@ export const useOrganization = () => {
         .select()
         .single();
 
-      if (groupError) throw groupError;
+      if (groupError) {
+        console.error('[useOrganization] Error creating group:', groupError);
+        throw groupError;
+      }
+
+      console.log('[useOrganization] Group created:', groupData.id);
 
       // Create membership for creator
       const { error: membershipError } = await supabase
@@ -244,7 +251,12 @@ export const useOrganization = () => {
           role: 'owner',
         });
 
-      if (membershipError) throw membershipError;
+      if (membershipError) {
+        console.error('[useOrganization] Error creating membership:', membershipError);
+        throw membershipError;
+      }
+
+      console.log('[useOrganization] Membership created');
 
       // Set all other contexts to inactive first
       const { error: deactivateError } = await supabase
@@ -252,7 +264,10 @@ export const useOrganization = () => {
         .update({ is_active: false })
         .eq('user_id', user.id);
 
-      if (deactivateError) throw deactivateError;
+      if (deactivateError) {
+        console.error('[useOrganization] Error deactivating contexts:', deactivateError);
+        throw deactivateError;
+      }
 
       // Add to user contexts and set as active
       const { error: contextError } = await supabase
@@ -263,28 +278,19 @@ export const useOrganization = () => {
           is_active: true,
         });
 
-      if (contextError) throw contextError;
+      if (contextError) {
+        console.error('[useOrganization] Error creating context:', contextError);
+        throw contextError;
+      }
 
-      // Create default module settings based on group type
-      const defaultModules = getDefaultModulesForType(type);
+      console.log('[useOrganization] User context created and activated');
+
+      // NOTE: Module permissions are intentionally NOT created here
+      // The caller (e.g., SharedSpacesOnboarding) will create them with the correct settings
       
-      const { error: modulesError } = await supabase
-        .from('module_permissions')
-        .insert(
-          defaultModules.map(module => ({
-            organization_id: groupData.id,
-            module_name: module.name,
-            is_enabled: true,
-            is_shared: module.shared,
-            visibility: module.visibility,
-          }))
-        );
-
-      if (modulesError) throw modulesError;
-
       return groupData;
     } catch (error) {
-      console.error('Error creating group:', error);
+      console.error('[useOrganization] Error creating group:', error);
       throw error;
     }
   };
