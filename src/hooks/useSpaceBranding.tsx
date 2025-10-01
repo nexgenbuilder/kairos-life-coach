@@ -68,7 +68,7 @@ export function useSpaceBranding() {
     root.style.removeProperty('--primary');
     root.style.removeProperty('--secondary');
     root.style.removeProperty('--accent');
-    body.style.backgroundImage = '';
+    root.style.removeProperty('--background-image');
     body.style.fontFamily = '';
     
     if (!activeContext?.settings) return;
@@ -102,13 +102,9 @@ export function useSpaceBranding() {
         }
       }
 
-      // Apply background image with proper layering
+      // Apply background image as CSS custom property for proper layering
       if (backgroundImage) {
-        body.style.backgroundImage = `url(${backgroundImage})`;
-        body.style.backgroundSize = 'cover';
-        body.style.backgroundAttachment = 'fixed';
-        body.style.backgroundPosition = 'center';
-        body.style.backgroundRepeat = 'no-repeat';
+        root.style.setProperty('--background-image', `url(${backgroundImage})`);
       }
 
       // Apply typography
@@ -124,7 +120,7 @@ export function useSpaceBranding() {
       root.style.removeProperty('--accent');
       root.style.removeProperty('--background');
       root.style.removeProperty('--foreground');
-      body.style.backgroundImage = '';
+      root.style.removeProperty('--background-image');
       body.style.fontFamily = '';
     };
   }, [activeContext]);
