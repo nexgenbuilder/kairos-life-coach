@@ -7,10 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
-import { useChatMode } from '@/hooks/useChatMode';
-import { ModeToggle } from './ModeToggle';
-import { ModeStatusChip } from './ModeStatusChip';
-import { parseSlashCommand } from '@/utils/slashCommandParser';
 import { MentionAutocomplete } from './MentionAutocomplete';
 import { InboxView } from './InboxView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,12 +36,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const { session } = useAuth();
   const { toast } = useToast();
   const { activeContext } = useOrganization();
-  
-  // Generate stable threadId for this chat session
-  const threadId = React.useMemo(() => {
-    return activeContext?.id ? `thread-${activeContext.id}` : 'default-thread';
-  }, [activeContext?.id]);
-  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -57,7 +47,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { state: modeState, toggleMode, checkQuota, incrementUsage, handleError } = useChatMode(threadId);
+  const [routingMode, setRoutingMode] = useState<'auto' | 'gpt5' | 'search'>('auto');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
@@ -293,14 +283,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         return;
       }
 
-      if (modeState.activeMode === 'perplexity') {
-        // Check quota before using Perplexity
-        const canUse = await checkQuota('perplexity');
-        if (!canUse) {
-          setIsLoading(false);
-          return;
-        }
-
+      if (routingMode === 'search') {
         const { data, error } = await supabase.functions.invoke('perplexity-search', {
           body: { 
             message: currentInput,
@@ -311,13 +294,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           } : {}
         });
 
-        if (error) {
-          handleError('Perplexity search failed. Switched to general mode.');
-          setIsLoading(false);
-          return;
-        }
-
-        await incrementUsage('perplexity');
+        if (error) throw error;
 
         const aiResponseMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -329,39 +306,26 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         
         setMessages(prev => [...prev, aiResponseMessage]);
 
-      } else if (modeState.activeMode === 'gemini') {
-        // Check quota before using Gemini
-        const canUse = await checkQuota('gemini');
-        if (!canUse) {
-          setIsLoading(false);
-          return;
-        }
-
+      } else if (routingMode === 'gpt5') {
         const { data, error } = await supabase.functions.invoke('lovable-chat', {
           body: { 
             message: currentInput,
             context: window.location.pathname.slice(1) || 'home',
-            forceGPT5: false
+            forceGPT5: true
           },
           headers: session ? {
             'Authorization': `Bearer ${session.access_token}`
           } : {}
         });
 
-        if (error) {
-          handleError('Gemini AI failed. Switched to general mode.');
-          setIsLoading(false);
-          return;
-        }
-
-        await incrementUsage('gemini');
+        if (error) throw error;
 
         const aiResponseMessage: Message = {
           id: (Date.now() + 1).toString(),
           content: data.response,
           sender: 'kairos',
           timestamp: new Date(),
-          source: 'gemini'
+          source: 'lovable-ai'
         };
         
         setMessages(prev => [...prev, aiResponseMessage]);
@@ -383,53 +347,89 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         }
 
       } else {
-        // General mode: default to lovable-chat
-        const { data, error } = await supabase.functions.invoke('lovable-chat', {
-          body: { 
-            message: currentInput,
-            context: window.location.pathname.slice(1) || 'home',
-            forceGPT5: false
-          },
-          headers: session ? {
-            'Authorization': `Bearer ${session.access_token}`
-          } : {}
-        });
+        const actionType = detectActionType(currentInput);
 
-        if (error) throw error;
-
-        const aiResponseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.response,
-          sender: 'kairos',
-          timestamp: new Date(),
-          source: data.source || 'lovable-ai'
-        };
-        
-        setMessages(prev => [...prev, aiResponseMessage]);
-
-        if ((window as any).refreshTodayPage) {
-          (window as any).refreshTodayPage();
-        }
-        if ((window as any).refreshDashboard) {
-          (window as any).refreshDashboard();
-        }
-
-        try {
-          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+        if (actionType !== 'chat') {
+          const { data, error } = await supabase.functions.invoke('smart-action', {
             body: { 
-              text: data.response,
-              voice: 'alloy'
-            }
+              message: currentInput,
+              actionType: actionType,
+              context: window.location.pathname.slice(1) || 'home'
+            },
+            headers: session ? {
+              'Authorization': `Bearer ${session.access_token}`
+            } : {}
           });
 
-          if (!ttsError && ttsData.audioContent) {
-            const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
-            audio.play().catch(err => console.error('Error playing audio:', err));
+          if (error) throw error;
+
+          const aiResponseMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: data.response,
+            sender: 'kairos',
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, aiResponseMessage]);
+
+          if ((window as any).refreshTodayPage) {
+            (window as any).refreshTodayPage();
           }
-        } catch (error) {
-          console.error('Error generating speech:', error);
+          if ((window as any).refreshDashboard) {
+            (window as any).refreshDashboard();
+          }
+        } else {
+          const { data, error } = await supabase.functions.invoke('lovable-chat', {
+            body: { 
+              message: currentInput,
+              context: window.location.pathname.slice(1) || 'home'
+            },
+            headers: session ? {
+              'Authorization': `Bearer ${session.access_token}`
+            } : {}
+          });
+
+          if (error) throw error;
+
+          const aiResponseMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: data.response,
+            sender: 'kairos',
+            timestamp: new Date(),
+            source: data.source || 'lovable-ai'
+          };
+          
+          setMessages(prev => [...prev, aiResponseMessage]);
+
+          if ((window as any).refreshTodayPage) {
+            (window as any).refreshTodayPage();
+          }
+          if ((window as any).refreshDashboard) {
+            (window as any).refreshDashboard();
+          }
+
+          try {
+            const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+              body: { 
+                text: data.response,
+                voice: 'alloy'
+              }
+            });
+
+            if (!ttsError && ttsData.audioContent) {
+              const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
+              audio.play().catch(err => console.error('Error playing audio:', err));
+            }
+          } catch (error) {
+            console.error('Error generating speech:', error);
+          }
         }
       }
+
+      if (routingMode !== 'auto') {
+        setTimeout(() => setRoutingMode('auto'), 100);
+      }
+
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -587,7 +587,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   return (
     <div className={cn("flex flex-col h-full bg-background", className)}>
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chat' | 'inbox')} className="flex-1 flex flex-col">
-        <TabsList className="w-full grid grid-cols-2 mb-4">
+        <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             AI Chat
@@ -597,18 +597,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             Inbox
           </TabsTrigger>
         </TabsList>
-        
-        {activeTab === 'chat' && (
-          <div className="flex items-center justify-between px-4 mb-3">
-            <ModeToggle
-              activeMode={modeState.activeMode}
-              onToggle={toggleMode}
-              allowed={modeState.allowed}
-              quotas={modeState.quotas}
-            />
-            <ModeStatusChip mode={modeState.activeMode} />
-          </div>
-        )}
 
         <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
           {/* Messages */}
@@ -655,6 +643,18 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             ))}
           </div>
 
+          {/* Routing Mode Indicator */}
+          {routingMode !== 'auto' && (
+            <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
+              <div className="flex items-center justify-center space-x-2 text-sm text-primary">
+                {routingMode === 'gpt5' ? <Sparkles className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+                <span>
+                  {routingMode === 'gpt5' ? 'Lovable AI Mode - Powered by Gemini' : 'Search Mode - Real-time web search capabilities'}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Attached Files Display */}
           {attachedFiles.length > 0 && (
             <div className="border-t p-3 bg-muted/30">
@@ -681,7 +681,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           )}
 
           {/* Input Area */}
-          <div className="border-t border-border">
+          <div className="p-4 border-t border-border">
             {showMentions && activeContext && (
               <MentionAutocomplete
                 searchTerm={mentionSearch}
@@ -690,37 +690,31 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 position={mentionPosition}
               />
             )}
-            
-            {/* Image Preview */}
             {selectedImage && (
-              <div className="p-3 border-b border-border">
-                <div className="relative inline-block">
-                  <img 
-                    src={selectedImage} 
-                    alt="Selected" 
-                    className="max-h-24 rounded-lg"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-destructive hover:bg-destructive/90"
-                    onClick={() => setSelectedImage(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+              <div className="mb-2 relative inline-block">
+                <img 
+                  src={selectedImage} 
+                  alt="Selected" 
+                  className="max-h-20 rounded-lg"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive hover:bg-destructive/90"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             )}
-
-            {/* Action Buttons Row - Mobile Optimized */}
-            <div className="p-3 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <div className="flex space-x-2">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
                     disabled={isLoading || !activeContext}
-                    className="shrink-0 h-11 w-11 sm:h-10 sm:w-10"
+                    className="shrink-0"
                     title="Attach files from Cloud Storage"
                   >
                     <Paperclip className="h-4 w-4" />
@@ -769,7 +763,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
-                className="shrink-0 h-11 w-11 sm:h-10 sm:w-10"
+                className="shrink-0"
                 title="Upload receipt image"
               >
                 <Image className="h-4 w-4" />
@@ -779,15 +773,31 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 size="icon"
                 onClick={toggleListening}
                 disabled={isLoading}
-                className={cn("shrink-0 h-11 w-11 sm:h-10 sm:w-10", isListening && "bg-destructive text-destructive-foreground")}
+                className={cn("shrink-0", isListening && "bg-destructive text-destructive-foreground")}
                 title="Voice input"
               >
                 {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </Button>
-            </div>
-
-            {/* Input Field Row - Full Width */}
-            <div className="px-3 pb-3 flex items-end gap-2">
+              <Button
+                variant={routingMode === 'gpt5' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
+                disabled={isLoading}
+                className="shrink-0"
+                title="GPT-5 Mode"
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={routingMode === 'search' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
+                disabled={isLoading}
+                className="shrink-0"
+                title="Web Search Mode"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
               <Input
                 ref={inputRef}
                 value={inputValue}
@@ -799,18 +809,17 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 }}
                 placeholder={activeContext ? "Message AI or @mention teammates..." : "Ask Kairos anything..."}
                 disabled={isLoading}
-                className="flex-1 min-h-[48px] h-auto py-3 px-4"
+                className="flex-1"
               />
               <Button 
                 onClick={handleSendMessage} 
                 disabled={isLoading || (!inputValue.trim() && !selectedImage && attachedFiles.length === 0)}
-                className="shrink-0 h-12 w-12"
-                size="icon"
+                className="shrink-0"
               >
                 {isLoading ? (
-                  <Bot className="h-5 w-5 animate-pulse" />
+                  <Bot className="h-4 w-4 animate-pulse" />
                 ) : (
-                  <Send className="h-5 w-5" />
+                  <Send className="h-4 w-4" />
                 )}
               </Button>
             </div>

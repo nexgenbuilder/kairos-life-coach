@@ -91,10 +91,10 @@ serve(async (req) => {
     
     const userId = user.id;
 
-    // Rate limiting - increased for development
+    // Rate limiting
     const { data: rateLimitOk } = await supabase.rpc('check_rate_limit', {
       p_endpoint: `smart-action-${actionType}`,
-      p_limit: 100,
+      p_limit: 20,
       p_window_minutes: 60
     });
     
