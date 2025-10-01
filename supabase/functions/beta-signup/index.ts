@@ -6,6 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Input validation
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const sanitizeString = (str: string): string => {
+  return str.trim().replace(/[<>'"]/g, '');
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -15,6 +21,7 @@ serve(async (req) => {
   try {
     const { email, name } = await req.json();
     
+    // Validate inputs
     if (!email || !name) {
       return new Response(
         JSON.stringify({ 
@@ -27,16 +34,46 @@ serve(async (req) => {
       );
     }
 
+    // Validate email format
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid email format' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+
+    // Validate string lengths
+    if (name.length > 100 || email.length > 255) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Input exceeds maximum length' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+
+    // Sanitize inputs
+    const sanitizedName = sanitizeString(name);
+    const sanitizedEmail = sanitizeString(email);
+
     // Create Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Insert beta signup request
+    // Insert beta signup request with sanitized inputs
     const { data, error } = await supabase
       .from('beta_signups')
-      .insert([{ email, name }]);
+      .insert([{ email: sanitizedEmail, name: sanitizedName }]);
 
     if (error) {
       // Check if it's a duplicate email error
@@ -56,7 +93,7 @@ serve(async (req) => {
       throw error;
     }
 
-    console.log('Beta signup request received:', { email, name });
+    console.log('Beta signup request received from:', sanitizedEmail);
 
     return new Response(
       JSON.stringify({ 
