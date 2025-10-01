@@ -538,7 +538,8 @@ const DashboardPage = () => {
   return (
     <AppLayout>
       <ErrorBoundary>
-      <div className={`${isMobile ? 'p-2 space-y-3' : 'p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 md:space-y-8'}`}>
+      <div className="w-full max-w-full overflow-x-hidden">
+      <div className={`${isMobile ? 'p-2 space-y-3' : 'p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 md:space-y-8'} w-full`}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
           <div className="space-y-1 sm:space-y-2">
@@ -564,7 +565,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Key Metrics Overview */}
-        <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4'}`}>
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4'}`}>
           <Card>
             <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${isMobile ? 'p-2' : 'p-4 sm:p-6'}`}>
               <CardTitle className="text-xs sm:text-sm font-medium">Net Worth</CardTitle>
@@ -1181,6 +1182,7 @@ const DashboardPage = () => {
           </TabsContent>
         </Tabs>
         </div>
+      </div>
       </ErrorBoundary>
     </AppLayout>
   );
