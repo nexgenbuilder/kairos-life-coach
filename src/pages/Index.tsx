@@ -8,54 +8,25 @@ import { MiniDashGrid } from '@/components/hub/MiniDashGrid';
 import { TaskSheet } from '@/components/hub/TaskSheet';
 import { ExpenseSheet } from '@/components/hub/ExpenseSheet';
 import { LeadSheet } from '@/components/hub/LeadSheet';
-import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
 
 const Index = () => {
-  const { user, loading: authLoading } = useAuth();
   const { activeContext, loading: orgLoading } = useOrganization();
   const navigate = useNavigate();
   const [taskSheetOpen, setTaskSheetOpen] = useState(false);
   const [expenseSheetOpen, setExpenseSheetOpen] = useState(false);
   const [leadSheetOpen, setLeadSheetOpen] = useState(false);
-  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    console.log('[Index] Auth loading:', authLoading, 'Org loading:', orgLoading, 'User:', !!user, 'ActiveContext:', !!activeContext);
-    
-    // Wait for both auth and org to finish loading before making navigation decisions
-    if (authLoading || orgLoading) {
-      console.log('[Index] Still loading, waiting...');
-      return;
-    }
-
-    // Prevent multiple redirects
-    if (hasRedirected) {
-      console.log('[Index] Already redirected, skipping');
-      return;
-    }
-
-    // If no user, go to auth page
-    if (!user) {
-      console.log('[Index] No user, redirecting to /auth');
-      setHasRedirected(true);
-      navigate("/auth", { replace: true });
-      return;
-    }
-
-    // If user exists but no active context, go to onboarding
-    if (!activeContext) {
-      console.log('[Index] User exists but no active context, redirecting to /onboarding');
-      setHasRedirected(true);
+    // If user has no active context, redirect to onboarding
+    if (!orgLoading && !activeContext) {
+      console.log('[Index] No active context, redirecting to onboarding');
       navigate("/onboarding", { replace: true });
-      return;
     }
+  }, [activeContext, orgLoading, navigate]);
 
-    console.log('[Index] All good, showing dashboard');
-  }, [user, authLoading, orgLoading, activeContext, navigate, hasRedirected]);
-
-  // Show loading while auth or org is loading
-  if (authLoading || orgLoading) {
+  // Show loading while org is loading
+  if (orgLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -66,8 +37,8 @@ const Index = () => {
     );
   }
 
-  // Don't render anything if we're missing user or context (navigation will handle it)
-  if (!user || !activeContext) {
+  // Don't render anything if we're missing context (navigation will handle it)
+  if (!activeContext) {
     return null;
   }
 

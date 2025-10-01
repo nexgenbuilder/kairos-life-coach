@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ui/error-boundary";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import SignupPage from "./pages/SignupPage";
 import AuthPage from "./pages/AuthPage";
@@ -44,25 +45,25 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/dashboard" element={<Index />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/today" element={<TodayPage />} />
-            <Route path="/money" element={<MoneyPage />} />
-            <Route path="/health" element={<HealthPage />} />
-            <Route path="/fitness" element={<FitnessPage />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/business" element={<BusinessPage />} />
-            <Route path="/professional" element={<ProfessionalPage />} />
-            <Route path="/social" element={<SocialPage />} />
-            <Route path="/love" element={<LovePage />} />
-            <Route path="/creators" element={<CreatorsPage />} />
-            <Route path="/crypto" element={<CryptoPage />} />
-            <Route path="/stocks" element={<StocksPage />} />
-            <Route path="/news" element={<NewsPage />} />
-            <Route path="/cloud" element={<CloudPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+            <Route path="/today" element={<ProtectedRoute><TodayPage /></ProtectedRoute>} />
+            <Route path="/money" element={<ProtectedRoute><MoneyPage /></ProtectedRoute>} />
+            <Route path="/health" element={<ProtectedRoute><HealthPage /></ProtectedRoute>} />
+            <Route path="/fitness" element={<ProtectedRoute><FitnessPage /></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+            <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/business" element={<ProtectedRoute><BusinessPage /></ProtectedRoute>} />
+            <Route path="/professional" element={<ProtectedRoute><ProfessionalPage /></ProtectedRoute>} />
+            <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
+            <Route path="/love" element={<ProtectedRoute><LovePage /></ProtectedRoute>} />
+            <Route path="/creators" element={<ProtectedRoute><CreatorsPage /></ProtectedRoute>} />
+            <Route path="/crypto" element={<ProtectedRoute><CryptoPage /></ProtectedRoute>} />
+            <Route path="/stocks" element={<ProtectedRoute><StocksPage /></ProtectedRoute>} />
+            <Route path="/news" element={<ProtectedRoute><NewsPage /></ProtectedRoute>} />
+            <Route path="/cloud" element={<ProtectedRoute><CloudPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
