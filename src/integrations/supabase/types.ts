@@ -2881,14 +2881,24 @@ export type Database = {
         Returns: string
       }
       log_audit: {
-        Args: {
-          p_ip_address?: string
-          p_new_data?: Json
-          p_old_data?: Json
-          p_operation: string
-          p_table_name: string
-          p_user_agent?: string
-        }
+        Args:
+          | {
+              p_ip_address?: string
+              p_new_data?: Json
+              p_old_data?: Json
+              p_operation: string
+              p_table_name: string
+              p_user_agent?: string
+            }
+          | {
+              p_ip_address?: string
+              p_new_data?: Json
+              p_old_data?: Json
+              p_operation: string
+              p_table_name: string
+              p_user_agent?: string
+              p_user_id?: string
+            }
         Returns: string
       }
       switch_user_context: {
