@@ -31,6 +31,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('[lovable-chat] Request received');
+    
     const contentType = req.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       logSecurityEvent('INVALID_CONTENT_TYPE', { contentType }, req);
@@ -40,26 +42,37 @@ serve(async (req) => {
       );
     }
 
-    const { message, context, forceGPT5 } = await req.json();
+    const requestBody = await req.json();
+    console.log('[lovable-chat] Request body keys:', Object.keys(requestBody));
+    
+    const { message, context, forceGPT5, messages, model } = requestBody;
 
-    if (!message || typeof message !== 'string') {
-      logSecurityEvent('INVALID_INPUT', { message }, req);
+    // Support both single message and messages array format
+    let conversationMessages = messages || [];
+    let sanitizedMessage = '';
+    
+    if (message && typeof message === 'string') {
+      sanitizedMessage = sanitizeInput(message);
+    } else if (!conversationMessages || conversationMessages.length === 0) {
+      logSecurityEvent('INVALID_INPUT', { message, messages }, req);
       return new Response(
         JSON.stringify({ error: 'Invalid message format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const sanitizedMessage = sanitizeInput(message);
+    
+    console.log('[lovable-chat] Processing with', conversationMessages.length, 'messages or single message:', !!sanitizedMessage);
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
     if (!lovableApiKey) {
-      console.error('LOVABLE_API_KEY not configured');
+      console.error('[lovable-chat] LOVABLE_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'AI service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    console.log('[lovable-chat] API key found');
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
@@ -82,11 +95,14 @@ serve(async (req) => {
     
     if (authError || !user) {
       logSecurityEvent('AUTH_FAILURE', { error: authError }, req);
+      console.error('[lovable-chat] Auth failed:', authError);
       return new Response(
         JSON.stringify({ error: 'Authentication failed' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    console.log('[lovable-chat] User authenticated:', user.id);
 
     // Rate limiting
     const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc(
@@ -119,7 +135,19 @@ Your capabilities:
 Be helpful, concise, and actionable in your responses. When users mention creating tasks, logging expenses, tracking workouts, etc., acknowledge that they can do so directly through the chat.`;
 
     // Call Lovable AI Gateway
-    const aiModel = forceGPT5 ? 'openai/gpt-5-mini' : 'google/gemini-2.5-flash';
+    const aiModel = model || (forceGPT5 ? 'openai/gpt-5-mini' : 'google/gemini-2.5-flash');
+    
+    console.log('[lovable-chat] Using AI model:', aiModel);
+    
+    // Build messages array - support both formats
+    const messagesToSend = conversationMessages.length > 0
+      ? [{ role: 'system', content: systemPrompt }, ...conversationMessages]
+      : [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: sanitizedMessage }
+        ];
+    
+    console.log('[lovable-chat] Sending', messagesToSend.length, 'messages to AI Gateway');
     
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -129,18 +157,17 @@ Be helpful, concise, and actionable in your responses. When users mention creati
       },
       body: JSON.stringify({
         model: aiModel,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: sanitizedMessage }
-        ],
+        messages: messagesToSend,
         temperature: 0.7,
         max_tokens: 500
       }),
     });
+    
+    console.log('[lovable-chat] AI Gateway response status:', aiResponse.status);
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('Lovable AI error:', aiResponse.status, errorText);
+      console.error('[lovable-chat] Lovable AI error:', aiResponse.status, errorText);
 
       if (aiResponse.status === 429) {
         return new Response(
@@ -169,35 +196,54 @@ Be helpful, concise, and actionable in your responses. When users mention creati
     }
 
     const aiData = await aiResponse.json();
-    const aiMessage = aiData.choices[0].message.content;
-
-    // Check if user is trying to create a task
-    const taskIntent = /create.*task|add.*task|new.*task|make.*task/i.test(sanitizedMessage);
+    console.log('[lovable-chat] AI response data keys:', Object.keys(aiData));
     
-    if (taskIntent) {
-      const taskTitle = extractTaskTitle(sanitizedMessage);
-      const priority = extractPriority(sanitizedMessage);
+    const aiMessage = aiData.choices?.[0]?.message?.content;
+    
+    if (!aiMessage) {
+      console.error('[lovable-chat] No message content in AI response:', JSON.stringify(aiData));
+      return new Response(
+        JSON.stringify({ error: 'No content in AI response' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('[lovable-chat] AI message length:', aiMessage.length);
+
+    // Check if user is trying to create a task (only for single message format)
+    if (sanitizedMessage) {
+      const taskIntent = /create.*task|add.*task|new.*task|make.*task/i.test(sanitizedMessage);
       
-      if (taskTitle) {
-        const { error: insertError } = await supabase
-          .from('tasks')
-          .insert({
-            title: taskTitle,
-            user_id: user.id,
-            priority: priority,
-            status: 'todo'
-          });
+      if (taskIntent) {
+        const taskTitle = extractTaskTitle(sanitizedMessage);
+        const priority = extractPriority(sanitizedMessage);
         
-        if (insertError) {
-          console.error('Error creating task:', insertError);
+        if (taskTitle) {
+          const { error: insertError } = await supabase
+            .from('tasks')
+            .insert({
+              title: taskTitle,
+              user_id: user.id,
+              priority: priority,
+              status: 'todo'
+            });
+          
+          if (insertError) {
+            console.error('[lovable-chat] Error creating task:', insertError);
+          } else {
+            console.log('[lovable-chat] Task created successfully');
+          }
         }
       }
     }
 
+    console.log('[lovable-chat] Returning successful response');
+
     return new Response(
       JSON.stringify({ 
+        choices: [{ message: { content: aiMessage } }],
         response: aiMessage,
-        source: forceGPT5 ? 'gpt-5-mini' : 'gemini-flash'
+        source: model || (forceGPT5 ? 'gpt-5-mini' : 'gemini-flash')
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

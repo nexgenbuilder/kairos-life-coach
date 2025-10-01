@@ -50,21 +50,35 @@ export function SimplifiedAIChat({ engine, title, description }: SimplifiedAICha
             model: 'google/gemini-2.5-flash'
           };
 
+      console.log(`[${title}] Sending request to ${functionName}:`, body);
+
       const { data, error } = await supabase.functions.invoke(functionName, { body });
 
-      if (error) throw error;
+      console.log(`[${title}] Response:`, { data, error });
+
+      if (error) {
+        console.error(`[${title}] Edge function error:`, error);
+        throw error;
+      }
+
+      if (!data) {
+        console.error(`[${title}] No data returned from edge function`);
+        throw new Error('No response data received');
+      }
 
       const aiContent = engine === 'perplexity' 
         ? data.response 
-        : data.choices?.[0]?.message?.content || 'No response';
+        : data.choices?.[0]?.message?.content || data.response || 'No response';
+
+      console.log(`[${title}] AI content:`, aiContent);
 
       setMessages(prev => [...prev, { role: 'assistant', content: aiContent }]);
       play('success');
     } catch (error: any) {
-      console.error(`${engine} error:`, error);
+      console.error(`[${title}] Full error:`, error);
       toast({ 
         title: `${title} Error`, 
-        description: error.message || 'Failed to get response',
+        description: error.message || 'Failed to get response. Please check console for details.',
         variant: 'destructive' 
       });
       play('warn');
