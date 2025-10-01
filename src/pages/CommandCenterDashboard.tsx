@@ -11,8 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bot, Search, Sparkles, MessageSquare, Mail, Banknote, ReceiptText, CheckSquare, Calendar, Dumbbell, HeartPulse, Users, Shield, Bell, LayoutDashboard, Settings, Boxes, MapPin, Send } from 'lucide-react';
 import { createTaskQuick, logExpenseQuick, logIncomeQuick, createSpaceQuick } from '@/lib/command-actions';
 import { MiniDashGrid } from '@/components/hub/MiniDashGrid';
+import { AppLayout } from '@/components/layout/AppLayout';
 
-const SmartChatInterface = React.lazy(() => import('@/components/chat/SmartChatInterface').then(m => ({ default: m.SmartChatInterface })));
+const SmartChatInterface = React.lazy(() => import('@/components/chat/SmartChatInterface'));
 
 function Field({ label, type = 'text', value, onChange, placeholder }: any) {
   return (
@@ -141,6 +142,7 @@ export default function CommandCenterDashboard() {
   ], []);
 
   return (
+    <AppLayout>
     <div className='w-full mx-auto max-w-6xl px-4 md:px-6 py-6 space-y-6 bg-aurora min-h-[100svh] text-white'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-3'>
@@ -293,5 +295,6 @@ export default function CommandCenterDashboard() {
         </Suspense>
       </ModuleModal>
     </div>
+    </AppLayout>
   );
 }

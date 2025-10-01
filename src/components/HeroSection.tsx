@@ -91,9 +91,9 @@ export function HeroSection() {
               </span>
             </motion.h1>
             <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground max-w-4xl mx-auto leading-relaxed font-medium px-4">
-              The AI for your life — coach, planner, partner.
+              Your centralized Command Center for life.
               <br className="hidden sm:block" />
-              <span className="text-foreground font-semibold">Manage everything, collaborate with anyone, personalize every space.</span>
+              <span className="text-foreground font-semibold">One hub for AI, tasks, spaces, and everything you need to stay on track.</span>
             </p>
           </div>
           

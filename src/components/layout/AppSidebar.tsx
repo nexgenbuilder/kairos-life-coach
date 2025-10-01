@@ -23,7 +23,8 @@ import {
   Rss,
   UserCircle,
   MessageSquare,
-  Layers
+  Layers,
+  LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -46,6 +47,7 @@ import { cn } from '@/lib/utils';
 
 // Feed and Members only show in shared spaces (not individual)
 const lifeCategories = [
+  { title: 'Command Center', url: '/command', icon: LayoutDashboard },
   { title: 'Today', url: '/today', icon: Clock },
   { title: 'Feed', url: '/feed', icon: Rss, sharedOnly: true },
   { title: 'Members', url: '/members', icon: UserCircle, sharedOnly: true },
@@ -103,7 +105,7 @@ export function AppSidebar() {
     >
       <SidebarHeader className="border-b border-border p-4">
         <NavLink 
-          to="/dashboard" 
+          to="/command" 
           className="flex items-center space-x-3 group"
         >
           {activeContext?.logo_url ? (
@@ -147,6 +149,7 @@ export function AppSidebar() {
                   
                   // Map routes to module names
                   const moduleMap: Record<string, string> = {
+                    '/command': 'command',
                     '/today': 'today',
                     '/feed': 'feed',
                     '/members': 'feed',

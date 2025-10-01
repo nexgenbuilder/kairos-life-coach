@@ -42,12 +42,12 @@ const LandingPage = () => {
               Welcome back! You're already logged in.
             </p>
             <Button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/command')}
               variant="secondary"
               size="sm"
               className="flex items-center gap-2"
             >
-              Go to Dashboard
+              Go to Command Center
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
