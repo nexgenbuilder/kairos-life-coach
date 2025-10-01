@@ -27,6 +27,7 @@ import StocksPage from "./pages/StocksPage";
 import NewsPage from "./pages/NewsPage";
 import LandingPage from "./pages/LandingPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import CloudPage from "./pages/CloudPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/crypto" element={<CryptoPage />} />
             <Route path="/stocks" element={<StocksPage />} />
             <Route path="/news" element={<NewsPage />} />
+            <Route path="/cloud" element={<CloudPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

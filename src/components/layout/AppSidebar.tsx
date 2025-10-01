@@ -18,7 +18,8 @@ import {
   Video,
   Bitcoin,
   TrendingUp,
-  Newspaper
+  Newspaper,
+  Cloud
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -54,6 +55,7 @@ const lifeCategories = [
   { title: 'Stocks', url: '/stocks', icon: TrendingUp },
   { title: 'News', url: '/news', icon: Newspaper },
   { title: 'Calendar', url: '/calendar', icon: Calendar },
+  { title: 'Cloud', url: '/cloud', icon: Cloud },
 ];
 
 const bottomItems = [
@@ -131,6 +133,7 @@ export function AppSidebar() {
                     '/crypto': 'crypto',
                     '/stocks': 'stocks',
                     '/news': 'news',
+                    '/cloud': 'cloud',
                   };
                   
                   const moduleName = moduleMap[item.url];
