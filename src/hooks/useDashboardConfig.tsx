@@ -17,10 +17,10 @@ export interface DashboardConfig {
 }
 
 const DEFAULT_CARDS: DashboardCard[] = [
-  { id: 'today_tasks', module: 'tasks', label: 'Today\'s Tasks', enabled: true, order: 0 },
-  { id: 'spend_week', module: 'money', label: 'Weekly Spending', enabled: true, order: 1 },
-  { id: 'leads', module: 'professional', label: 'Leads', enabled: true, order: 2 },
-  { id: 'fitness_streak', module: 'fitness', label: 'Fitness Streak', enabled: true, order: 3 },
+  { id: 'today_tasks', module: 'tasks', label: 'Today\'s Tasks', enabled: false, order: 0 },
+  { id: 'spend_week', module: 'money', label: 'Weekly Spending', enabled: false, order: 1 },
+  { id: 'leads', module: 'professional', label: 'Leads', enabled: false, order: 2 },
+  { id: 'fitness_streak', module: 'fitness', label: 'Fitness Streak', enabled: false, order: 3 },
   { id: 'upcoming_events', module: 'calendar', label: 'Upcoming Events', enabled: false, order: 4 },
   { id: 'health_metrics', module: 'health', label: 'Health Summary', enabled: false, order: 5 },
   { id: 'content_performance', module: 'creators', label: 'Content Performance', enabled: false, order: 6 },

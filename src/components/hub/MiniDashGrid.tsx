@@ -246,10 +246,22 @@ export function MiniDashGrid({ className }: MiniDashGridProps) {
 
   if (cards.length === 0) {
     return (
-      <div className={cn("p-6 text-center", className)}>
-        <p className="text-sm text-muted-foreground">
-          No dashboard cards enabled. Configure your dashboard in Settings.
-        </p>
+      <div className={cn("flex flex-col items-center justify-center p-8 text-center gap-4", className)}>
+        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+          <ListChecks className="h-8 w-8 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Quick Overview Not Configured</h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            Select which metrics you'd like to see in your quick overview dashboard
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/settings?tab=dashboard')}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-smooth"
+        >
+          Configure Dashboard
+        </button>
       </div>
     );
   }

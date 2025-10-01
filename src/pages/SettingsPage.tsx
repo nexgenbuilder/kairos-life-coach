@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GoogleCalendarSettings } from '@/components/settings/GoogleCalendarSettings';
@@ -23,6 +24,17 @@ import { useOrganization } from '@/hooks/useOrganization';
 
 const SettingsPage = () => {
   const { activeContext, isAdmin } = useOrganization();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get('tab') || (activeContext?.type === 'individual' ? 'modules' : 'organization')
+  );
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   return (
     <AppLayout>
@@ -37,7 +49,7 @@ const SettingsPage = () => {
         {/* Show pending invitations for all users */}
         <PendingInvitations />
 
-        <Tabs defaultValue={activeContext?.type === 'individual' ? 'modules' : 'organization'} className="space-y-4 sm:space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
             <TabsList className="inline-flex w-auto min-w-full sm:w-full h-auto flex-nowrap sm:flex-wrap p-1 gap-1">
               {activeContext?.type !== 'individual' && (
