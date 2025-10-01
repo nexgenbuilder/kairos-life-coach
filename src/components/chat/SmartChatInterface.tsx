@@ -1,19 +1,29 @@
-import React, { useState, useRef } from 'react';
-import { Send, Mic, MicOff, Bot, Search, Sparkles, Image, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Mic, MicOff, Bot, Search, Sparkles, Image, X, Inbox, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganization } from '@/hooks/useOrganization';
+import { MentionAutocomplete } from './MentionAutocomplete';
+import { InboxView } from './InboxView';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'kairos';
   timestamp: Date;
-  source?: string; // Track which AI model responded
-  imageUrl?: string; // For displaying images in chat
+  source?: string;
+  imageUrl?: string;
+}
+
+interface Member {
+  user_id: string;
+  full_name: string;
+  avatar_url?: string;
 }
 
 interface ChatInterfaceProps {
@@ -23,10 +33,11 @@ interface ChatInterfaceProps {
 export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const { session } = useAuth();
   const { toast } = useToast();
+  const { activeContext } = useOrganization();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hey! I\'m Kairos, your AI life assistant. I can help you manage tasks, plan your day, track expenses, log workouts, and much more. What would you like to work on today?',
+      content: "Hey! I'm Kairos, your AI life assistant. I can help you manage tasks, plan your day, track expenses, log workouts, and much more. You can also use @mentions to message team members. What would you like to work on today?",
       sender: 'kairos',
       timestamp: new Date()
     }
@@ -34,9 +45,75 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [routingMode, setRoutingMode] = useState<'auto' | 'gpt5' | 'search'>('auto'); // Manual routing control
+  const [routingMode, setRoutingMode] = useState<'auto' | 'gpt5' | 'search'>('auto');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [members, setMembers] = useState<Member[]>([]);
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [activeTab, setActiveTab] = useState<'chat' | 'inbox'>('chat');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch organization members for @mentions
+  useEffect(() => {
+    if (!activeContext) return;
+
+    const fetchMembers = async () => {
+      const { data, error } = await supabase
+        .rpc('get_organization_members', { org_id: activeContext.id });
+
+      if (!error && data) {
+        setMembers(data);
+      }
+    };
+
+    fetchMembers();
+  }, [activeContext]);
+
+  // Handle input changes to detect @mentions
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+
+    // Detect @ mentions
+    const lastAtSymbol = value.lastIndexOf('@');
+    if (lastAtSymbol !== -1 && lastAtSymbol === value.length - 1) {
+      // Just typed @
+      setShowMentions(true);
+      setMentionSearch('');
+      updateMentionPosition();
+    } else if (lastAtSymbol !== -1) {
+      const searchTerm = value.substring(lastAtSymbol + 1);
+      if (!searchTerm.includes(' ')) {
+        setShowMentions(true);
+        setMentionSearch(searchTerm);
+        updateMentionPosition();
+      } else {
+        setShowMentions(false);
+      }
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const updateMentionPosition = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setMentionPosition({
+        top: window.innerHeight - rect.top + 10,
+        left: rect.left
+      });
+    }
+  };
+
+  const handleMentionSelect = (userId: string, name: string) => {
+    const lastAtSymbol = inputValue.lastIndexOf('@');
+    const beforeMention = inputValue.substring(0, lastAtSymbol);
+    setInputValue(`${beforeMention}@${name} `);
+    setShowMentions(false);
+    inputRef.current?.focus();
+  };
 
   // Detection patterns for different actions
   const detectActionType = (message: string): 'task' | 'expense' | 'income' | 'fitness' | 'chat' => {
@@ -104,6 +181,16 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
 
   const handleSendMessage = async () => {
     if ((!inputValue.trim() && !selectedImage) || isLoading) return;
+
+    // Check if message contains @mentions (peer-to-peer message)
+    const mentionPattern = /@(\w+)/g;
+    const mentions = [...inputValue.matchAll(mentionPattern)];
+    
+    if (mentions.length > 0 && activeContext) {
+      // This is a user-to-user message
+      await handleUserMessage(inputValue, mentions);
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -369,6 +456,81 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     }
   };
 
+  const handleUserMessage = async (content: string, mentions: RegExpMatchArray[]) => {
+    if (!activeContext || !session?.user) return;
+
+    try {
+      setIsLoading(true);
+
+      // Parse mentions
+      const mentionedNames = mentions.map(m => m[1]);
+      const isAllMention = mentionedNames.includes('all');
+      
+      let recipientIds: string[] = [];
+      
+      if (isAllMention) {
+        // Send to all members in the organization
+        const { data: allMembers } = await supabase
+          .rpc('get_organization_members', { org_id: activeContext.id });
+        recipientIds = allMembers?.map((m: Member) => m.user_id) || [];
+      } else {
+        // Send to specific mentioned users
+        recipientIds = members
+          .filter(m => mentionedNames.includes(m.full_name))
+          .map(m => m.user_id);
+      }
+
+      if (recipientIds.length === 0) {
+        toast({
+          title: "No recipients found",
+          description: "Could not find the mentioned users",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Create the message
+      const { error } = await supabase
+        .from('user_messages')
+        .insert({
+          sender_id: session.user.id,
+          organization_id: activeContext.id,
+          content,
+          recipients: recipientIds,
+          is_all_mention: isAllMention
+        });
+
+      if (error) throw error;
+
+      // Add confirmation message to chat
+      const confirmMessage: Message = {
+        id: Date.now().toString(),
+        content: `Message sent to ${isAllMention ? '@all' : mentionedNames.map(n => '@' + n).join(', ')}`,
+        sender: 'kairos',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, confirmMessage]);
+
+      toast({
+        title: "Message sent",
+        description: `Delivered to ${recipientIds.length} recipient${recipientIds.length > 1 ? 's' : ''}`,
+      });
+
+      setInputValue('');
+    } catch (error) {
+      console.error('Error sending user message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const toggleListening = async () => {
     if (!isListening) {
       try {
@@ -433,8 +595,21 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
 
   return (
     <div className={cn("flex flex-col h-full bg-background", className)}>
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chat' | 'inbox')} className="flex-1 flex flex-col">
+        <TabsList className="w-full grid grid-cols-2">
+          <TabsTrigger value="chat" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            AI Chat
+          </TabsTrigger>
+          <TabsTrigger value="inbox" className="flex items-center gap-2">
+            <Inbox className="h-4 w-4" />
+            Inbox
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -490,106 +665,110 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       )}
 
       {/* Input Area */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
+      <div className="p-4 border-t border-border">
+        {showMentions && activeContext && (
+          <MentionAutocomplete
+            searchTerm={mentionSearch}
+            members={members}
+            onSelect={handleMentionSelect}
+            position={mentionPosition}
+          />
+        )}
         {selectedImage && (
-          <div className="max-w-4xl mx-auto mb-2 relative inline-block">
+          <div className="mb-2 relative inline-block">
             <img 
               src={selectedImage} 
-              alt="Selected receipt" 
-              className="max-h-32 rounded-lg border border-border"
+              alt="Selected" 
+              className="max-h-20 rounded-lg"
             />
             <Button
+              variant="ghost"
               size="icon"
-              variant="destructive"
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+              className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive hover:bg-destructive/90"
               onClick={() => setSelectedImage(null)}
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         )}
-        <div className="flex items-center space-x-2 max-w-4xl mx-auto">
+        <div className="flex space-x-2">
           <input
             type="file"
             ref={fileInputRef}
-            onChange={handleImageSelect}
-            accept="image/*"
             className="hidden"
+            accept="image/*"
+            onChange={handleImageSelect}
           />
-          
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
-            className="text-muted-foreground hover:text-primary"
-            title="Upload receipt image"
+            disabled={isLoading}
+            className="shrink-0"
           >
             <Image className="h-4 w-4" />
           </Button>
-
-          <div className="flex-1 relative">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-              placeholder={selectedImage ? "Add a note (optional)" : routingMode === 'gpt5' ? "Chat with Lovable AI..." : routingMode === 'search' ? "Search the web..." : "Create tasks, log expenses, track fitness..."}
-              className="pr-12 border-border focus:ring-primary"
-            />
-          </div>
-          
-          {/* Lovable AI Button */}
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
-            className={cn(
-              "transition-smooth",
-              routingMode === 'gpt5' ? 'text-purple-600 bg-purple-100 dark:bg-purple-900/50 shadow-glow-soft' : 'text-muted-foreground hover:text-purple-600'
-            )}
-            title="Lovable AI - Powered by Gemini"
-          >
-            <Sparkles className="h-4 w-4" />
-          </Button>
-
-          {/* Perplexity Search Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
-            className={cn(
-              "transition-smooth",
-              routingMode === 'search' ? 'text-green-600 bg-green-100 dark:bg-green-900/50 shadow-glow-soft' : 'text-muted-foreground hover:text-green-600'
-            )}
-            title="Perplexity Search - Real-time web search"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={toggleListening}
-            className={cn(
-              "transition-smooth",
-              isListening ? 'text-primary bg-accent' : 'text-muted-foreground hover:text-primary'
-            )}
+            disabled={isLoading}
+            className={cn("shrink-0", isListening && "bg-destructive text-destructive-foreground")}
           >
             {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
-          
+          <Button
+            variant={routingMode === 'gpt5' ? 'default' : 'outline'}
+            size="icon"
+            onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
+            disabled={isLoading}
+            className="shrink-0"
+            title="GPT-5 Mode"
+          >
+            <Sparkles className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={routingMode === 'search' ? 'default' : 'outline'}
+            size="icon"
+            onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
+            disabled={isLoading}
+            className="shrink-0"
+            title="Web Search Mode"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+          <Input
+            ref={inputRef}
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !showMentions) {
+                handleSendMessage();
+              }
+            }}
+            placeholder={activeContext ? "Message AI or @mention teammates..." : "Ask Kairos anything..."}
+            disabled={isLoading}
+            className="flex-1"
+          />
           <Button 
-            onClick={handleSendMessage}
-            disabled={(!inputValue.trim() && !selectedImage) || isLoading}
-            className="bg-primary-gradient hover:opacity-90 transition-smooth shadow-glow-soft"
+            onClick={handleSendMessage} 
+            disabled={isLoading || (!inputValue.trim() && !selectedImage)}
+            className="shrink-0"
           >
             {isLoading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+              <Bot className="h-4 w-4 animate-pulse" />
             ) : (
               <Send className="h-4 w-4" />
             )}
           </Button>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="inbox" className="flex-1 mt-0">
+          <InboxView />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

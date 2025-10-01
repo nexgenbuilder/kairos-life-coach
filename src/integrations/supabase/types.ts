@@ -1607,6 +1607,41 @@ export type Database = {
           },
         ]
       }
+      message_inbox: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message_id: string
+          read_at: string | null
+          recipient_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_id: string
+          read_at?: string | null
+          recipient_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_id?: string
+          read_at?: string | null
+          recipient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_inbox_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "user_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_permissions: {
         Row: {
           can_admin: boolean | null
@@ -2621,6 +2656,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_all_mention: boolean | null
+          organization_id: string | null
+          recipients: string[]
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_all_mention?: boolean | null
+          organization_id?: string | null
+          recipients?: string[]
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_all_mention?: boolean | null
+          organization_id?: string | null
+          recipients?: string[]
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_schedules: {
         Row: {
           created_at: string
@@ -2841,6 +2924,14 @@ export type Database = {
       cleanup_security_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_organization_members: {
+        Args: { org_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          user_id: string
+        }[]
       }
       get_user_active_context: {
         Args: { user_uuid?: string }
