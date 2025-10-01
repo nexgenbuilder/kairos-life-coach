@@ -12,7 +12,7 @@ export function HeroContinuousMotion({
 
   const particleCount = useMemo(() => {
     if (shouldReduceMotion) return 0;
-    const counts = { low: 24, med: 40, high: 64 };
+    const counts = { low: 16, med: 28, high: 48 }; // Optimized counts
     return counts[intensity];
   }, [intensity, shouldReduceMotion]);
 
@@ -149,6 +149,7 @@ export function HeroContinuousMotion({
                   left: "50%",
                   top: "50%",
                   willChange: "transform, opacity",
+                  transform: "translate3d(0, 0, 0)", // GPU acceleration
                 }}
                 initial={{ opacity: 0, y: 20, scale: 0.8 }}
                 animate={{

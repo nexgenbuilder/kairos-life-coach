@@ -38,24 +38,24 @@ export function CosmicRevealIntro({ onComplete }: { onComplete: () => void }) {
   }, [onComplete]);
 
   const particles = useMemo(
-    () => buildParticles(shouldReduceMotion ? 30 : 60), // Optimized from 90
+    () => buildParticles(shouldReduceMotion ? 20 : 45), // Further optimized for 60fps
     [shouldReduceMotion]
   );
 
   const shards = useMemo(
-    () => buildParticles(shouldReduceMotion ? 8 : 18), // Optimized from 22
+    () => buildParticles(shouldReduceMotion ? 5 : 12), // Further optimized
     [shouldReduceMotion]
   );
 
   const stars = useMemo(
     () =>
-      Array.from({ length: 100 }).map((_, i) => ({ // Optimized from 150
+      Array.from({ length: 60 }).map((_, i) => ({ // Further optimized from 100
         id: i,
         size: Math.random() * 2 + 1,
         x: Math.random() * 100,
         y: Math.random() * 100,
-        delay: Math.random() * 2,
-        opacity: Math.random() * 0.6 + 0.4,
+        delay: Math.random() * 1.5,
+        opacity: Math.random() * 0.5 + 0.3,
       })),
     []
   );
@@ -82,7 +82,8 @@ export function CosmicRevealIntro({ onComplete }: { onComplete: () => void }) {
               height: star.size,
               left: `${star.x}%`,
               top: `${star.y}%`,
-              willChange: "opacity, transform",
+              willChange: "opacity",
+              transform: "translate3d(0, 0, 0)", // GPU acceleration
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: [0, star.opacity, star.opacity, 0] }}
@@ -99,22 +100,14 @@ export function CosmicRevealIntro({ onComplete }: { onComplete: () => void }) {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: `radial-gradient(800px 600px at 50% 50%, ${
-            brandColors?.primary || "rgba(99,102,241,0.25)"
-          }, rgba(0,0,0,0.7) 50%, rgba(0,0,0,0.95) 100%)`,
+          background: `radial-gradient(600px 500px at 50% 50%, ${
+            brandColors?.primary || "rgba(99,102,241,0.2)"
+          }, rgba(0,0,0,0.75) 50%, rgba(0,0,0,0.95) 100%)`,
+          transform: "translate3d(0, 0, 0)", // GPU acceleration
         }}
       />
 
-      {/* Camera shake wrapper */}
-      <motion.div
-        className="absolute inset-0"
-        animate={
-          !shouldReduceMotion && phase === "explosion"
-            ? { x: [0, 4, -4, 2, -2, 0], y: [0, -3, 3, -2, 2, 0] }
-            : {}
-        }
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      />
+      {/* Camera shake wrapper - removed for better performance */}
 
       {/* Swirling particles (buildup phase) */}
       {(phase === "buildup" || phase === "explosion") && (
@@ -130,6 +123,7 @@ export function CosmicRevealIntro({ onComplete }: { onComplete: () => void }) {
                   left: "50%",
                   top: "50%",
                   willChange: "transform, opacity",
+                  transform: "translate3d(0, 0, 0)", // GPU acceleration
                 }}
                 initial={{ x: 0, y: 0, opacity: 0, scale: 0.6 }}
                 animate={
@@ -180,6 +174,7 @@ export function CosmicRevealIntro({ onComplete }: { onComplete: () => void }) {
                   })`,
                   transformOrigin: "center",
                   willChange: "transform, opacity",
+                  transform: "translate3d(0, 0, 0)", // GPU acceleration
                 }}
                 initial={{ x: 0, y: 0, opacity: 0, rotate: 0 }}
                 animate={
@@ -217,8 +212,9 @@ export function CosmicRevealIntro({ onComplete }: { onComplete: () => void }) {
             }
             transition={{ duration: 1.4, ease: "easeOut" }}
             style={{
-              boxShadow: `0 0 80px ${brandColors?.primary || "rgba(99,102,241,0.6)"}`,
-              filter: "blur(1px)",
+              boxShadow: `0 0 60px ${brandColors?.primary || "rgba(99,102,241,0.5)"}`,
+              filter: "blur(0.5px)",
+              transform: "translate3d(0, 0, 0)", // GPU acceleration
             }}
           />
           <motion.div
@@ -231,7 +227,10 @@ export function CosmicRevealIntro({ onComplete }: { onComplete: () => void }) {
                 : { scale: [0.3, 2.0, 4.5], opacity: [0, 0.8, 0] }
             }
             transition={{ duration: 1.8, ease: "easeOut", delay: 0.1 }}
-            style={{ boxShadow: "0 0 60px rgba(255,255,255,0.4)" }}
+            style={{ 
+              boxShadow: "0 0 40px rgba(255,255,255,0.3)",
+              transform: "translate3d(0, 0, 0)", // GPU acceleration
+            }}
           />
         </>
       )}
