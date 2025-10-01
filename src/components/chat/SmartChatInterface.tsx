@@ -611,7 +611,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
               >
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-2xl px-4 py-3 transition-smooth",
+                    "max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 transition-smooth",
                     message.sender === 'user'
                       ? 'bg-primary-gradient text-primary-foreground shadow-glow-soft'
                       : 'bg-chat-gradient border border-border text-foreground'

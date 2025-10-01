@@ -95,29 +95,29 @@ export function SmartSuggestionsRow({
 
   return (
     <div className={cn("w-full overflow-x-auto scrollbar-hide", className)}>
-      <div className="flex items-center gap-2 px-4 mb-2">
+      <div className="flex items-center gap-2 px-3 md:px-4 mb-2">
         <Sparkles className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-muted-foreground">
           Smart Suggestions
         </span>
       </div>
-      <div className="flex gap-3 px-4 pb-2 min-w-max">
+      <div className="flex gap-3 px-3 md:px-4 pb-2 min-w-max">
         {suggestions.map((suggestion) => {
           const Icon = suggestion.icon;
           return (
             <Card
               key={suggestion.id}
-              className="min-w-[280px] hover:shadow-glow-soft transition-all cursor-pointer hover:scale-105"
+              className="min-w-[260px] sm:min-w-[280px] max-w-[260px] sm:max-w-[280px] hover:shadow-glow-soft transition-all cursor-pointer hover:scale-105 flex-shrink-0"
               onClick={suggestion.action}
             >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" />
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm mb-1">{suggestion.title}</h3>
-                    <p className="text-xs text-muted-foreground">{suggestion.subtitle}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{suggestion.subtitle}</p>
                   </div>
                 </div>
               </CardContent>

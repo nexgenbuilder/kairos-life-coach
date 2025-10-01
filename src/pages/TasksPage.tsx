@@ -13,13 +13,13 @@ const TasksPage = () => {
 
   return (
     <AppLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Tasks</h1>
-          <p className="text-muted-foreground">Stay organized and get things done</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Tasks</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Stay organized and get things done</p>
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <CategoryManager />
           <TaskForm onTaskCreated={handleTaskCreated} />
           <TaskStatusManager refreshTrigger={refreshTrigger} />

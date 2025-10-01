@@ -448,7 +448,7 @@ const BusinessPage = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-4 sm:p-6 max-w-full overflow-x-hidden">
           <div className="text-center">Loading...</div>
         </div>
       </AppLayout>
@@ -457,12 +457,12 @@ const BusinessPage = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+      <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Business Management
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Manage contacts, inventory, expenses, and revenue
           </p>
         </div>

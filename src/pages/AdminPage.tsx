@@ -179,12 +179,12 @@ export default function AdminPage() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
-        <div className="flex items-center gap-3 mb-6">
-          <Settings className="h-8 w-8 text-primary" />
+      <div className="container mx-auto p-4 sm:p-6 max-w-6xl overflow-x-hidden">
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <Settings className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">Space Branding</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">Space Branding</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Customize the look and feel of {activeContext.name}
             </p>
           </div>

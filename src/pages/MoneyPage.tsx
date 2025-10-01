@@ -20,28 +20,28 @@ const MoneyPage = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+      <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Money Management
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Track your expenses and manage your finances
           </p>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Income Tracking</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4">Income Tracking</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <IncomeForm onIncomeAdded={handleIncomeAdded} />
               <IncomeList refreshTrigger={incomeRefreshTrigger} />
             </div>
           </div>
 
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Expense Tracking</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4">Expense Tracking</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               <ExpenseForm onExpenseAdded={handleExpenseAdded} />
               <ExpenseList refreshTrigger={expenseRefreshTrigger} />
               <ReceiptProcessor onExpensesAdded={handleExpenseAdded} />

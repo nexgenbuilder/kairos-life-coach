@@ -352,7 +352,7 @@ const LovePage = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-4 sm:p-6 max-w-full overflow-x-hidden">
           <div className="text-center">Loading...</div>
         </div>
       </AppLayout>
@@ -361,13 +361,13 @@ const LovePage = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Love
             </h1>
-            <p className="text-muted-foreground mt-2">Nurture your family relationships and special moments</p>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">Nurture your family relationships and special moments</p>
           </div>
           
           <div className="space-x-2">

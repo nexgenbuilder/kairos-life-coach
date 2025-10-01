@@ -210,7 +210,7 @@ export default function CreateSpacePage() {
 
   return (
     <AppLayout>
-      <div className="container max-w-4xl mx-auto p-6 space-y-6">
+      <div className="container max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
         <Button
           variant="ghost"
           onClick={() => navigate('/spaces')}

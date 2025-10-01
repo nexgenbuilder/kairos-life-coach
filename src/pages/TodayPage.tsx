@@ -293,10 +293,10 @@ const TodayPage = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-4 sm:p-6 max-w-full overflow-x-hidden">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-48"></div>
-            <div className="h-4 bg-muted rounded w-96"></div>
+            <div className="h-4 bg-muted rounded w-full max-w-sm"></div>
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
                 <div key={i} className="h-20 bg-muted rounded"></div>
@@ -310,12 +310,12 @@ const TodayPage = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+      <div className="container mx-auto p-4 sm:p-6 max-w-full overflow-x-hidden">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Today
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Your daily overview - {format(new Date(), 'EEEE, MMMM do, yyyy')}
           </p>
         </div>

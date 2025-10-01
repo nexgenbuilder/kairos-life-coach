@@ -366,7 +366,7 @@ const ProfessionalPage = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-4 sm:p-6 max-w-full overflow-x-hidden">
           <div className="text-center">Loading...</div>
         </div>
       </AppLayout>
@@ -375,13 +375,13 @@ const ProfessionalPage = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
+      <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div className="w-full">
             <div className="flex items-center gap-4 mb-2">
               <ContextIndicator />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Professional
             </h1>
             <p className="text-muted-foreground mt-2">Manage your work schedule, sales pipeline, and professional network</p>

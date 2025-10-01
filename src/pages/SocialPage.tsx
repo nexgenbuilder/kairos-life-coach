@@ -257,7 +257,7 @@ const SocialPage = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-4 sm:p-6 max-w-full overflow-x-hidden">
           <div className="text-center">Loading connections...</div>
         </div>
       </AppLayout>
@@ -266,13 +266,13 @@ const SocialPage = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-bold bg-hero-gradient bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-hero-gradient bg-clip-text text-transparent">
               Connections
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">
               {connections.length} connections across {spaces.length} spaces
             </p>
           </div>

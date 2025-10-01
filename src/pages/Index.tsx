@@ -44,9 +44,9 @@ const Index = () => {
 
   return (
     <AppLayout>
-      <div className="flex flex-col lg:flex-row gap-0 min-h-[calc(100vh-3.5rem)]">
+      <div className="flex flex-col lg:flex-row gap-0 min-h-[calc(100vh-3.5rem)] max-w-full overflow-x-hidden">
         {/* Left: Conversational Hub - Mobile Full Width, Desktop 60% */}
-        <div className="flex-1 flex flex-col lg:w-[60%] border-b lg:border-b-0 lg:border-r border-border">
+        <div className="flex-1 flex flex-col lg:w-[60%] border-b lg:border-b-0 lg:border-r border-border min-w-0 w-full lg:max-w-[60%]">
           {/* Quick Actions Bar */}
           <QuickActionsBar
             onCreateTask={() => setTaskSheetOpen(true)}
@@ -66,15 +66,15 @@ const Index = () => {
           />
 
           {/* Chat Interface */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 w-full">
             <SmartChatInterface className="h-full" />
           </div>
         </div>
 
         {/* Right: Mini Dashboard - Mobile Below, Desktop 40% */}
-        <div className="w-full lg:w-[40%] bg-muted/30 min-h-[400px] lg:min-h-0">
+        <div className="w-full lg:w-[40%] lg:max-w-[40%] bg-muted/30 min-h-[400px] lg:min-h-0">
           <div className="lg:sticky lg:top-0 lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto">
-            <div className="p-4 pb-3 border-b border-border">
+            <div className="p-3 md:p-4 pb-3 border-b border-border">
               <h2 className="text-lg font-semibold">Quick Overview</h2>
               <p className="text-xs text-muted-foreground mt-1">
                 Tap cards to explore modules
