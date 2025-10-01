@@ -215,7 +215,9 @@ export type Database = {
           category: string
           connection_user_id: string
           created_at: string
+          discovered_at: string | null
           id: string
+          source_organization_id: string | null
           space_id: string
           updated_at: string
           user_id: string
@@ -224,7 +226,9 @@ export type Database = {
           category: string
           connection_user_id: string
           created_at?: string
+          discovered_at?: string | null
           id?: string
+          source_organization_id?: string | null
           space_id: string
           updated_at?: string
           user_id: string
@@ -233,12 +237,28 @@ export type Database = {
           category?: string
           connection_user_id?: string
           created_at?: string
+          discovered_at?: string | null
           id?: string
+          source_organization_id?: string | null
           space_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "connection_categories_source_organization_id_fkey"
+            columns: ["source_organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connection_categories_source_organization_id_fkey"
+            columns: ["source_organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "connection_categories_space_id_fkey"
             columns: ["space_id"]
@@ -2996,6 +3016,51 @@ export type Database = {
           },
           {
             foreignKeyName: "user_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_space_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          tag: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          tag: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          tag?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_space_tags_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_space_tags_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

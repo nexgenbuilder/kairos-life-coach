@@ -59,6 +59,7 @@ const App = () => (
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/business" element={<ProtectedRoute><BusinessPage /></ProtectedRoute>} />
             <Route path="/professional" element={<ProtectedRoute><ProfessionalPage /></ProtectedRoute>} />
+            <Route path="/connections" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
             <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
             <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
             <Route path="/members" element={<ProtectedRoute><MembersPage /></ProtectedRoute>} />

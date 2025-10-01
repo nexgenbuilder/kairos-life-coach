@@ -68,8 +68,8 @@ interface AllModuleStats {
     recentDeals: number;
   };
   
-  // Social Module - now Connections
-  social: {
+  // Connections Module (previously Social)
+  connections: {
     totalConnections: number;
     socialConnections: number;
     communityConnections: number;
@@ -144,7 +144,7 @@ const DashboardPage = () => {
     tasks: { inactive: 0, active: 0, completed: 0, total: 0, completionRate: 0 },
     finance: { totalIncome: 0, totalExpenses: 0, balance: 0, monthlyIncome: 0, monthlyExpenses: 0, monthlyBalance: 0 },
     business: { totalContacts: 0, inventory: 0, lowStockItems: 0, monthlyRevenue: 0, monthlyExpenses: 0, profitMargin: 0, recentDeals: 0 },
-    social: { totalConnections: 0, socialConnections: 0, communityConnections: 0, groupsConnections: 0, workConnections: 0, recentInteractions: 0, upcomingBirthdays: 0, needsFollowUp: 0 },
+    connections: { totalConnections: 0, socialConnections: 0, communityConnections: 0, groupsConnections: 0, workConnections: 0, recentInteractions: 0, upcomingBirthdays: 0, needsFollowUp: 0 },
     professional: { totalContacts: 0, workSchedules: 0, ptoRequests: 0, weeklyEarnings: 0, hoursWorkedThisWeek: 0, pendingPTO: 0 },
     love: { totalContacts: 0, family: 0, significantOthers: 0, upcomingCelebrations: 0, keyDates: 0, needsAttention: 0 },
     creators: { totalPlatforms: 0, totalFollowers: 0, totalContent: 0, publishedContent: 0, monthlyRevenue: 0, totalEngagement: 0, upcomingLivestreams: 0 },
@@ -182,9 +182,9 @@ const DashboardPage = () => {
         supabase.from('business_expenses').select('amount_cents, date').eq('user_id', user.id),
         supabase.from('deals').select('*').eq('user_id', user.id),
         
-        // Social
-        supabase.from('people').select('*').eq('user_id', user.id).in('type', ['friend', 'colleague', 'acquaintance']),
-        supabase.from('interactions').select('*').eq('user_id', user.id).eq('module', 'social').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+        // Connections (previously Social)
+        supabase.from('connection_categories').select('*').eq('user_id', user.id),
+        supabase.from('interactions').select('*').eq('user_id', user.id).eq('module', 'connections').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
         
         // Professional
         supabase.from('people').select('*').eq('user_id', user.id).in('type', ['hr', 'manager', 'coworker', 'client', 'vendor', 'mentor']),
@@ -277,8 +277,7 @@ const DashboardPage = () => {
         return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
       }).reduce((sum, item) => sum + (item.amount_cents / 100), 0);
 
-      // Process Social - Calculate connections from shared spaces
-      const socialContacts = socialContactsResult.status === 'fulfilled' ? socialContactsResult.value.data || [] : [];
+      // Process Connections - No longer using people table, just connection_categories
       const socialInteractions = socialInteractionsResult.status === 'fulfilled' ? socialInteractionsResult.value.data || [] : [];
       
       // Get total connections from all shared spaces using the new function
@@ -304,13 +303,6 @@ const DashboardPage = () => {
           if (cat.category === 'work_business') categoryCounts.work_business = Number(cat.count);
         });
       }
-      
-      const upcomingBirthdays = socialContacts.filter(contact => {
-        if (!contact.birthday) return false;
-        const birthday = new Date(contact.birthday);
-        const thisYearBirthday = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
-        return thisYearBirthday >= today && thisYearBirthday <= thirtyDaysFromNow;
-      }).length;
 
       // Process Professional
       const professionalContacts = professionalContactsResult.status === 'fulfilled' ? professionalContactsResult.value.data || [] : [];
@@ -419,18 +411,15 @@ const DashboardPage = () => {
           profitMargin: monthlyBizRevenue > 0 ? Math.round(((monthlyBizRevenue - monthlyBizExpenses) / monthlyBizRevenue) * 100) : 0,
           recentDeals: deals.filter(deal => new Date(deal.created_at) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length
         },
-        social: {
+        connections: {
           totalConnections: connectionsCount || 0,
           socialConnections: categoryCounts.social,
           communityConnections: categoryCounts.community,
           groupsConnections: categoryCounts.groups,
           workConnections: categoryCounts.work_business,
           recentInteractions: socialInteractions.length,
-          upcomingBirthdays,
-          needsFollowUp: socialContacts.filter(contact => {
-            if (!contact.last_interaction_at) return true;
-            return new Date(contact.last_interaction_at) < new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
-          }).length
+          upcomingBirthdays: 0, // Not tracked in connections
+          needsFollowUp: 0 // Not tracked in connections
         },
         professional: {
           totalContacts: professionalContacts.length,
@@ -592,7 +581,7 @@ const DashboardPage = () => {
             </CardHeader>
             <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
               <div className="text-xl sm:text-2xl font-bold">
-                {stats.social.totalConnections + stats.professional.totalContacts + stats.love.totalContacts + stats.business.totalContacts}
+                {stats.connections.totalConnections + stats.professional.totalContacts + stats.love.totalContacts + stats.business.totalContacts}
               </div>
               <p className="text-xs text-muted-foreground">
                 Across all networks
@@ -775,13 +764,13 @@ const DashboardPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.social.totalConnections}</div>
+                  <div className="text-3xl font-bold">{stats.connections.totalConnections}</div>
                   <div className="text-sm text-muted-foreground space-y-1">
-                    <div>{stats.social.socialConnections} social</div>
-                    <div>{stats.social.workConnections} work/business</div>
-                    <div>{stats.social.communityConnections} community</div>
+                    <div>{stats.connections.socialConnections} social</div>
+                    <div>{stats.connections.workConnections} work/business</div>
+                    <div>{stats.connections.communityConnections} community</div>
                   </div>
-                  <Link to="/members" className="mt-2 inline-block">
+                  <Link to="/connections" className="mt-2 inline-block">
                     <Button variant="outline" size="sm">View Connections</Button>
                   </Link>
                 </CardContent>
@@ -795,11 +784,11 @@ const DashboardPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.social.recentInteractions}</div>
+                  <div className="text-3xl font-bold">{stats.connections.recentInteractions}</div>
                   <p className="text-sm text-muted-foreground">Interactions this month</p>
-                  {stats.social.needsFollowUp > 0 && (
+                  {stats.connections.needsFollowUp > 0 && (
                     <Badge variant="outline" className="mt-1">
-                      {stats.social.needsFollowUp} need follow-up
+                      {stats.connections.needsFollowUp} need follow-up
                     </Badge>
                   )}
                 </CardContent>
@@ -813,9 +802,9 @@ const DashboardPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.social.upcomingBirthdays}</div>
+                  <div className="text-3xl font-bold">{stats.connections.upcomingBirthdays}</div>
                   <p className="text-sm text-muted-foreground">Birthdays next 30 days</p>
-                  {stats.social.upcomingBirthdays > 0 && (
+                  {stats.connections.upcomingBirthdays > 0 && (
                     <Badge className="mt-1">Don't forget!</Badge>
                   )}
                 </CardContent>
@@ -1103,16 +1092,16 @@ const DashboardPage = () => {
                 </Card>
               )}
 
-              {stats.social.upcomingBirthdays > 0 && (
+              {stats.connections.upcomingBirthdays > 0 && (
                 <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
                       <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-blue-800 dark:text-blue-300 text-sm sm:text-base">Upcoming Birthdays</h4>
-                        <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">{stats.social.upcomingBirthdays} birthdays in the next 30 days</p>
+                        <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">{stats.connections.upcomingBirthdays} birthdays in the next 30 days</p>
                       </div>
-                      <Link to="/social" className="w-full sm:w-auto sm:ml-auto">
+                      <Link to="/connections" className="w-full sm:w-auto sm:ml-auto">
                         <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">View Contacts</Button>
                       </Link>
                     </div>
@@ -1120,7 +1109,7 @@ const DashboardPage = () => {
                 </Card>
               )}
 
-              {(stats.social.needsFollowUp + stats.love.needsAttention) > 0 && (
+              {(stats.connections.needsFollowUp + stats.love.needsAttention) > 0 && (
                 <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950">
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
@@ -1128,7 +1117,7 @@ const DashboardPage = () => {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-yellow-800 dark:text-yellow-300 text-sm sm:text-base">Follow-up Needed</h4>
                         <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">
-                          {stats.social.needsFollowUp + stats.love.needsAttention} contacts haven't been reached out to recently
+                          {stats.connections.needsFollowUp + stats.love.needsAttention} contacts haven't been reached out to recently
                         </p>
                       </div>
                       <Link to="/social" className="w-full sm:w-auto sm:ml-auto">
@@ -1158,8 +1147,8 @@ const DashboardPage = () => {
 
               {/* If no alerts */}
               {stats.business.lowStockItems === 0 && 
-               stats.social.upcomingBirthdays === 0 && 
-               (stats.social.needsFollowUp + stats.love.needsAttention) === 0 && 
+               stats.connections.upcomingBirthdays === 0 && 
+               (stats.connections.needsFollowUp + stats.love.needsAttention) === 0 && 
                stats.professional.pendingPTO === 0 && (
                  <Card>
                    <CardContent className="p-6 sm:p-8 text-center">

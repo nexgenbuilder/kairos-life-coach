@@ -387,7 +387,7 @@ function getDefaultModulesForType(type: Group['type']) {
         { name: 'money', shared: false, visibility: 'private' },
         { name: 'health', shared: false, visibility: 'private' },
         { name: 'fitness', shared: false, visibility: 'private' },
-        { name: 'social', shared: false, visibility: 'private' },
+        { name: 'connections', shared: false, visibility: 'private' },
         { name: 'love', shared: false, visibility: 'private' },
         { name: 'creators', shared: false, visibility: 'private' },
         { name: 'crypto', shared: false, visibility: 'private' },
@@ -401,7 +401,7 @@ function getDefaultModulesForType(type: Group['type']) {
         { name: 'money', shared: true, visibility: 'all_members' },
         { name: 'health', shared: false, visibility: 'private' },
         { name: 'fitness', shared: true, visibility: 'all_members' },
-        { name: 'social', shared: true, visibility: 'all_members' },
+        { name: 'connections', shared: true, visibility: 'all_members' },
         { name: 'news', shared: true, visibility: 'all_members' },
       ];
     

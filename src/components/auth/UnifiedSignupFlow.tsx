@@ -113,7 +113,7 @@ export const UnifiedSignupFlow = () => {
       case 'individual':
         return [...baseModules, 'money', 'health', 'fitness'];
       case 'family':
-        return [...baseModules, 'money', 'health', 'social'];
+        return [...baseModules, 'money', 'health', 'connections'];
       case 'team':
       case 'project':
         return [...baseModules, 'professional', 'cloud'];
