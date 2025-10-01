@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { ContextSwitcher } from '@/components/organization/ContextSwitcher';
 import { cn } from '@/lib/utils';
+import { useSpaceBranding } from '@/hooks/useSpaceBranding';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,9 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, className }: AppLayoutProps) {
+  // Apply space branding
+  useSpaceBranding();
+  
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">

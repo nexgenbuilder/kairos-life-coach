@@ -35,7 +35,7 @@ export function ModulesExplorer() {
       icon: Users, 
       name: 'Connections', 
       color: 'text-indigo-500', 
-      description: 'Smart connection management across all shared spaces. Browse members, send messages, and organize connections by category.' 
+      description: 'Build meaningful relationships across all your spaces. Auto-discover colleagues, tag connections, and manage relationships with ease.' 
     },
     { id: 'business', icon: Briefcase, name: 'Business', color: 'text-indigo-500', description: 'Business financials, payroll, invoicing, and performance tracking.' },
     { id: 'crypto', icon: Bitcoin, name: 'Crypto', color: 'text-yellow-500', description: 'Track cryptocurrency portfolios and market data in real-time.' },

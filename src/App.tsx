@@ -32,6 +32,7 @@ import CloudPage from "./pages/CloudPage";
 import FeedPage from "./pages/FeedPage";
 import MembersPage from "./pages/MembersPage";
 import PublicSpacesPage from "./pages/PublicSpacesPage";
+import AdminPage from './pages/AdminPage';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/news" element={<ProtectedRoute><NewsPage /></ProtectedRoute>} />
             <Route path="/cloud" element={<ProtectedRoute><CloudPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

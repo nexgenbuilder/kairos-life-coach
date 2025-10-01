@@ -64,6 +64,10 @@ const lifeCategories = [
   { title: 'Cloud', url: '/cloud', icon: Cloud },
 ];
 
+const adminItems = [
+  { title: 'Admin', url: '/admin', icon: Settings, adminOnly: true },
+];
+
 const bottomItems = [
   { title: 'Notifications', url: '/notifications', icon: Bell },
   { title: 'Settings', url: '/settings', icon: Settings },
@@ -76,7 +80,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const { hasModuleAccess, loading: orgLoading, activeContext } = useOrganization();
+  const { hasModuleAccess, loading: orgLoading, activeContext, isAdmin } = useOrganization();
   
   // Check if current space is a shared space (not individual)
   const isSharedSpace = activeContext?.type !== 'individual';
@@ -177,6 +181,24 @@ export function AppSidebar() {
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>
+              {/* Admin section - only for space admins */}
+              {isAdmin() && adminItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url} 
+                      className={getNavCls}
+                      title={collapsed ? item.title : undefined}
+                    >
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      {!collapsed && (
+                        <span className="flex-1">{item.title}</span>
+                      )}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              
               {bottomItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
