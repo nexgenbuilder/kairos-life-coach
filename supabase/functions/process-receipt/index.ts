@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -30,10 +30,10 @@ serve(async (req) => {
       );
     }
 
-    if (!openAIApiKey) {
-      console.error('OpenAI API key not found in environment');
+    if (!lovableApiKey) {
+      console.error('Lovable API key not found in environment');
       return new Response(
-        JSON.stringify({ success: false, error: 'OpenAI API key not configured' }),
+        JSON.stringify({ success: false, error: 'AI service not configured' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -41,31 +41,31 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processing receipt with OpenAI Vision API...');
+    console.log('Processing receipt with Lovable AI (Gemini Vision)...');
 
-    // Use OpenAI Vision API to analyze the receipt
-    console.log('Making OpenAI Vision API request...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Use Lovable AI Gateway with Gemini for vision capabilities
+    console.log('Making Lovable AI request...');
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Analyze this receipt and extract individual items with their amounts. Return ONLY a valid JSON array with objects containing:
+                text: `Analyze this receipt image and extract individual items with their amounts. Return ONLY a valid JSON array with objects containing:
                 - description: string (item name/description)  
                 - amount: number (item price in decimal format)
-                - category: string (one of: "Food & Dining", "Transportation", "Shopping", "Entertainment", "Bills & Utilities", "Healthcare", "Travel", "Education", "Groceries", "Other")
+                - category: string (one of: "food", "transport", "utilities", "entertainment", "health", "shopping", "other")
                 
                 Return only the JSON array, no markdown formatting, no additional text. Example:
-                [{"description": "Coffee", "amount": 4.50, "category": "Food & Dining"}]`
+                [{"description": "Coffee", "amount": 4.50, "category": "food"}]`
               },
               {
                 type: 'image_url',
@@ -80,12 +80,27 @@ serve(async (req) => {
       }),
     });
 
-    console.log('OpenAI API response status:', response.status);
+    console.log('Lovable AI response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      console.error('Lovable AI error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again later.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'AI credits depleted. Please add credits to your workspace.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      throw new Error(`Lovable AI error: ${response.status} - ${errorText}`);
     }
 
     const aiResponse = await response.json();
