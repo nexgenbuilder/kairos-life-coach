@@ -18,11 +18,37 @@ serve(async (req) => {
   }
 
   try {
-    const { image, userId } = await req.json();
-
-    if (!image || !userId) {
+    // Get JWT token from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing image or userId' }),
+        JSON.stringify({ success: false, error: 'Missing authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create authenticated Supabase client to get user
+    const supabaseAuth = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = user.id;
+    console.log('Processing receipt for user:', userId);
+
+    const { image } = await req.json();
+
+    if (!image) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing image' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -138,12 +164,25 @@ serve(async (req) => {
       );
     }
 
+    // Get user's active organization context
+    const { data: contextData } = await supabaseAuth
+      .from('user_contexts')
+      .select('group_id')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('last_accessed', { ascending: false })
+      .limit(1)
+      .single();
+
+    const organizationId = contextData?.group_id || null;
+
     // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Insert each item as a separate expense
     const expenseRecords = items.map((item: any) => ({
       user_id: userId,
+      organization_id: organizationId,
       amount: parseFloat(item.amount.toString()),
       category: item.category,
       description: item.description,

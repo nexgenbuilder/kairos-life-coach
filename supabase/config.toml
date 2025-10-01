@@ -16,4 +16,4 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.process-receipt]
-verify_jwt = false
+verify_jwt = true

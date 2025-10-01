@@ -52,8 +52,7 @@ const ReceiptProcessor: React.FC<ReceiptProcessorProps> = ({ onExpensesAdded }) 
       // Call the receipt processing edge function
       const { data, error } = await supabase.functions.invoke('process-receipt', {
         body: {
-          image: base64,
-          userId: user.id
+          image: base64
         }
       });
 
