@@ -23,10 +23,10 @@ const SettingsPage = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-          <p className="text-muted-foreground mt-2">
+      <div className="container mx-auto py-4 sm:py-6 md:py-8 px-3 sm:px-4">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Settings</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Manage your account preferences and integrations
           </p>
         </div>
@@ -34,37 +34,42 @@ const SettingsPage = () => {
         {/* Show pending invitations for all users */}
         <PendingInvitations />
 
-        <Tabs defaultValue={activeContext?.type === 'individual' ? 'modules' : 'organization'} className="space-y-6">
-          <TabsList className={`grid w-full ${activeContext?.type === 'individual' ? 'grid-cols-5' : 'grid-cols-5'}`}>
-          {activeContext?.type !== 'individual' && (
-            <TabsTrigger value="organization" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              {activeContext?.type === 'organization' ? 'Organization' : 'Space'}
-            </TabsTrigger>
-          )}
-            {activeContext?.type === 'individual' && (
-              <TabsTrigger value="modules" className="flex items-center gap-2">
-                <SettingsIcon className="h-4 w-4" />
-                Modules
+        <Tabs defaultValue={activeContext?.type === 'individual' ? 'modules' : 'organization'} className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:w-full h-auto flex-nowrap sm:flex-wrap p-1 gap-1">
+              {activeContext?.type !== 'individual' && (
+                <TabsTrigger value="organization" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+                  <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">{activeContext?.type === 'organization' ? 'Organization' : 'Space'}</span>
+                  <span className="sm:hidden">{activeContext?.type === 'organization' ? 'Org' : 'Space'}</span>
+                </TabsTrigger>
+              )}
+              {activeContext?.type === 'individual' && (
+                <TabsTrigger value="modules" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+                  <SettingsIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Modules
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="integrations" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+                <Link className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Integrations</span>
+                <span className="sm:hidden">Integr.</span>
               </TabsTrigger>
-            )}
-            <TabsTrigger value="integrations" className="flex items-center gap-2">
-              <Link className="h-4 w-4" />
-              Integrations
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="general" className="flex items-center gap-2">
-              <SettingsIcon className="h-4 w-4" />
-              General
-            </TabsTrigger>
-          </TabsList>
+              <TabsTrigger value="notifications" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+                <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Notifications</span>
+                <span className="sm:hidden">Notifs</span>
+              </TabsTrigger>
+              <TabsTrigger value="security" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+                <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+                Security
+              </TabsTrigger>
+              <TabsTrigger value="general" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+                <SettingsIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                General
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {activeContext?.type === 'individual' && (
             <TabsContent value="modules" className="space-y-6">

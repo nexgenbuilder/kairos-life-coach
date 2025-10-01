@@ -502,24 +502,25 @@ const DashboardPage = () => {
   return (
     <AppLayout>
       <ErrorBoundary>
-      <div className="p-6 space-y-8">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-start">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div className="space-y-1 sm:space-y-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Life Dashboard
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg">
               Complete overview of your personal and professional life
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {quickActions.map((action) => (
               <Link key={action.label} to={action.href}>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <action.icon className="h-4 w-4" />
-                  {action.label}
+                <Button variant="outline" size="sm" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                  <action.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">{action.label}</span>
+                  <span className="sm:hidden">{action.label.split(' ')[1] || action.label.split(' ')[0]}</span>
                 </Button>
               </Link>
             ))}
@@ -527,14 +528,14 @@ const DashboardPage = () => {
         </div>
 
         {/* Key Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Net Worth</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Net Worth</CardTitle>
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${stats.finance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className={`text-xl sm:text-2xl font-bold ${stats.finance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(stats.finance.balance)}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -544,12 +545,12 @@ const DashboardPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Tasks</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Active Tasks</CardTitle>
+              <Target className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.tasks.active}</div>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{stats.tasks.active}</div>
               <p className="text-xs text-muted-foreground">
                 {stats.tasks.completionRate}% completion rate
               </p>
@@ -557,12 +558,12 @@ const DashboardPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Contacts</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Contacts</CardTitle>
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">
                 {stats.social.totalContacts + stats.professional.totalContacts + stats.love.totalContacts + stats.business.totalContacts}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -572,12 +573,12 @@ const DashboardPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Week</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">This Week</CardTitle>
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.health.thisWeekMetrics}</div>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{stats.health.thisWeekMetrics}</div>
               <p className="text-xs text-muted-foreground">
                 Health metrics this week
               </p>
@@ -585,12 +586,12 @@ const DashboardPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Weekly Hours</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Weekly Hours</CardTitle>
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.professional.hoursWorkedThisWeek}</div>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{stats.professional.hoursWorkedThisWeek}</div>
               <p className="text-xs text-muted-foreground">
                 {formatCurrency(stats.professional.weeklyEarnings)} earned
               </p>
@@ -599,20 +600,22 @@ const DashboardPage = () => {
         </div>
 
         {/* Module Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="business">Business</TabsTrigger>
-            <TabsTrigger value="social">Social</TabsTrigger>
-            <TabsTrigger value="professional">Professional</TabsTrigger>
-            <TabsTrigger value="love">Love</TabsTrigger>
-            <TabsTrigger value="creators">Creators</TabsTrigger>
-            <TabsTrigger value="health">Health</TabsTrigger>
-            <TabsTrigger value="alerts">Alerts</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full h-auto p-1 gap-1">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">Overview</TabsTrigger>
+              <TabsTrigger value="business" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">Business</TabsTrigger>
+              <TabsTrigger value="social" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">Social</TabsTrigger>
+              <TabsTrigger value="professional" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">Professional</TabsTrigger>
+              <TabsTrigger value="love" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">Love</TabsTrigger>
+              <TabsTrigger value="creators" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">Creators</TabsTrigger>
+              <TabsTrigger value="health" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">Health</TabsTrigger>
+              <TabsTrigger value="alerts" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">Alerts</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Tasks Overview */}
               <DashboardCard title="Tasks & Productivity" description="Your task management summary" icon={Target}>
                 <div className="space-y-3">
@@ -671,8 +674,8 @@ const DashboardPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="business" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="business" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -734,8 +737,8 @@ const DashboardPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="social" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="social" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -790,8 +793,8 @@ const DashboardPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="professional" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="professional" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -844,8 +847,8 @@ const DashboardPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="love" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="love" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -900,8 +903,8 @@ const DashboardPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="creators" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="creators" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -960,8 +963,8 @@ const DashboardPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="health" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="health" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1050,20 +1053,20 @@ const DashboardPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="alerts" className="space-y-6">
-            <div className="grid gap-4">
+          <TabsContent value="alerts" className="space-y-3 sm:space-y-4 md:space-y-6">
+            <div className="grid gap-3 sm:gap-4">
               {/* Priority Alerts */}
               {stats.business.lowStockItems > 0 && (
-                <Card className="border-red-200 bg-red-50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                      <div>
-                        <h4 className="font-medium text-red-800">Low Stock Alert</h4>
-                        <p className="text-sm text-red-600">{stats.business.lowStockItems} items need restocking</p>
+                <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-red-800 dark:text-red-300 text-sm sm:text-base">Low Stock Alert</h4>
+                        <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">{stats.business.lowStockItems} items need restocking</p>
                       </div>
-                      <Link to="/business" className="ml-auto">
-                        <Button variant="outline" size="sm">Check Inventory</Button>
+                      <Link to="/business" className="w-full sm:w-auto sm:ml-auto">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">Check Inventory</Button>
                       </Link>
                     </div>
                   </CardContent>
@@ -1071,16 +1074,16 @@ const DashboardPage = () => {
               )}
 
               {stats.social.upcomingBirthdays > 0 && (
-                <Card className="border-blue-200 bg-blue-50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Gift className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <h4 className="font-medium text-blue-800">Upcoming Birthdays</h4>
-                        <p className="text-sm text-blue-600">{stats.social.upcomingBirthdays} birthdays in the next 30 days</p>
+                <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                      <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-blue-800 dark:text-blue-300 text-sm sm:text-base">Upcoming Birthdays</h4>
+                        <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">{stats.social.upcomingBirthdays} birthdays in the next 30 days</p>
                       </div>
-                      <Link to="/social" className="ml-auto">
-                        <Button variant="outline" size="sm">View Contacts</Button>
+                      <Link to="/social" className="w-full sm:w-auto sm:ml-auto">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">View Contacts</Button>
                       </Link>
                     </div>
                   </CardContent>
@@ -1088,18 +1091,18 @@ const DashboardPage = () => {
               )}
 
               {(stats.social.needsFollowUp + stats.love.needsAttention) > 0 && (
-                <Card className="border-yellow-200 bg-yellow-50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <MessageCircle className="h-5 w-5 text-yellow-600" />
-                      <div>
-                        <h4 className="font-medium text-yellow-800">Follow-up Needed</h4>
-                        <p className="text-sm text-yellow-600">
+                <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                      <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-yellow-800 dark:text-yellow-300 text-sm sm:text-base">Follow-up Needed</h4>
+                        <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">
                           {stats.social.needsFollowUp + stats.love.needsAttention} contacts haven't been reached out to recently
                         </p>
                       </div>
-                      <Link to="/social" className="ml-auto">
-                        <Button variant="outline" size="sm">Review Contacts</Button>
+                      <Link to="/social" className="w-full sm:w-auto sm:ml-auto">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">Review Contacts</Button>
                       </Link>
                     </div>
                   </CardContent>
@@ -1107,16 +1110,16 @@ const DashboardPage = () => {
               )}
 
               {stats.professional.pendingPTO > 0 && (
-                <Card className="border-purple-200 bg-purple-50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Plane className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <h4 className="font-medium text-purple-800">Pending PTO</h4>
-                        <p className="text-sm text-purple-600">{stats.professional.pendingPTO} PTO requests awaiting approval</p>
+                <Card className="border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                      <Plane className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-purple-800 dark:text-purple-300 text-sm sm:text-base">Pending PTO</h4>
+                        <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-400">{stats.professional.pendingPTO} PTO requests awaiting approval</p>
                       </div>
-                      <Link to="/professional" className="ml-auto">
-                        <Button variant="outline" size="sm">Check Status</Button>
+                      <Link to="/professional" className="w-full sm:w-auto sm:ml-auto">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">Check Status</Button>
                       </Link>
                     </div>
                   </CardContent>
@@ -1128,13 +1131,13 @@ const DashboardPage = () => {
                stats.social.upcomingBirthdays === 0 && 
                (stats.social.needsFollowUp + stats.love.needsAttention) === 0 && 
                stats.professional.pendingPTO === 0 && (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">All Clear!</h3>
-                    <p className="text-muted-foreground">No urgent items require your attention right now.</p>
-                  </CardContent>
-                </Card>
+                 <Card>
+                   <CardContent className="p-6 sm:p-8 text-center">
+                     <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-green-500 mx-auto mb-3 sm:mb-4" />
+                     <h3 className="text-base sm:text-lg font-medium mb-2">All Clear!</h3>
+                     <p className="text-muted-foreground text-sm sm:text-base">No urgent items require your attention right now.</p>
+                   </CardContent>
+                 </Card>
               )}
             </div>
           </TabsContent>
