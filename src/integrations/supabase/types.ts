@@ -3292,57 +3292,6 @@ export type Database = {
         }
         Relationships: []
       }
-      module_settings: {
-        Row: {
-          created_at: string | null
-          group_id: string | null
-          id: string | null
-          is_enabled: boolean | null
-          is_shared: boolean | null
-          module_name: string | null
-          settings: Json | null
-          updated_at: string | null
-          visibility: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          group_id?: string | null
-          id?: string | null
-          is_enabled?: boolean | null
-          is_shared?: boolean | null
-          module_name?: string | null
-          settings?: Json | null
-          updated_at?: string | null
-          visibility?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          group_id?: string | null
-          id?: string | null
-          is_enabled?: boolean | null
-          is_shared?: boolean | null
-          module_name?: string | null
-          settings?: Json | null
-          updated_at?: string | null
-          visibility?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "module_permissions_organization_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "module_permissions_organization_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Functions: {
       accept_organization_invitation: {
