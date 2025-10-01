@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Shield, Zap, Users, Globe, TrendingUp } from 'lucide-react';
+import { Brain, Sparkles, Shield, Zap, Target, Users, MessageSquare, Globe } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 export function FeaturesShowcase() {
@@ -7,38 +7,50 @@ export function FeaturesShowcase() {
     {
       icon: Brain,
       title: "AI-Powered Intelligence",
-      description: "Google Gemini 2.5 integration for natural conversations, task automation, and smart insights across all your data.",
+      description: "Kairos learns from you and provides personalized insights, recommendations, and automation across all your data.",
       gradient: "from-purple-500/20 to-pink-500/20"
     },
     {
+      icon: MessageSquare,
+      title: "Social Collaboration",
+      description: "Share updates, @mention connections, comment and like posts—all within secure spaces with granular privacy controls.",
+      gradient: "from-pink-500/20 to-rose-500/20"
+    },
+    {
       icon: Users,
-      title: "Shared Spaces",
-      description: "Create collaborative workspaces for family, teams, or organizations with granular permission controls.",
-      gradient: "from-blue-500/20 to-cyan-500/20"
+      title: "Public & Private Spaces",
+      description: "Create private teams or public communities. Discoverable spaces let anyone join, while private ones stay invite-only.",
+      gradient: "from-indigo-500/20 to-purple-500/20"
     },
     {
       icon: Zap,
-      title: "Modular Platform",
-      description: "Enable only what you need: Money, Health, Fitness, Tasks, Calendar, Social, and 10+ more modules.",
-      gradient: "from-orange-500/20 to-yellow-500/20"
+      title: "Smart Connections",
+      description: "Automatic connection management based on shared spaces. Organize by Social, Community, Groups, or Work/Business.",
+      gradient: "from-blue-500/20 to-cyan-500/20"
     },
     {
       icon: Shield,
       title: "Privacy First",
-      description: "Your data stays yours. Enterprise-grade security with role-based access and end-to-end encryption.",
+      description: "Your data stays yours. Enterprise-grade security with granular privacy controls for every module and space.",
       gradient: "from-green-500/20 to-emerald-500/20"
     },
     {
-      icon: Globe,
-      title: "Live Search Integration",
-      description: "Real-time web search powered by AI for up-to-date information and contextual assistance.",
-      gradient: "from-indigo-500/20 to-purple-500/20"
+      icon: Sparkles,
+      title: "Natural Conversations",
+      description: "Chat with AI like a personal assistant. Add data, get insights, automate tasks—all in plain language.",
+      gradient: "from-orange-500/20 to-yellow-500/20"
     },
     {
-      icon: TrendingUp,
-      title: "Unified Dashboard",
-      description: "All your life data in one place. Track finances, health, tasks, and more with beautiful visualizations.",
-      gradient: "from-red-500/20 to-pink-500/20"
+      icon: Target,
+      title: "Modular Design",
+      description: "Activate only what you need. Each module is purpose-built, AI-integrated, and shareable with your spaces.",
+      gradient: "from-red-500/20 to-orange-500/20"
+    },
+    {
+      icon: Globe,
+      title: "Member Directory",
+      description: "Enhanced member management with profiles, categorization, direct messaging, and role-based access controls.",
+      gradient: "from-teal-500/20 to-green-500/20"
     }
   ];
 

@@ -4,6 +4,7 @@ import { HeroSection } from '@/components/HeroSection';
 import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
 import { ModulesExplorer } from '@/components/landing/ModulesExplorer';
 import { SharedSpacesDemo } from '@/components/landing/SharedSpacesDemo';
+import { SocialFeaturesSection } from '@/components/landing/SocialFeaturesSection';
 import { AICapabilitiesSection } from '@/components/landing/AICapabilitiesSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { AccessSection } from '@/components/landing/AccessSection';
@@ -58,6 +59,9 @@ const LandingPage = () => {
 
       {/* Shared Spaces Demo */}
       <SharedSpacesDemo />
+
+      {/* Social Features */}
+      <SocialFeaturesSection />
 
       {/* AI Capabilities */}
       <div id="ai">

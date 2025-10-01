@@ -65,7 +65,7 @@ export function HeroSection() {
             className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-primary/20 shadow-sm animate-fade-in"
           >
             <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Private Beta • AI-Powered Life OS</span>
+            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Private Beta • AI-Powered Life OS + Social Collaboration</span>
           </div>
           
           {/* Main heading with staggered animation */}
@@ -79,7 +79,7 @@ export function HeroSection() {
             <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground max-w-4xl mx-auto leading-relaxed font-medium px-4">
               The AI for your life — coach, planner, partner.
               <br className="hidden sm:block" />
-              <span className="text-foreground font-semibold">Manage everything through simple conversation.</span>
+              <span className="text-foreground font-semibold">Manage everything, collaborate with anyone, share with your community.</span>
             </p>
           </div>
           

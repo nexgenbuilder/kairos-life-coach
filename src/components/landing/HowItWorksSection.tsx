@@ -7,29 +7,29 @@ export function HowItWorksSection() {
     {
       number: "01",
       icon: UserPlus,
-      title: "Sign Up & Get Access",
-      description: "Request beta access, create your account, and join the Kairos community. Set up your personal or organization space in minutes.",
+      title: "Sign Up & Complete Profile",
+      description: "Request beta access and create your account. Complete your profile with your name and avatar—required for all social features.",
       color: "from-blue-500/20 to-cyan-500/20"
     },
     {
       number: "02",
       icon: Settings,
-      title: "Choose Your Modules",
-      description: "Enable only the modules you need—Money, Health, Tasks, Calendar, and more. Customize permissions for team members if you're in a shared space.",
+      title: "Create Your Space",
+      description: "Set up a private space or create a public community. Choose visibility, enable modules, and configure permissions for members.",
       color: "from-purple-500/20 to-pink-500/20"
     },
     {
       number: "03",
       icon: MessageSquare,
-      title: "Chat with AI",
-      description: "Start conversations with Kairos AI. Add data, ask questions, get insights, and automate tasks—all through natural language.",
-      color: "from-orange-500/20 to-yellow-500/20"
+      title: "Collaborate & Connect",
+      description: "Share posts in the Feed, @mention connections, and collaborate in real-time. Join public communities or invite members to private spaces.",
+      color: "from-pink-500/20 to-rose-500/20"
     },
     {
       number: "04",
       icon: TrendingUp,
-      title: "Track & Optimize",
-      description: "Watch your dashboard come alive with insights. AI learns your patterns, suggests improvements, and helps you achieve your goals.",
+      title: "AI-Powered Insights",
+      description: "Chat with Kairos AI, track your goals, and optimize your workflows. AI learns from you and your community to provide personalized insights.",
       color: "from-green-500/20 to-emerald-500/20"
     }
   ];
@@ -45,7 +45,7 @@ export function HowItWorksSection() {
             </span>
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
-            From signup to AI-powered life management in under 5 minutes
+            From signup to collaborative AI-powered management in under 5 minutes
           </p>
         </div>
 

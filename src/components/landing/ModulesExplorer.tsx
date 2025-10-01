@@ -9,19 +9,38 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 
 export function ModulesExplorer() {
-  const [activeModule, setActiveModule] = useState('money');
+  const [activeModule, setActiveModule] = useState('feed');
 
   const modules = [
-    { id: 'money', icon: DollarSign, name: 'Money', color: 'text-green-500', description: 'Track income, expenses, budgets, and financial goals with smart categorization and insights.' },
+    { 
+      id: 'feed',
+      icon: MessageSquare,
+      name: 'Feed',
+      color: 'text-pink-500',
+      description: 'Social collaboration hub for shared spaces. Share updates, @mention connections, and engage in real-time conversations with your teams.'
+    },
+    { 
+      id: 'money', 
+      icon: DollarSign, 
+      name: 'Money', 
+      color: 'text-green-500', 
+      description: 'Track income, expenses, budgets, and financial goals with smart categorization and insights.' 
+    },
     { id: 'health', icon: Heart, name: 'Health', color: 'text-red-500', description: 'Monitor health metrics, medications, symptoms, and medical appointments in one secure place.' },
     { id: 'fitness', icon: Dumbbell, name: 'Fitness', color: 'text-orange-500', description: 'Log workouts, track progress, set goals, and get AI-powered training recommendations.' },
     { id: 'tasks', icon: CheckSquare, name: 'Tasks', color: 'text-blue-500', description: 'Organize tasks with smart categories, priorities, and AI-powered task suggestions.' },
     { id: 'calendar', icon: Calendar, name: 'Calendar', color: 'text-purple-500', description: 'Unified calendar with Google Calendar sync and intelligent scheduling assistance.' },
-    { id: 'social', icon: MessageSquare, name: 'Social', color: 'text-pink-500', description: 'Content planning, scheduling, and analytics for your social media presence.' },
+    { 
+      id: 'connections', 
+      icon: Users, 
+      name: 'Connections', 
+      color: 'text-indigo-500', 
+      description: 'Smart connection management across all shared spaces. Browse members, send messages, and organize connections by category.' 
+    },
     { id: 'business', icon: Briefcase, name: 'Business', color: 'text-indigo-500', description: 'Business financials, payroll, invoicing, and performance tracking.' },
     { id: 'crypto', icon: Bitcoin, name: 'Crypto', color: 'text-yellow-500', description: 'Track cryptocurrency portfolios and market data in real-time.' },
     { id: 'stocks', icon: TrendingUp, name: 'Stocks', color: 'text-cyan-500', description: 'Monitor stock portfolios and market trends with live data.' },
-    { id: 'professional', icon: Users, name: 'Professional', color: 'text-teal-500', description: 'Work schedule management, PTO tracking, and professional development.' },
+    { id: 'professional', icon: Briefcase, name: 'Professional', color: 'text-teal-500', description: 'Work schedule management, PTO tracking, and professional development.' },
     { id: 'today', icon: Sun, name: 'Today', color: 'text-amber-500', description: 'Your daily hub with aggregated insights and quick actions across all modules.' },
     { id: 'cloud', icon: Cloud, name: 'Cloud', color: 'text-slate-500', description: 'Secure file storage, sharing, and collaboration with organization members.' },
     { id: 'notifications', icon: Bell, name: 'Notifications', color: 'text-rose-500', description: 'Centralized notification center for all platform activities and updates.' },
@@ -35,7 +54,7 @@ export function ModulesExplorer() {
     <section className="py-24 bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 space-y-4">
-          <Badge variant="secondary" className="mb-4">15+ Powerful Modules</Badge>
+          <Badge variant="secondary" className="mb-4">16+ Powerful Modules</Badge>
           <h2 className="text-4xl md:text-5xl font-bold">
             Build your{' '}
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
