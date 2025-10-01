@@ -36,12 +36,12 @@ const SettingsPage = () => {
 
         <Tabs defaultValue={activeContext?.type === 'individual' ? 'modules' : 'organization'} className="space-y-6">
           <TabsList className={`grid w-full ${activeContext?.type === 'individual' ? 'grid-cols-5' : 'grid-cols-5'}`}>
-            {activeContext?.type !== 'individual' && (
-              <TabsTrigger value="organization" className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                {activeContext?.type === 'organization' ? 'Organization' : 'Group'}
-              </TabsTrigger>
-            )}
+          {activeContext?.type !== 'individual' && (
+            <TabsTrigger value="organization" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              {activeContext?.type === 'organization' ? 'Organization' : 'Space'}
+            </TabsTrigger>
+          )}
             {activeContext?.type === 'individual' && (
               <TabsTrigger value="modules" className="flex items-center gap-2">
                 <SettingsIcon className="h-4 w-4" />
@@ -83,14 +83,14 @@ const SettingsPage = () => {
               ) : (
                 <Card>
                   <CardHeader>
-                    <CardTitle>{activeContext?.type === 'organization' ? 'Organization' : 'Group'} Settings</CardTitle>
+                    <CardTitle>{activeContext?.type === 'organization' ? 'Organization' : 'Space'} Settings</CardTitle>
                     <CardDescription>
-                      Only {activeContext?.type === 'organization' ? 'organization' : 'group'} administrators can manage these settings.
+                      Only {activeContext?.type === 'organization' ? 'organization' : 'space'} administrators can manage these settings.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">
-                      Contact your {activeContext?.type === 'organization' ? 'organization' : 'group'} administrator to make changes to these settings.
+                      Contact your {activeContext?.type === 'organization' ? 'organization' : 'space'} administrator to make changes to these settings.
                     </p>
                   </CardContent>
                 </Card>

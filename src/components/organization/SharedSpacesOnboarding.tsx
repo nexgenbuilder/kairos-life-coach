@@ -21,40 +21,40 @@ import {
 import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/components/ui/use-toast';
 
-type GroupType = 'individual' | 'family' | 'team' | 'organization' | 'project';
+type SpaceType = 'individual' | 'family' | 'team' | 'organization' | 'project';
 
-const GROUP_TYPES = [
+const SPACE_TYPES = [
   {
-    value: 'individual' as GroupType,
+    value: 'individual' as SpaceType,
     label: 'Continue as Individual',
     description: 'Private Life OS just for you',
     icon: Users,
     color: 'bg-blue-500',
   },
   {
-    value: 'family' as GroupType,
-    label: 'Create a Family Group',
+    value: 'family' as SpaceType,
+    label: 'Create a Family Space',
     description: 'Share calendars, budgets, and plans with family',
     icon: Heart,
     color: 'bg-pink-500',
   },
   {
-    value: 'team' as GroupType,
-    label: 'Create a Team',
+    value: 'team' as SpaceType,
+    label: 'Create a Team Space',
     description: 'Collaborate on projects with friends or colleagues',
     icon: Users,
     color: 'bg-green-500',
   },
   {
-    value: 'organization' as GroupType,
+    value: 'organization' as SpaceType,
     label: 'Create an Organization',
     description: 'Business with structured roles and admin controls',
     icon: Building2,
     color: 'bg-purple-500',
   },
   {
-    value: 'project' as GroupType,
-    label: 'Create a Project Group',
+    value: 'project' as SpaceType,
+    label: 'Create a Project Space',
     description: 'Focused collaboration for specific projects',
     icon: FolderOpen,
     color: 'bg-orange-500',
@@ -85,9 +85,9 @@ interface SharedSpacesOnboardingProps {
 export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ onComplete }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [selectedType, setSelectedType] = useState<GroupType>('individual');
-  const [groupName, setGroupName] = useState('');
-  const [groupDescription, setGroupDescription] = useState('');
+  const [selectedType, setSelectedType] = useState<SpaceType>('individual');
+  const [spaceName, setSpaceName] = useState('');
+  const [spaceDescription, setSpaceDescription] = useState('');
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [moduleSettings, setModuleSettings] = useState<Record<string, { shared: boolean; visibility: string }>>({});
   const [isCreating, setIsCreating] = useState(false);
@@ -95,7 +95,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   const { createGroup } = useOrganization();
   const { toast } = useToast();
 
-  const handleTypeSelection = (type: GroupType) => {
+  const handleTypeSelection = (type: SpaceType) => {
     setSelectedType(type);
     
     // Set default modules based on type
@@ -154,17 +154,17 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     }));
   };
 
-  const handleCreateGroup = async () => {
+  const handleCreateSpace = async () => {
     setIsCreating(true);
     
     try {
-      console.log('[Onboarding] Creating group, type:', selectedType);
+      console.log('[Onboarding] Creating space, type:', selectedType);
       
       if (selectedType === 'individual') {
         // Create individual context - still needs an organization for the app to work
-        const newGroup = await createGroup('Personal Space', 'individual', 'Your personal workspace');
+        const newSpace = await createGroup('Personal Space', 'individual', 'Your personal workspace');
         
-        console.log('[Onboarding] Individual group created:', newGroup?.id);
+        console.log('[Onboarding] Individual space created:', newSpace?.id);
         
         // Wait a moment for the database to update
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -179,34 +179,34 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         return;
       }
 
-      if (!groupName.trim()) {
+      if (!spaceName.trim()) {
         toast({
-          title: "Group name required",
-          description: "Please enter a name for your group.",
+          title: "Space name required",
+          description: "Please enter a name for your space.",
           variant: "destructive",
         });
         setIsCreating(false);
         return;
       }
 
-      const newGroup = await createGroup(groupName, selectedType, groupDescription);
+      const newSpace = await createGroup(spaceName, selectedType, spaceDescription);
       
-      console.log('[Onboarding] Group created:', newGroup?.id);
+      console.log('[Onboarding] Space created:', newSpace?.id);
       
       // Wait a moment for the database to update
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
-        title: "Group created successfully!",
+        title: "Space created successfully!",
         description: `Your ${selectedType} is ready to use.`,
       });
       
       // Use React Router navigate instead of hard redirect
       navigate('/', { replace: true });
     } catch (error) {
-      console.error('[Onboarding] Error creating group:', error);
+      console.error('[Onboarding] Error creating space:', error);
       toast({
-        title: "Error creating group",
+        title: "Error creating space",
         description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
@@ -227,7 +227,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {GROUP_TYPES.map((type) => (
+                {SPACE_TYPES.map((type) => (
                   <Card
                     key={type.value}
                     className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary"
@@ -251,7 +251,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   }
 
   if (step === 2) {
-    const selectedTypeInfo = GROUP_TYPES.find(t => t.value === selectedType)!;
+    const selectedTypeInfo = SPACE_TYPES.find(t => t.value === selectedType)!;
     
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -268,22 +268,22 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="groupName">{selectedType === 'family' ? 'Family Name' : 'Group Name'}</Label>
+                <Label htmlFor="spaceName">{selectedType === 'family' ? 'Family Name' : 'Space Name'}</Label>
                 <Input
-                  id="groupName"
+                  id="spaceName"
                   placeholder={`Enter your ${selectedType} name`}
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
+                  value={spaceName}
+                  onChange={(e) => setSpaceName(e.target.value)}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="groupDescription">Description (Optional)</Label>
+                <Label htmlFor="spaceDescription">Description (Optional)</Label>
                 <Textarea
-                  id="groupDescription"
-                  placeholder="Describe your group's purpose"
-                  value={groupDescription}
-                  onChange={(e) => setGroupDescription(e.target.value)}
+                  id="spaceDescription"
+                  placeholder="Describe your space's purpose"
+                  value={spaceDescription}
+                  onChange={(e) => setSpaceDescription(e.target.value)}
                   rows={3}
                 />
               </div>
@@ -297,7 +297,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
                 </Button>
                 <Button
                   onClick={() => setStep(3)}
-                  disabled={!groupName.trim()}
+                  disabled={!spaceName.trim()}
                   className="px-8"
                 >
                   Next
@@ -414,14 +414,14 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
                 Back
               </Button>
               <Button
-                onClick={handleCreateGroup}
+                onClick={handleCreateSpace}
                 disabled={isCreating || selectedModules.length === 0}
                 className="px-8"
               >
                 {isCreating ? 'Creating...' : (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    {selectedType === 'individual' ? 'Continue' : 'Create Group'}
+                    {selectedType === 'individual' ? 'Continue' : 'Create Space'}
                   </>
                 )}
               </Button>
@@ -433,7 +433,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   );
 };
 
-function getDefaultModulesForType(type: GroupType): string[] {
+function getDefaultModulesForType(type: SpaceType): string[] {
   switch (type) {
     case 'individual':
       return ['today', 'tasks', 'calendar', 'money', 'health', 'fitness', 'news'];
@@ -449,7 +449,7 @@ function getDefaultModulesForType(type: GroupType): string[] {
   }
 }
 
-function getDefaultModuleSettingsForType(type: GroupType, moduleName: string): { shared: boolean; visibility: string } {
+function getDefaultModuleSettingsForType(type: SpaceType, moduleName: string): { shared: boolean; visibility: string } {
   switch (type) {
     case 'individual':
       return { shared: false, visibility: 'private' };
