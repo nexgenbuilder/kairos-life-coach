@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useChatMode } from '@/hooks/useChatMode';
+import { routeMessage } from '@/lib/engineRouter';
 import { ModeToggle } from './ModeToggle';
 import { ModeStatusChip } from './ModeStatusChip';
 import { parseSlashCommand } from '@/utils/slashCommandParser';
@@ -293,131 +294,55 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         return;
       }
 
-      if (modeState.activeMode === 'perplexity') {
-        // Check quota before using Perplexity
-        const canUse = await checkQuota('perplexity');
-        if (!canUse) {
-          setIsLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase.functions.invoke('perplexity-search', {
-          body: { 
-            message: currentInput,
-            context: window.location.pathname.slice(1) || 'home'
-          },
-          headers: session ? {
-            'Authorization': `Bearer ${session.access_token}`
-          } : {}
-        });
-
-        if (error) {
-          handleError('Perplexity search failed. Switched to general mode.');
-          setIsLoading(false);
-          return;
-        }
-
-        await incrementUsage('perplexity');
-
-        const aiResponseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.response,
-          sender: 'kairos',
-          timestamp: new Date(),
-          source: 'perplexity'
-        };
-        
-        setMessages(prev => [...prev, aiResponseMessage]);
-
-      } else if (modeState.activeMode === 'gemini') {
-        // Check quota before using Gemini
-        const canUse = await checkQuota('gemini');
-        if (!canUse) {
-          setIsLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase.functions.invoke('lovable-chat', {
-          body: { 
-            message: currentInput,
-            context: window.location.pathname.slice(1) || 'home',
-            forceGPT5: false
-          },
-          headers: session ? {
-            'Authorization': `Bearer ${session.access_token}`
-          } : {}
-        });
-
-        if (error) {
-          handleError('Gemini AI failed. Switched to general mode.');
-          setIsLoading(false);
-          return;
-        }
-
-        await incrementUsage('gemini');
-
-        const aiResponseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.response,
-          sender: 'kairos',
-          timestamp: new Date(),
-          source: 'gemini'
-        };
-        
-        setMessages(prev => [...prev, aiResponseMessage]);
-
-        try {
-          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
-            body: { 
-              text: data.response,
-              voice: 'alloy'
-            }
+      // Route message through centralized engine router
+      const result = await routeMessage({
+        mode: modeState.activeMode,
+        text: currentInput,
+        context: window.location.pathname.slice(1) || 'home',
+        session,
+        onQuotaCheck: checkQuota,
+        onIncrementUsage: incrementUsage,
+        onFallback: (reason) => {
+          toast({
+            title: "Switched to General Mode",
+            description: reason,
+            variant: "default"
           });
-
-          if (!ttsError && ttsData.audioContent) {
-            const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
-            audio.play().catch(err => console.error('Error playing audio:', err));
-          }
-        } catch (error) {
-          console.error('Error generating speech:', error);
         }
+      });
 
-      } else {
-        // General mode: default to lovable-chat
-        const { data, error } = await supabase.functions.invoke('lovable-chat', {
-          body: { 
-            message: currentInput,
-            context: window.location.pathname.slice(1) || 'home',
-            forceGPT5: false
-          },
-          headers: session ? {
-            'Authorization': `Bearer ${session.access_token}`
-          } : {}
+      // Show fallback banner if needed
+      if (result.fellBackToGeneral && result.fallbackReason) {
+        toast({
+          title: "Using General Mode",
+          description: result.fallbackReason,
+          variant: "default"
         });
+      }
 
-        if (error) throw error;
+      const aiResponseMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: result.content,
+        sender: 'kairos',
+        timestamp: new Date(),
+        source: result.source
+      };
+      
+      setMessages(prev => [...prev, aiResponseMessage]);
 
-        const aiResponseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.response,
-          sender: 'kairos',
-          timestamp: new Date(),
-          source: data.source || 'lovable-ai'
-        };
-        
-        setMessages(prev => [...prev, aiResponseMessage]);
+      if ((window as any).refreshTodayPage) {
+        (window as any).refreshTodayPage();
+      }
+      if ((window as any).refreshDashboard) {
+        (window as any).refreshDashboard();
+      }
 
-        if ((window as any).refreshTodayPage) {
-          (window as any).refreshTodayPage();
-        }
-        if ((window as any).refreshDashboard) {
-          (window as any).refreshDashboard();
-        }
-
+      // TTS for Gemini and General modes
+      if (modeState.activeMode === 'gemini' || modeState.activeMode === 'general') {
         try {
           const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
             body: { 
-              text: data.response,
+              text: result.content,
               voice: 'alloy'
             }
           });
