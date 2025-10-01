@@ -12,37 +12,62 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { activeContext, loading: orgLoading } = useOrganization();
   const navigate = useNavigate();
   const [taskSheetOpen, setTaskSheetOpen] = useState(false);
   const [expenseSheetOpen, setExpenseSheetOpen] = useState(false);
   const [leadSheetOpen, setLeadSheetOpen] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    } else if (!orgLoading && user && !activeContext) {
-      navigate("/onboarding");
+    console.log('[Index] Auth loading:', authLoading, 'Org loading:', orgLoading, 'User:', !!user, 'ActiveContext:', !!activeContext);
+    
+    // Wait for both auth and org to finish loading before making navigation decisions
+    if (authLoading || orgLoading) {
+      console.log('[Index] Still loading, waiting...');
+      return;
     }
-  }, [user, loading, navigate, orgLoading, activeContext]);
 
-  if (loading || orgLoading) {
+    // Prevent multiple redirects
+    if (hasRedirected) {
+      console.log('[Index] Already redirected, skipping');
+      return;
+    }
+
+    // If no user, go to auth page
+    if (!user) {
+      console.log('[Index] No user, redirecting to /auth');
+      setHasRedirected(true);
+      navigate("/auth", { replace: true });
+      return;
+    }
+
+    // If user exists but no active context, go to onboarding
+    if (!activeContext) {
+      console.log('[Index] User exists but no active context, redirecting to /onboarding');
+      setHasRedirected(true);
+      navigate("/onboarding", { replace: true });
+      return;
+    }
+
+    console.log('[Index] All good, showing dashboard');
+  }, [user, authLoading, orgLoading, activeContext, navigate, hasRedirected]);
+
+  // Show loading while auth or org is loading
+  if (authLoading || orgLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Loading your workspace...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
-  if (!user || orgLoading || !activeContext) {
+  // Don't render anything if we're missing user or context (navigation will handle it)
+  if (!user || !activeContext) {
     return null;
   }
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,6 +83,7 @@ interface SharedSpacesOnboardingProps {
 }
 
 export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ onComplete }) => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState<GroupType>('individual');
   const [groupName, setGroupName] = useState('');
@@ -156,20 +158,24 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     setIsCreating(true);
     
     try {
+      console.log('[Onboarding] Creating group, type:', selectedType);
+      
       if (selectedType === 'individual') {
         // Create individual context - still needs an organization for the app to work
         const newGroup = await createGroup('Personal Space', 'individual', 'Your personal workspace');
         
+        console.log('[Onboarding] Individual group created:', newGroup?.id);
+        
         // Wait a moment for the database to update
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
         toast({
           title: "Welcome to Kairos!",
           description: "Your personal workspace is ready.",
         });
         
-        // Navigate directly instead of reloading
-        window.location.href = '/';
+        // Use React Router navigate instead of hard redirect
+        navigate('/', { replace: true });
         return;
       }
 
@@ -179,29 +185,31 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
           description: "Please enter a name for your group.",
           variant: "destructive",
         });
+        setIsCreating(false);
         return;
       }
 
       const newGroup = await createGroup(groupName, selectedType, groupDescription);
       
+      console.log('[Onboarding] Group created:', newGroup?.id);
+      
       // Wait a moment for the database to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
         title: "Group created successfully!",
         description: `Your ${selectedType} is ready to use.`,
       });
       
-      // Navigate directly instead of reloading
-      window.location.href = '/';
+      // Use React Router navigate instead of hard redirect
+      navigate('/', { replace: true });
     } catch (error) {
-      console.error('Error creating group:', error);
+      console.error('[Onboarding] Error creating group:', error);
       toast({
         title: "Error creating group",
-        description: "Please try again.",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsCreating(false);
     }
   };

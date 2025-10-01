@@ -9,8 +9,11 @@ const LandingPage = () => {
   const { user, loading } = useAuth();
 
   useEffect(() => {
+    console.log('[LandingPage] Loading:', loading, 'User:', !!user);
+    
     if (!loading && user) {
-      navigate("/dashboard");
+      console.log('[LandingPage] User authenticated, redirecting to /dashboard');
+      navigate("/dashboard", { replace: true });
     }
   }, [user, loading, navigate]);
 

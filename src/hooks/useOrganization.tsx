@@ -50,13 +50,23 @@ export const useOrganization = () => {
   const [membership, setMembership] = useState<GroupMembership | null>(null);
   const [moduleSettings, setModuleSettings] = useState<ModuleSetting[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user) {
+        console.log('[useOrganization] No user, skipping fetch');
         setLoading(false);
+        setActiveContext(null);
+        setUserContexts([]);
+        setMembership(null);
+        setModuleSettings([]);
         return;
       }
+
+      console.log('[useOrganization] Fetching user data for:', user.id);
+      setLoading(true);
+      setError(null);
 
       try {
         // Get user's contexts
@@ -64,8 +74,10 @@ export const useOrganization = () => {
           .rpc('get_user_contexts', { user_uuid: user.id });
 
         if (contextsError) {
-          console.error('Error fetching user contexts:', contextsError);
+          console.error('[useOrganization] Error fetching user contexts:', contextsError);
+          setError('Failed to load contexts');
         } else {
+          console.log('[useOrganization] User contexts:', contextsData);
           setUserContexts(contextsData || []);
         }
 
@@ -74,8 +86,10 @@ export const useOrganization = () => {
           .rpc('get_user_active_context', { user_uuid: user.id });
 
         if (activeError) {
-          console.error('Error fetching active context:', activeError);
+          console.error('[useOrganization] Error fetching active context:', activeError);
+          setError('Failed to load active context');
         } else if (activeContextId) {
+          console.log('[useOrganization] Active context ID:', activeContextId);
           // Get active context details
           const { data: contextData, error: contextError } = await supabase
             .from('organizations')
@@ -129,10 +143,16 @@ export const useOrganization = () => {
               can_admin: setting.can_admin ?? false
             })));
           }
+        } else {
+          console.log('[useOrganization] No active context found');
+          // User has no active context - they need onboarding
+          setActiveContext(null);
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('[useOrganization] Error fetching user data:', error);
+        setError('Failed to load user data');
       } finally {
+        console.log('[useOrganization] Finished loading, activeContext:', activeContext?.id || 'none');
         setLoading(false);
       }
     };
@@ -339,6 +359,7 @@ export const useOrganization = () => {
     membership,
     moduleSettings,
     loading,
+    error,
     hasModuleAccess,
     isAdmin,
     switchContext,
