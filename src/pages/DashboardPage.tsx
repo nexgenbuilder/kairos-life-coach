@@ -4,6 +4,8 @@ import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { PageLoading } from '@/components/ui/loading-spinner';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganization } from '@/hooks/useOrganization';
+import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -140,6 +142,7 @@ interface AllModuleStats {
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const { activeContext, loading: orgLoading } = useOrganization();
   const [stats, setStats] = useState<AllModuleStats>({
     tasks: { inactive: 0, active: 0, completed: 0, total: 0, completionRate: 0 },
     finance: { totalIncome: 0, totalExpenses: 0, balance: 0, monthlyIncome: 0, monthlyExpenses: 0, monthlyBalance: 0 },
@@ -500,6 +503,20 @@ const DashboardPage = () => {
       fetchAllModuleStats();
     }
   }, [user]);
+
+  // If organization is still loading, show loading state
+  if (orgLoading) {
+    return (
+      <AppLayout>
+        <PageLoading message="Loading your workspace..." />
+      </AppLayout>
+    );
+  }
+
+  // If user doesn't have an active context, redirect to onboarding
+  if (!orgLoading && !activeContext) {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   if (isLoading) {
     return (

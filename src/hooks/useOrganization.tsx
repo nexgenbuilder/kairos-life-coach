@@ -95,15 +95,19 @@ export const useOrganization = () => {
             .from('organizations')
             .select('*')
             .eq('id', activeContextId)
-            .single();
+            .maybeSingle();
 
           if (contextError) {
-            console.error('Error fetching context details:', contextError);
-          } else {
+            console.error('[useOrganization] Error fetching context details:', contextError);
+            setError('Failed to load workspace details');
+          } else if (contextData) {
+            console.log('[useOrganization] Context data loaded:', contextData);
             setActiveContext({
               ...contextData,
               type: contextData.type as Group['type']
             });
+          } else {
+            console.log('[useOrganization] No context data found for ID:', activeContextId);
           }
 
           // Get membership details
@@ -113,15 +117,19 @@ export const useOrganization = () => {
             .eq('user_id', user.id)
             .eq('organization_id', activeContextId)
             .eq('is_active', true)
-            .single();
+            .maybeSingle();
 
           if (membershipError) {
-            console.error('Error fetching membership:', membershipError);
-          } else {
+            console.error('[useOrganization] Error fetching membership:', membershipError);
+            setError('Failed to load membership details');
+          } else if (membershipData) {
+            console.log('[useOrganization] Membership data loaded');
             setMembership({
               ...membershipData,
               group_id: membershipData.organization_id
             });
+          } else {
+            console.log('[useOrganization] No membership found');
           }
 
           // Get module settings
@@ -131,8 +139,10 @@ export const useOrganization = () => {
             .eq('organization_id', activeContextId);
 
           if (settingsError) {
-            console.error('Error fetching module settings:', settingsError);
+            console.error('[useOrganization] Error fetching module settings:', settingsError);
+            setError('Failed to load module settings');
           } else {
+            console.log('[useOrganization] Module settings loaded:', settingsData?.length || 0);
             setModuleSettings((settingsData || []).map(setting => ({
               ...setting,
               group_id: setting.organization_id,
