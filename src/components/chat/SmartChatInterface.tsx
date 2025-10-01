@@ -681,7 +681,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           )}
 
           {/* Input Area */}
-          <div className="p-4 border-t border-border">
+          <div className="border-t border-border">
             {showMentions && activeContext && (
               <MentionAutocomplete
                 searchTerm={mentionSearch}
@@ -690,31 +690,37 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 position={mentionPosition}
               />
             )}
+            
+            {/* Image Preview */}
             {selectedImage && (
-              <div className="mb-2 relative inline-block">
-                <img 
-                  src={selectedImage} 
-                  alt="Selected" 
-                  className="max-h-20 rounded-lg"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive hover:bg-destructive/90"
-                  onClick={() => setSelectedImage(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+              <div className="p-3 border-b border-border">
+                <div className="relative inline-block">
+                  <img 
+                    src={selectedImage} 
+                    alt="Selected" 
+                    className="max-h-24 rounded-lg"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-destructive hover:bg-destructive/90"
+                    onClick={() => setSelectedImage(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
-            <div className="flex space-x-2">
+
+            {/* Action Buttons Row - Mobile Optimized */}
+            <div className="p-3 flex items-center gap-2 flex-wrap sm:flex-nowrap">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
                     disabled={isLoading || !activeContext}
-                    className="shrink-0"
+                    className="shrink-0 h-11 w-11 sm:h-10 sm:w-10"
                     title="Attach files from Cloud Storage"
                   >
                     <Paperclip className="h-4 w-4" />
@@ -763,7 +769,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
-                className="shrink-0"
+                className="shrink-0 h-11 w-11 sm:h-10 sm:w-10"
                 title="Upload receipt image"
               >
                 <Image className="h-4 w-4" />
@@ -773,7 +779,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 size="icon"
                 onClick={toggleListening}
                 disabled={isLoading}
-                className={cn("shrink-0", isListening && "bg-destructive text-destructive-foreground")}
+                className={cn("shrink-0 h-11 w-11 sm:h-10 sm:w-10", isListening && "bg-destructive text-destructive-foreground")}
                 title="Voice input"
               >
                 {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -783,7 +789,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 size="icon"
                 onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
                 disabled={isLoading}
-                className="shrink-0"
+                className="shrink-0 h-11 w-11 sm:h-10 sm:w-10"
                 title="GPT-5 Mode"
               >
                 <Sparkles className="h-4 w-4" />
@@ -793,11 +799,15 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 size="icon"
                 onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
                 disabled={isLoading}
-                className="shrink-0"
+                className="shrink-0 h-11 w-11 sm:h-10 sm:w-10"
                 title="Web Search Mode"
               >
                 <Search className="h-4 w-4" />
               </Button>
+            </div>
+
+            {/* Input Field Row - Full Width */}
+            <div className="px-3 pb-3 flex items-end gap-2">
               <Input
                 ref={inputRef}
                 value={inputValue}
@@ -809,17 +819,18 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 }}
                 placeholder={activeContext ? "Message AI or @mention teammates..." : "Ask Kairos anything..."}
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 min-h-[48px] h-auto py-3 px-4"
               />
               <Button 
                 onClick={handleSendMessage} 
                 disabled={isLoading || (!inputValue.trim() && !selectedImage && attachedFiles.length === 0)}
-                className="shrink-0"
+                className="shrink-0 h-12 w-12"
+                size="icon"
               >
                 {isLoading ? (
-                  <Bot className="h-4 w-4 animate-pulse" />
+                  <Bot className="h-5 w-5 animate-pulse" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5" />
                 )}
               </Button>
             </div>
