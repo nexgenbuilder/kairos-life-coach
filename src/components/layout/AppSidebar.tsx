@@ -22,7 +22,8 @@ import {
   Cloud,
   Rss,
   UserCircle,
-  MessageSquare
+  MessageSquare,
+  Layers
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -48,6 +49,7 @@ const lifeCategories = [
   { title: 'Today', url: '/today', icon: Clock },
   { title: 'Feed', url: '/feed', icon: Rss, sharedOnly: true },
   { title: 'Members', url: '/members', icon: UserCircle, sharedOnly: true },
+  { title: 'Spaces', url: '/spaces', icon: Layers },
   { title: 'Connections', url: '/connections', icon: MessageSquare },
   { title: 'Money', url: '/money', icon: DollarSign },
   { title: 'Health', url: '/health', icon: Heart },
@@ -104,15 +106,25 @@ export function AppSidebar() {
           to="/dashboard" 
           className="flex items-center space-x-3 group"
         >
-          <div className="w-8 h-8 bg-primary-gradient rounded-lg flex items-center justify-center shadow-glow-soft">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
+          {activeContext?.logo_url ? (
+            <img 
+              src={activeContext.logo_url} 
+              alt={activeContext.name || 'Logo'} 
+              className="w-8 h-8 object-contain rounded-lg"
+            />
+          ) : (
+            <div className="w-8 h-8 bg-primary-gradient rounded-lg flex items-center justify-center shadow-glow-soft">
+              <Sparkles className="h-4 w-4 text-white" />
+            </div>
+          )}
           {!collapsed && (
             <div>
               <h1 className="font-bold text-lg bg-hero-gradient bg-clip-text text-transparent">
-                Kairos
+                {activeContext?.name || 'Kairos'}
               </h1>
-              <p className="text-xs text-muted-foreground">AI for your life</p>
+              <p className="text-xs text-muted-foreground">
+                {activeContext?.type === 'individual' ? 'AI for your life' : activeContext?.description || 'Shared Space'}
+              </p>
             </div>
           )}
         </NavLink>
@@ -138,6 +150,7 @@ export function AppSidebar() {
                     '/today': 'today',
                     '/feed': 'feed',
                     '/members': 'feed',
+                    '/spaces': 'spaces',
                     '/professional': 'professional',
                     '/tasks': 'tasks',
                     '/calendar': 'calendar',

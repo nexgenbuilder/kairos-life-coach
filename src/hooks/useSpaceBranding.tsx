@@ -61,6 +61,16 @@ export function useSpaceBranding() {
   const { activeContext } = useOrganization();
 
   useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    
+    // Cleanup first to prevent flicker
+    root.style.removeProperty('--primary');
+    root.style.removeProperty('--secondary');
+    root.style.removeProperty('--accent');
+    body.style.backgroundImage = '';
+    body.style.fontFamily = '';
+    
     if (!activeContext?.settings) return;
 
     const settings = activeContext.settings as SpaceBranding;
@@ -68,61 +78,54 @@ export function useSpaceBranding() {
     const backgroundImage = settings.background_image_url;
     const typography = settings.typography;
 
-    // Apply brand colors as CSS custom properties
-    if (brandColors) {
-      const root = document.documentElement;
-      
-      if (brandColors.primary) {
-        root.style.setProperty('--space-primary', hexToHSL(brandColors.primary));
-        root.style.setProperty('--primary', hexToHSL(brandColors.primary));
+    // Apply brand colors as CSS custom properties with a small delay to prevent flicker
+    requestAnimationFrame(() => {
+      if (brandColors) {
+        if (brandColors.primary) {
+          root.style.setProperty('--primary', hexToHSL(brandColors.primary));
+        }
+        
+        if (brandColors.secondary) {
+          root.style.setProperty('--secondary', hexToHSL(brandColors.secondary));
+        }
+        
+        if (brandColors.accent) {
+          root.style.setProperty('--accent', hexToHSL(brandColors.accent));
+        }
+        
+        if (brandColors.background) {
+          root.style.setProperty('--background', hexToHSL(brandColors.background));
+        }
+        
+        if (brandColors.text) {
+          root.style.setProperty('--foreground', hexToHSL(brandColors.text));
+        }
       }
-      
-      if (brandColors.secondary) {
-        root.style.setProperty('--space-secondary', hexToHSL(brandColors.secondary));
-        root.style.setProperty('--secondary', hexToHSL(brandColors.secondary));
-      }
-      
-      if (brandColors.accent) {
-        root.style.setProperty('--space-accent', hexToHSL(brandColors.accent));
-        root.style.setProperty('--accent', hexToHSL(brandColors.accent));
-      }
-      
-      if (brandColors.background) {
-        root.style.setProperty('--space-background', hexToHSL(brandColors.background));
-      }
-      
-      if (brandColors.text) {
-        root.style.setProperty('--space-text', hexToHSL(brandColors.text));
-      }
-    }
 
-    // Apply background image
-    if (backgroundImage) {
-      document.body.style.backgroundImage = `url(${backgroundImage})`;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundAttachment = 'fixed';
-      document.body.style.backgroundPosition = 'center';
-    } else {
-      document.body.style.backgroundImage = '';
-    }
+      // Apply background image with proper layering
+      if (backgroundImage) {
+        body.style.backgroundImage = `url(${backgroundImage})`;
+        body.style.backgroundSize = 'cover';
+        body.style.backgroundAttachment = 'fixed';
+        body.style.backgroundPosition = 'center';
+        body.style.backgroundRepeat = 'no-repeat';
+      }
 
-    // Apply typography
-    if (typography?.font) {
-      document.documentElement.style.setProperty('--space-font', typography.font);
-      document.body.style.fontFamily = typography.font;
-    }
+      // Apply typography
+      if (typography?.font) {
+        body.style.fontFamily = `${typography.font}, sans-serif`;
+      }
+    });
 
     // Cleanup function to reset when context changes
     return () => {
-      const root = document.documentElement;
-      root.style.removeProperty('--space-primary');
-      root.style.removeProperty('--space-secondary');
-      root.style.removeProperty('--space-accent');
-      root.style.removeProperty('--space-background');
-      root.style.removeProperty('--space-text');
-      root.style.removeProperty('--space-font');
-      document.body.style.backgroundImage = '';
-      document.body.style.fontFamily = '';
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--secondary');
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--background');
+      root.style.removeProperty('--foreground');
+      body.style.backgroundImage = '';
+      body.style.fontFamily = '';
     };
   }, [activeContext]);
 
