@@ -3,21 +3,21 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Heart, LogIn, UserPlus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { HeroContinuousMotion } from './HeroContinuousMotion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 export function HeroSection() {
   const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
 
   const scrollToAccess = () => {
     document.getElementById('access')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-secondary/5 min-h-screen flex flex-col">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-      </div>
+    <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-secondary/5 min-h-screen flex flex-col">
+      {/* Continuous motion system */}
+      <HeroContinuousMotion intensity="med" />
       
       {/* Navigation */}
       <nav className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 sm:py-6">
@@ -70,12 +70,26 @@ export function HeroSection() {
           
           {/* Main heading with staggered animation */}
           <div className="space-y-4 sm:space-y-6 animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground drop-shadow-sm px-4">
+            <motion.h1
+              className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground drop-shadow-sm px-4"
+              animate={
+                shouldReduceMotion
+                  ? {}
+                  : {
+                      textShadow: [
+                        "0 0 0 hsla(248, 53%, 58%, 0)",
+                        "0 0 24px hsla(248, 53%, 58%, 0.55)",
+                        "0 0 0 hsla(248, 53%, 58%, 0)",
+                      ],
+                    }
+              }
+              transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }}
+            >
               Meet{' '}
-              <span className="text-primary">
+              <span className="kairos-accent text-primary">
                 Kairos
               </span>
-            </h1>
+            </motion.h1>
             <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground max-w-4xl mx-auto leading-relaxed font-medium px-4">
               The AI for your life — coach, planner, partner.
               <br className="hidden sm:block" />
@@ -141,11 +155,19 @@ export function HeroSection() {
       </div>
 
       {/* Scroll indicator */}
-      <div className="relative pb-12 animate-bounce">
-        <div className="w-6 h-10 border-2 border-primary/30 rounded-full mx-auto flex items-start justify-center p-2">
-          <div className="w-1 h-2 bg-primary rounded-full"></div>
+      <motion.div
+        className="relative pb-12"
+        animate={shouldReduceMotion ? {} : { y: [0, 10, 0] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        <div className="w-7 h-12 rounded-full border-2 border-primary/30 flex items-start justify-center p-1">
+          <motion.div
+            className="w-2 h-2 bg-primary rounded-full"
+            animate={shouldReduceMotion ? {} : { y: [0, 6, 0] }}
+            transition={{ duration: 1.6, repeat: Infinity }}
+          />
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </section>
   );
 }
