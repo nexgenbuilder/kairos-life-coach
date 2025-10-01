@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Send, Mic, MicOff, Bot, Search, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Send, Mic, MicOff, Bot, Search, Sparkles, Image, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ interface Message {
   sender: 'user' | 'kairos';
   timestamp: Date;
   source?: string; // Track which AI model responded
+  imageUrl?: string; // For displaying images in chat
 }
 
 interface ChatInterfaceProps {
@@ -34,6 +35,8 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [routingMode, setRoutingMode] = useState<'auto' | 'gpt5' | 'search'>('auto'); // Manual routing control
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Detection patterns for different actions
   const detectActionType = (message: string): 'task' | 'expense' | 'income' | 'fitness' | 'chat' => {
@@ -77,22 +80,89 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     return 'chat';
   };
 
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image must be less than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Read file as base64
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+    if ((!inputValue.trim() && !selectedImage) || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
+      content: inputValue || (selectedImage ? 'Uploaded an image' : ''),
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      imageUrl: selectedImage || undefined
     };
 
     setMessages(prev => [...prev, userMessage]);
     const currentInput = inputValue;
+    const currentImage = selectedImage;
     setInputValue('');
+    setSelectedImage(null);
     setIsLoading(true);
 
     try {
+      // If image is provided, try to process it as a receipt
+      if (currentImage) {
+        try {
+          const { data: receiptData, error: receiptError } = await supabase.functions.invoke('process-receipt', {
+            body: {
+              image: currentImage
+            }
+          });
+
+          if (receiptError) throw receiptError;
+
+          const successMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: `Great! I processed your receipt and added ${receiptData.itemsAdded} expense items:\n\n${receiptData.items.map((item: any) => `• ${item.description}: $${item.amount}`).join('\n')}\n\nTotal: $${receiptData.items.reduce((sum: number, item: any) => sum + item.amount, 0).toFixed(2)}`,
+            sender: 'kairos',
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, successMessage]);
+
+          // Refresh Today page if it exists
+          if ((window as any).refreshTodayPage) {
+            (window as any).refreshTodayPage();
+          }
+
+          return;
+        } catch (error) {
+          console.error('Receipt processing error:', error);
+          toast({
+            title: "Receipt Processing Failed",
+            description: "Could not process the receipt image. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Continue with existing text-based message handling
+      if (!currentInput.trim()) {
+        setIsLoading(false);
+        return;
+      }
+
       if (routingMode === 'search') {
         // Force Perplexity for real-time search
         const { data, error } = await supabase.functions.invoke('perplexity-search', {
@@ -347,6 +417,14 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                   : 'bg-chat-gradient border border-border text-foreground'
               )}
             >
+              {message.imageUrl && (
+                <img 
+                  src={message.imageUrl} 
+                  alt="Uploaded receipt" 
+                  className="max-w-full rounded-lg mb-2"
+                  style={{ maxHeight: '200px' }}
+                />
+              )}
               <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
               {message.sender === 'kairos' && message.source && (
                 <div className="mt-2 flex justify-end">
@@ -379,13 +457,48 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
 
       {/* Input Area */}
       <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
+        {selectedImage && (
+          <div className="max-w-4xl mx-auto mb-2 relative inline-block">
+            <img 
+              src={selectedImage} 
+              alt="Selected receipt" 
+              className="max-h-32 rounded-lg border border-border"
+            />
+            <Button
+              size="icon"
+              variant="destructive"
+              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+              onClick={() => setSelectedImage(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
         <div className="flex items-center space-x-2 max-w-4xl mx-auto">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+            accept="image/*"
+            className="hidden"
+          />
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            className="text-muted-foreground hover:text-primary"
+            title="Upload receipt image"
+          >
+            <Image className="h-4 w-4" />
+          </Button>
+
           <div className="flex-1 relative">
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder={routingMode === 'gpt5' ? "Chat with Lovable AI..." : routingMode === 'search' ? "Search the web..." : "Create tasks, log expenses, track fitness..."}
+              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+              placeholder={selectedImage ? "Add a note (optional)" : routingMode === 'gpt5' ? "Chat with Lovable AI..." : routingMode === 'search' ? "Search the web..." : "Create tasks, log expenses, track fitness..."}
               className="pr-12 border-border focus:ring-primary"
             />
           </div>
@@ -432,7 +545,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           
           <Button 
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
+            disabled={(!inputValue.trim() && !selectedImage) || isLoading}
             className="bg-primary-gradient hover:opacity-90 transition-smooth shadow-glow-soft"
           >
             {isLoading ? (
