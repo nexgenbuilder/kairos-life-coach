@@ -20,8 +20,6 @@ import {
 } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { SharedSpacesOnboarding } from './SharedSpacesOnboarding';
 
 const SPACE_TYPE_ICONS = {
   individual: User,
@@ -32,11 +30,10 @@ const SPACE_TYPE_ICONS = {
 };
 
 export const ContextSwitcher: React.FC = () => {
+  const navigate = useNavigate();
   const { activeContext, userContexts, switchContext, loading } = useOrganization();
   const [isSwitching, setIsSwitching] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleContextSwitch = async (contextId: string) => {
     if (contextId === activeContext?.id) return;
@@ -126,24 +123,13 @@ export const ContextSwitcher: React.FC = () => {
           <DropdownMenuSeparator />
           <DropdownMenuItem 
             className="flex items-center space-x-2 cursor-pointer"
-            onClick={() => setShowCreateDialog(true)}
+            onSelect={() => navigate('/spaces/new')}
           >
             <Plus className="w-4 w-4" />
             <span>Create New Space</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <SharedSpacesOnboarding 
-            onComplete={() => {
-              setShowCreateDialog(false);
-              window.location.reload();
-            }} 
-          />
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

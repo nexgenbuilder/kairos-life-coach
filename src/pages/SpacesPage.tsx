@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,8 @@ import {
   Clock,
   MapPin,
   DollarSign,
-  Filter
+  Filter,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,6 +56,7 @@ const CATEGORIES = [
 ];
 
 const SpacesPage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [spaces, setSpaces] = useState<PublicSpace[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -228,6 +231,10 @@ const SpacesPage = () => {
               Find and join communities across categories
             </p>
           </div>
+          <Button onClick={() => navigate('/spaces/new')} size="lg">
+            <Plus className="mr-2 h-4 w-4" />
+            Create New Space
+          </Button>
         </div>
 
         <Card>

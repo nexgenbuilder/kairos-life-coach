@@ -213,15 +213,21 @@ export const useOrganization = () => {
     }
   };
 
-  const createGroup = async (name: string, type: Group['type'], description?: string) => {
-    if (!user) throw new Error('User not authenticated');
+  const createGroup = async (
+    name: string,
+    type: Group['type'],
+    description?: string,
+    modules?: string[],
+    discoverable?: boolean
+  ): Promise<{ success: boolean; groupId?: string; error?: string }> => {
+    if (!user) return { success: false, error: 'User not authenticated' };
 
     try {
-      console.log('[useOrganization] Creating group:', { name, type, description });
+      console.log('[useOrganization] Creating group:', { name, type, description, modules, discoverable });
       
       // Ensure user is authenticated
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) throw new Error('User not authenticated');
+      if (!currentUser) return { success: false, error: 'User not authenticated' };
 
       // Create group
       const { data: groupData, error: groupError } = await supabase
@@ -231,13 +237,15 @@ export const useOrganization = () => {
           type,
           description,
           created_by: currentUser.id,
+          visibility: discoverable ? 'public' : 'private',
+          discoverable: discoverable || false,
         })
         .select()
         .single();
 
       if (groupError) {
         console.error('[useOrganization] Error creating group:', groupError);
-        throw groupError;
+        return { success: false, error: groupError.message };
       }
 
       console.log('[useOrganization] Group created:', groupData.id);
@@ -253,7 +261,7 @@ export const useOrganization = () => {
 
       if (membershipError) {
         console.error('[useOrganization] Error creating membership:', membershipError);
-        throw membershipError;
+        return { success: false, error: membershipError.message };
       }
 
       console.log('[useOrganization] Membership created');
@@ -266,7 +274,7 @@ export const useOrganization = () => {
 
       if (deactivateError) {
         console.error('[useOrganization] Error deactivating contexts:', deactivateError);
-        throw deactivateError;
+        return { success: false, error: deactivateError.message };
       }
 
       // Add to user contexts and set as active
@@ -280,18 +288,42 @@ export const useOrganization = () => {
 
       if (contextError) {
         console.error('[useOrganization] Error creating context:', contextError);
-        throw contextError;
+        return { success: false, error: contextError.message };
       }
 
       console.log('[useOrganization] User context created and activated');
 
-      // NOTE: Module permissions are intentionally NOT created here
-      // The caller (e.g., SharedSpacesOnboarding) will create them with the correct settings
+      // Create module permissions if modules are provided
+      if (modules && modules.length > 0) {
+        console.log('[useOrganization] Creating module permissions for:', modules);
+        
+        const modulePermissions = modules.map(moduleName => ({
+          organization_id: groupData.id,
+          module_name: moduleName,
+          is_enabled: true,
+          is_shared: true,
+          can_view: true,
+          can_edit: true,
+          can_admin: false,
+          visibility: 'all_members',
+        }));
+
+        const { error: permissionsError } = await supabase
+          .from('module_permissions')
+          .insert(modulePermissions);
+
+        if (permissionsError) {
+          console.error('[useOrganization] Error creating module permissions:', permissionsError);
+          return { success: false, error: permissionsError.message };
+        }
+
+        console.log('[useOrganization] Module permissions created successfully');
+      }
       
-      return groupData;
-    } catch (error) {
+      return { success: true, groupId: groupData.id };
+    } catch (error: any) {
       console.error('[useOrganization] Error creating group:', error);
-      throw error;
+      return { success: false, error: error.message || 'Unknown error' };
     }
   };
 

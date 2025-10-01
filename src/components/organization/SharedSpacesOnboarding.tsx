@@ -190,13 +190,13 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         const individualName = spaceName.trim() || 'Personal Space';
         console.log('[Onboarding] Creating individual space with modules:', selectedModules);
         
-        const newSpace = await createGroup(individualName, 'individual', 'Your personal workspace');
+        const newSpace = await createGroup(individualName, 'individual', 'Your personal workspace', selectedModules, false);
         
-        if (!newSpace?.id) {
-          throw new Error('Failed to create space');
+        if (!newSpace?.success || !newSpace?.groupId) {
+          throw new Error(newSpace?.error || 'Failed to create space');
         }
         
-        console.log('[Onboarding] Individual space created:', newSpace.id);
+        console.log('[Onboarding] Individual space created:', newSpace.groupId);
         
         // Update visibility settings
         const { error: updateError } = await supabase
@@ -206,37 +206,15 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
             discoverable: false,
             join_approval_required: false,
           })
-          .eq('id', newSpace.id);
+          .eq('id', newSpace.groupId);
         
         if (updateError) {
           console.error('[Onboarding] Error updating visibility:', updateError);
           throw updateError;
         }
         
-        // Create module permissions with selected modules
-        if (selectedModules.length > 0) {
-          const { error: insertError } = await supabase
-            .from('module_permissions')
-            .insert(
-              selectedModules.map(moduleName => ({
-                organization_id: newSpace.id,
-                module_name: moduleName,
-                is_enabled: true,
-                is_shared: false,
-                visibility: 'private',
-                can_view: true,
-                can_edit: true,
-                can_admin: true,
-              }))
-            );
-          
-          if (insertError) {
-            console.error('[Onboarding] Error creating module permissions:', insertError);
-            throw insertError;
-          }
-          
-          console.log('[Onboarding] Module permissions created');
-        }
+        // Module permissions are already created by createGroup
+        console.log('[Onboarding] Module permissions created during space creation');
         
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -262,13 +240,19 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
 
       console.log('[Onboarding] Creating space:', { spaceName, selectedType, selectedModules });
 
-      const newSpace = await createGroup(spaceName.trim(), selectedType, spaceDescription.trim());
+      const newSpace = await createGroup(
+        spaceName.trim(), 
+        selectedType, 
+        spaceDescription.trim(), 
+        selectedModules,
+        visibility === 'public' && discoverable
+      );
       
-      if (!newSpace?.id) {
-        throw new Error('Failed to create space');
+      if (!newSpace?.success || !newSpace?.groupId) {
+        throw new Error(newSpace?.error || 'Failed to create space');
       }
       
-      console.log('[Onboarding] Space created successfully:', newSpace.id);
+      console.log('[Onboarding] Space created successfully:', newSpace.groupId);
       
       // Update visibility settings and additional fields
       const { error: updateError } = await supabase
@@ -283,7 +267,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
           price_amount_cents: pricingType === 'paid' ? Math.round(parseFloat(priceAmount || '0') * 100) : 0,
           subscription_interval: pricingType === 'paid' ? subscriptionInterval : null,
         })
-        .eq('id', newSpace.id);
+        .eq('id', newSpace.groupId);
       
       if (updateError) {
         console.error('[Onboarding] Error updating space settings:', updateError);
@@ -292,33 +276,8 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
       
       console.log('[Onboarding] Space settings updated');
       
-      // Create module permissions with selected modules and settings
-      if (selectedModules.length > 0) {
-        const modulePermissions = selectedModules.map(moduleName => {
-          const settings = moduleSettings[moduleName] || { shared: true, visibility: 'all_members' };
-          return {
-            organization_id: newSpace.id,
-            module_name: moduleName,
-            is_enabled: true,
-            is_shared: settings.shared,
-            visibility: settings.visibility,
-            can_view: true,
-            can_edit: settings.shared,
-            can_admin: settings.visibility === 'admin_only',
-          };
-        });
-        
-        const { error: insertError } = await supabase
-          .from('module_permissions')
-          .insert(modulePermissions);
-        
-        if (insertError) {
-          console.error('[Onboarding] Error creating module permissions:', insertError);
-          throw insertError;
-        }
-        
-        console.log('[Onboarding] Module permissions created:', selectedModules);
-      }
+      // Module permissions are already created by createGroup
+      console.log('[Onboarding] Module permissions created during space creation');
       
       // Delay to ensure all DB writes complete
       await new Promise(resolve => setTimeout(resolve, 1000));
