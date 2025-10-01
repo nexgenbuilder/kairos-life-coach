@@ -110,7 +110,7 @@ export function useSpaceBranding() {
       }
 
       // Apply background image as CSS custom property for proper layering
-      if (backgroundImage) {
+      if (backgroundImage && backgroundImage.trim() !== '') {
         console.log('[useSpaceBranding] Setting background image:', backgroundImage);
         root.style.setProperty('--background-image', `url("${backgroundImage}")`);
         
@@ -121,6 +121,7 @@ export function useSpaceBranding() {
         img.src = backgroundImage;
       } else {
         console.log('[useSpaceBranding] No background image');
+        root.style.removeProperty('--background-image');
       }
 
       // Apply typography

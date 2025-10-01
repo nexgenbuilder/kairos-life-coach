@@ -3,12 +3,12 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Search, Sparkles, MessageSquare, Mail, Banknote, ReceiptText, CheckSquare, Calendar, Dumbbell, HeartPulse, Users, Shield, Bell, LayoutDashboard, Settings, Boxes, MapPin } from 'lucide-react';
+import { Search, Sparkles, MessageSquare, Mail, Banknote, ReceiptText, CheckSquare, Calendar, Dumbbell, HeartPulse, Users, Bell, LayoutDashboard, Settings, Boxes, MapPin, Rss } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useSound } from '@/hooks/useSound';
 import {
   TasksWindow, MoneyWindow, ReceiptsWindow, SpacesWindow, MessagesWindow,
-  CalendarWindow, FitnessWindow, HealthWindow, NotificationsWindow, SecurityWindow, SettingsWindow, AssetsWindow, LocationsWindow,
+  CalendarWindow, FitnessWindow, HealthWindow, NotificationsWindow, FeedWindow, SettingsWindow, AssetsWindow, LocationsWindow,
   AIPerplexityWindow, AIGeminiWindow, ModuleKey
 } from '@/components/command/ModuleWindows';
 
@@ -49,9 +49,9 @@ export default function CommandCenterDashboard() {
     { key: 'health', label: 'Health', icon: HeartPulse, subtitle: 'Vitals & habits', action: () => { play('ui'); setOpen('health'); } },
     { key: 'spaces', label: 'Spaces', icon: Users, subtitle: 'Create / manage', action: () => { play('ui'); setOpen('spaces'); } },
     { key: 'notifications', label: 'Notifications', icon: Bell, subtitle: 'Center & rules', action: () => { play('ui'); setOpen('notifications'); } },
-    { key: 'security', label: 'Security', icon: Shield, subtitle: 'Audit & controls', action: () => { play('ui'); setOpen('security'); } },
+    { key: 'feed', label: 'Feed', icon: Rss, subtitle: 'Shared spaces posts', action: () => { play('ui'); setOpen('feed'); } },
     { key: 'settings', label: 'Settings', icon: Settings, subtitle: 'Personal & org', action: () => { play('ui'); setOpen('settings'); } },
-    { key: 'assets', label: 'Assets', icon: Boxes, subtitle: 'Files & media', action: () => { play('ui'); setOpen('assets'); } },
+    { key: 'cloud', label: 'Cloud', icon: Boxes, subtitle: 'Files & media', action: () => { play('ui'); setOpen('cloud'); } },
     { key: 'locations', label: 'Locations', icon: MapPin, subtitle: 'Places & visits', action: () => { play('ui'); setOpen('locations'); } }
   ], [play]);
 
@@ -102,15 +102,15 @@ export default function CommandCenterDashboard() {
             { key:'spend', title:'Spend This Week', value:'$0', foot:'this week', openKey:'money' as ModuleKey },
             { key:'leads', title:'Leads', value:'4', foot:'active', openKey:'messages' as ModuleKey },
             { key:'fitness', title:'Fitness Streak', value:'0', foot:'days', openKey:'fitness' as ModuleKey },
-            { key:'content', title:'Content Performance', value:'0', foot:'views', openKey:'assets' as ModuleKey },
+            { key:'content', title:'Content Performance', value:'0', foot:'views', openKey:'cloud' as ModuleKey },
             { key:'notifs', title:'Notifications', value:'2', foot:'unread', openKey:'notifications' as ModuleKey }
           ].map(c => (
             <button key={c.key} onClick={()=>{ play('ui'); setOpen(c.openKey); }} className='rounded-2xl w-full text-left'>
               <Card className='glass-card rounded-2xl h-full'>
                 <CardContent className='p-4'>
-                  <div className='text-xs text-white/70'>{c.title}</div>
+                  <div className='text-xs text-white/90'>{c.title}</div>
                   <div className='text-xl font-semibold mt-1 text-white'>{c.value}</div>
-                  <div className='text-xs text-white/60 mt-1'>{c.foot}</div>
+                  <div className='text-xs text-white/70 mt-1'>{c.foot}</div>
                 </CardContent>
               </Card>
             </button>
@@ -130,9 +130,9 @@ export default function CommandCenterDashboard() {
     <FitnessWindow open={open==='fitness'} onOpenChange={()=>setOpen(null)} />
     <HealthWindow open={open==='health'} onOpenChange={()=>setOpen(null)} />
     <NotificationsWindow open={open==='notifications'} onOpenChange={()=>setOpen(null)} />
-    <SecurityWindow open={open==='security'} onOpenChange={()=>setOpen(null)} />
+    <FeedWindow open={open==='feed'} onOpenChange={()=>setOpen(null)} />
     <SettingsWindow open={open==='settings'} onOpenChange={()=>setOpen(null)} />
-    <AssetsWindow open={open==='assets'} onOpenChange={()=>setOpen(null)} />
+    <AssetsWindow open={open==='cloud'} onOpenChange={()=>setOpen(null)} />
     <LocationsWindow open={open==='locations'} onOpenChange={()=>setOpen(null)} />
     <AIPerplexityWindow open={open==='perplexity'} onOpenChange={()=>setOpen(null)} />
     <AIGeminiWindow open={open==='gemini'} onOpenChange={()=>setOpen(null)} />

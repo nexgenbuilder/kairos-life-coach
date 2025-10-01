@@ -23,6 +23,7 @@ const AVAILABLE_MODULES = [
   { name: 'stocks', label: 'Stock Portfolio', description: 'Stock market investments' },
   { name: 'news', label: 'News Feed', description: 'Personalized news and updates' },
   { name: 'cloud', label: 'Cloud Storage', description: 'Shared file storage and management' },
+  { name: 'locations', label: 'Locations', description: 'Location bookmarking and management for places of interest' },
 ];
 
 interface ModulePermission {

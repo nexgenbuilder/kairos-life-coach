@@ -232,11 +232,39 @@ export default function AdminPage() {
                     onChange={handleLogoUpload}
                   />
                   {activeContext.logo_url && (
-                    <img
-                      src={activeContext.logo_url}
-                      alt="Current logo"
-                      className="h-20 w-20 object-contain border rounded"
-                    />
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={activeContext.logo_url}
+                        alt="Current logo"
+                        className="h-20 w-20 object-contain border rounded"
+                      />
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await supabase
+                              .from('organizations')
+                              .update({ logo_url: null })
+                              .eq('id', activeContext.id);
+                            toast({
+                              title: 'Logo Removed',
+                              description: 'Logo has been removed successfully.',
+                            });
+                            window.location.reload();
+                          } catch (error) {
+                            console.error('Error removing logo:', error);
+                            toast({
+                              title: 'Error',
+                              description: 'Failed to remove logo.',
+                              variant: 'destructive',
+                            });
+                          }
+                        }}
+                      >
+                        Remove Logo
+                      </Button>
+                    </div>
                   )}
                 </div>
 
@@ -249,11 +277,41 @@ export default function AdminPage() {
                     onChange={handleBackgroundUpload}
                   />
                   {activeContext.settings?.background_image_url && (
-                    <img
-                      src={activeContext.settings.background_image_url}
-                      alt="Current background"
-                      className="h-32 w-full object-cover border rounded"
-                    />
+                    <div className="space-y-2">
+                      <img
+                        src={activeContext.settings.background_image_url}
+                        alt="Current background"
+                        className="h-32 w-full object-cover border rounded"
+                      />
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const newSettings = { ...activeContext.settings };
+                            delete newSettings.background_image_url;
+                            await supabase
+                              .from('organizations')
+                              .update({ settings: newSettings })
+                              .eq('id', activeContext.id);
+                            toast({
+                              title: 'Background Removed',
+                              description: 'Background image has been removed successfully.',
+                            });
+                            window.location.reload();
+                          } catch (error) {
+                            console.error('Error removing background:', error);
+                            toast({
+                              title: 'Error',
+                              description: 'Failed to remove background.',
+                              variant: 'destructive',
+                            });
+                          }
+                        }}
+                      >
+                        Remove Background
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>

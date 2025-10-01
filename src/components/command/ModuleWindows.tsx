@@ -24,7 +24,7 @@ import { startOfWeek } from 'date-fns';
 
 const SmartChatInterface = React.lazy(() => import('@/components/chat/SmartChatInterface'));
 
-export type ModuleKey = 'perplexity'|'gemini'|'messages'|'tasks'|'money'|'receipts'|'calendar'|'fitness'|'health'|'spaces'|'notifications'|'security'|'settings'|'assets'|'locations';
+export type ModuleKey = 'perplexity'|'gemini'|'messages'|'tasks'|'money'|'receipts'|'calendar'|'fitness'|'health'|'spaces'|'notifications'|'feed'|'settings'|'cloud'|'locations';
 
 export function ModuleWindow({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (v: boolean) => void; title: string; children: React.ReactNode }) {
   return (
@@ -1614,69 +1614,109 @@ export function NotificationsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>v
   );
 }
 
-export function SecurityWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+export function FeedWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
+  const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (p.open) {
-      fetchAuditLogs();
+      fetchCurrentUser();
+      fetchSharedSpacePosts();
     }
   }, [p.open]);
 
-  const fetchAuditLogs = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    
-    if (!error && data) {
-      setAuditLogs(data);
+  const fetchCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) setCurrentUserId(user.id);
+  };
+
+  const fetchSharedSpacePosts = async () => {
+    try {
+      setLoading(true);
+      
+      // Get all organizations the user is a member of that are shared spaces (not individual)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: memberships, error: membershipError } = await supabase
+        .from('organization_memberships')
+        .select('organization_id, organizations(type)')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      if (membershipError) throw membershipError;
+
+      // Filter to only shared spaces (exclude individual type)
+      const sharedSpaceIds = memberships
+        ?.filter((m: any) => m.organizations?.type !== 'individual')
+        .map((m: any) => m.organization_id) || [];
+
+      if (sharedSpaceIds.length === 0) {
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch posts from all shared spaces
+      const { data: postsData, error: postsError } = await supabase
+        .from('space_posts')
+        .select('*')
+        .in('organization_id', sharedSpaceIds)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (postsError) throw postsError;
+
+      setPosts(postsData || []);
+    } catch (error) {
+      console.error('Error fetching shared space posts:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load feed',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Security'>
-      <Tabs defaultValue='logs' className='w-full'>
-        <TabsList className='w-full grid grid-cols-2'>
-          <TabsTrigger value='logs'>Audit Logs</TabsTrigger>
-          <TabsTrigger value='dashboard'>Dashboard</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value='logs' className='space-y-3'>
+    <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Shared Spaces Feed'>
+      <div className='space-y-4'>
+        <p className='text-sm text-muted'>Posts from all your connected shared spaces</p>
+        
+        <ScrollArea className='h-[400px]'>
           {loading ? (
-            <div className='text-soft text-sm'>Loading logs...</div>
-          ) : auditLogs.length === 0 ? (
-            <div className='text-soft text-sm'>No audit logs found</div>
+            <div className='flex items-center justify-center py-12'>
+              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary'></div>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className='text-center py-12'>
+              <p className='text-muted mb-2'>No posts yet</p>
+              <p className='text-sm text-soft'>
+                Posts from your shared spaces will appear here
+              </p>
+            </div>
           ) : (
-            <ScrollArea className='h-[400px]'>
-              <div className='space-y-2 pr-4'>
-                {auditLogs.map((log) => (
-                  <div key={log.id} className='p-3 rounded-lg bg-muted/30 space-y-1'>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-sm font-medium'>{log.operation}</span>
-                      <span className='text-xs text-soft'>
-                        {new Date(log.created_at).toLocaleString()}
-                      </span>
+            <div className='space-y-3 pr-4'>
+              {posts.map((post: any) => (
+                <div key={post.id} className='p-4 rounded-lg glass-soft border border-white/10 space-y-2'>
+                  <div className='flex items-start justify-between'>
+                    <div className='flex-1'>
+                      <p className='text-sm text-strong whitespace-pre-wrap'>{post.content}</p>
                     </div>
-                    <div className='text-xs text-soft'>Table: {log.table_name}</div>
-                    {log.ip_address && (
-                      <div className='text-xs text-soft'>IP: {log.ip_address}</div>
-                    )}
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
+                  <div className='flex items-center justify-between text-xs text-soft'>
+                    <span>{new Date(post.created_at).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-        </TabsContent>
-
-        <TabsContent value='dashboard'>
-          <SecurityDashboard />
-        </TabsContent>
-      </Tabs>
+        </ScrollArea>
+      </div>
     </ModuleWindow>
   );
 }
