@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   DollarSign, Heart, Dumbbell, CheckSquare, Calendar, 
   MessageSquare, Users, TrendingUp, Bitcoin, Briefcase,
-  Sun, Cloud, Bell, Shield, Settings
+  Sun, Cloud, Bell, Shield, Settings, Palette
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,7 @@ export function ModulesExplorer() {
     { id: 'notifications', icon: Bell, name: 'Notifications', color: 'text-rose-500', description: 'Centralized notification center for all platform activities and updates.' },
     { id: 'security', icon: Shield, name: 'Security', color: 'text-emerald-500', description: 'Security monitoring, activity logs, and account protection features.' },
     { id: 'settings', icon: Settings, name: 'Settings', color: 'text-gray-500', description: 'Customize your experience, manage integrations, and configure preferences.' },
+    { id: 'admin', icon: Palette, name: 'Admin', color: 'text-violet-500', description: 'White-label your spaces with custom logos, colors, backgrounds, and fonts. Complete branding control for organizations.' },
   ];
 
   const active = modules.find(m => m.id === activeModule) || modules[0];
@@ -54,7 +55,7 @@ export function ModulesExplorer() {
     <section className="py-24 bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 space-y-4">
-          <Badge variant="secondary" className="mb-4">16+ Powerful Modules</Badge>
+          <Badge variant="secondary" className="mb-4">17+ Powerful Modules</Badge>
           <h2 className="text-4xl md:text-5xl font-bold">
             Build your{' '}
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">

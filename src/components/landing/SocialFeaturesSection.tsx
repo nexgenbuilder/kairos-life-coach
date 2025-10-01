@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, AtSign, Heart, Users, Globe, Lock } from 'lucide-react';
+import { MessageSquare, AtSign, Heart, Users, Globe, Lock, Palette } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -7,9 +7,9 @@ export function SocialFeaturesSection() {
   const socialFeatures = [
     {
       icon: MessageSquare,
-      title: "Feed & Posts",
-      description: "Share updates, thoughts, and content with your spaces. Rich media support with real-time updates.",
-      badge: "Shared Spaces Only"
+      title: "Space-Specific Feeds",
+      description: "Each shared space has its own feed. Share updates, thoughts, and content within your communities, not personal feeds.",
+      badge: "Per Space"
     },
     {
       icon: AtSign,
@@ -38,8 +38,14 @@ export function SocialFeaturesSection() {
     {
       icon: Users,
       title: "Smart Connections",
-      description: "Automatic connection tracking across spaces. Organize by category: Social, Community, Groups, Work.",
+      description: "Automatic connection discovery across all your spaces. Auto-categorize by Social, Community, Groups, or Work/Business.",
       badge: "Automatic"
+    },
+    {
+      icon: Palette,
+      title: "Space Branding",
+      description: "Customize each space with your brand. Upload logos, set colors, choose fonts, and create a unique branded experience.",
+      badge: "White-Label"
     }
   ];
 

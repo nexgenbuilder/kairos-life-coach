@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Sparkles, Shield, Zap, Target, Users, MessageSquare, Globe } from 'lucide-react';
+import { Brain, Sparkles, Shield, Zap, Target, Users, MessageSquare, Globe, Palette } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 export function FeaturesShowcase() {
@@ -13,8 +13,14 @@ export function FeaturesShowcase() {
     {
       icon: MessageSquare,
       title: "Social Collaboration",
-      description: "Share updates, @mention connections, comment and like posts—all within secure spaces with granular privacy controls.",
+      description: "Space-specific feeds for sharing updates. @mention connections, comment and like posts—all within secure spaces with granular privacy controls.",
       gradient: "from-pink-500/20 to-rose-500/20"
+    },
+    {
+      icon: Palette,
+      title: "Space Branding & Personalization",
+      description: "White-label your spaces with custom logos, colors, backgrounds, and fonts. Create your own branded platform within Kairos.",
+      gradient: "from-violet-500/20 to-purple-500/20"
     },
     {
       icon: Users,
@@ -25,7 +31,7 @@ export function FeaturesShowcase() {
     {
       icon: Zap,
       title: "Smart Connections",
-      description: "Automatic connection management based on shared spaces. Organize by Social, Community, Groups, or Work/Business.",
+      description: "Automatic connection discovery and management. Auto-categorize by Social, Community, Groups, or Work/Business based on your shared spaces.",
       gradient: "from-blue-500/20 to-cyan-500/20"
     },
     {
