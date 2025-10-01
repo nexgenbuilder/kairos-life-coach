@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ChatMode } from '@/hooks/useChatMode';
+import { detectPII, formatPIIWarning } from './piiDetector';
 
 export interface RouteMessageParams {
   mode: ChatMode;
@@ -9,6 +10,7 @@ export interface RouteMessageParams {
   onQuotaCheck?: (engine: 'perplexity' | 'gemini') => Promise<boolean>;
   onIncrementUsage?: (engine: 'perplexity' | 'gemini') => Promise<void>;
   onFallback?: (reason: string) => void;
+  onPIIDetected?: (warning: string) => void;
 }
 
 export interface RouteMessageResult {
@@ -78,7 +80,28 @@ async function callGemini(text: string, context: string, session?: any): Promise
 }
 
 export async function routeMessage(params: RouteMessageParams): Promise<RouteMessageResult> {
-  const { mode, text, context = 'home', session, onQuotaCheck, onIncrementUsage, onFallback } = params;
+  const { mode, text, context = 'home', session, onQuotaCheck, onIncrementUsage, onFallback, onPIIDetected } = params;
+
+  // PII Detection for external engines (Perplexity & Gemini)
+  if (mode !== 'general') {
+    const piiResult = detectPII(text);
+    
+    if (piiResult.hasPII) {
+      const warning = formatPIIWarning(piiResult.types);
+      onPIIDetected?.(warning);
+      
+      // Force fallback to General mode for privacy
+      const fallbackReason = `Sensitive information detected. Using General mode for privacy protection.`;
+      onFallback?.(fallbackReason);
+      
+      const result = await callGeneralMode(text, context, session);
+      return {
+        ...result,
+        fellBackToGeneral: true,
+        fallbackReason
+      };
+    }
+  }
 
   // Try the requested mode first
   try {

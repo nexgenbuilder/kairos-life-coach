@@ -308,6 +308,14 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             description: reason,
             variant: "default"
           });
+        },
+        onPIIDetected: (warning) => {
+          toast({
+            title: "⚠️ Privacy Protection",
+            description: warning,
+            variant: "destructive",
+            duration: 5000
+          });
         }
       });
 
