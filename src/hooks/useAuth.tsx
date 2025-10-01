@@ -69,25 +69,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      console.log('[Auth] Signing out...');
       // Clean up auth state first
       cleanupAuthState();
       // Attempt global sign out
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        console.error('[Auth] Sign out error (continuing anyway):', err);
+        // Continue even if this fails
       }
       setUser(null);
       setSession(null);
       // Force page reload for clean state
       window.location.href = '/';
     } catch (error) {
-      console.error('[Auth] Error signing out:', error);
-      // Force state cleanup and redirect even on error
-      setUser(null);
-      setSession(null);
-      window.location.href = '/';
+      console.error('Error signing out:', error);
     }
   };
 
