@@ -132,26 +132,182 @@ serve(async (req) => {
     
     console.log('[lovable-chat] Rate limit check passed');
 
-    // Build system prompt with context
-    const systemPrompt = `You are Kairos, an intelligent AI life assistant. You help users manage their daily life, including tasks, finances, fitness, health, and more.
+    // Build comprehensive system prompt
+    const systemPrompt = `You are Gemini, a powerful AI assistant integrated with Kairos through Lovable AI.
+
+**Your Full Capabilities:**
+
+📋 **Task Management:**
+- Create, update, and track tasks
+- Set priorities (high/medium/low) and due dates
+- Organize tasks by categories
+
+💰 **Financial Management:**
+- Log expenses with categories and amounts
+- Track income sources
+- Monitor spending patterns
+
+🏃 **Fitness & Health:**
+- Log workouts (cardio, strength, flexibility)
+- Track health metrics (weight, blood pressure, etc.)
+- Manage medications and health goals
+
+📅 **Calendar & Events:**
+- Schedule events and meetings
+- Set reminders and deadlines
+- Manage your calendar
+
+📝 **Notes & Organization:**
+- Create and organize notes
+- Save important information
+- Quick note-taking
+
+👥 **Social & Spaces:**
+- Post to shared spaces
+- Manage contacts and people
+- Track relationships
+
+📍 **Locations:**
+- Save favorite locations
+- Bookmark important places
+- Track location-based information
+
+🎨 **Image Generation:**
+- Generate images from text descriptions
+- Create visual content and designs
+- Edit and enhance images
+
+When users ask "what can you do" or "help me", provide specific examples like:
+- "Create a task to finish the report by Friday"
+- "Log a $50 grocery expense"
+- "Generate an image of a sunset over mountains"
+- "Schedule a meeting tomorrow at 2pm"
+- "Log my 30-minute run"
+
+You can execute these actions using the available tools. Always use tools when possible rather than just describing what to do.
 
 Current context: ${context || 'home'}
-User is authenticated and can perform actions.
+Be helpful, conversational, and proactive. Execute actions when requested.`;
 
-Your capabilities:
-- Create tasks and help with productivity
-- Track expenses and income
-- Log fitness activities and workouts
-- Provide health tracking guidance
-- Offer advice on time management
-- Help with goal setting and planning
-
-Be helpful, concise, and actionable in your responses. When users mention creating tasks, logging expenses, tracking workouts, etc., acknowledge that they can do so directly through the chat.`;
-
-    // Call Lovable AI Gateway
-    const aiModel = model || (forceGPT5 ? 'openai/gpt-5-mini' : 'google/gemini-2.5-flash');
+    // Detect if user is asking for image generation
+    const lastMessage = conversationMessages.length > 0 
+      ? conversationMessages[conversationMessages.length - 1]?.content 
+      : sanitizedMessage;
     
-    console.log('[lovable-chat] Using AI model:', aiModel);
+    const isImageRequest = /generate|create|make|draw|design.*image|picture|photo|illustration|logo|poster|banner/i.test(lastMessage || '');
+    
+    // Use image generation model if needed
+    const aiModel = isImageRequest 
+      ? 'google/gemini-2.5-flash-image-preview'
+      : (model || (forceGPT5 ? 'openai/gpt-5-mini' : 'google/gemini-2.5-flash'));
+    
+    console.log('[lovable-chat] Using AI model:', aiModel, isImageRequest ? '(IMAGE MODE)' : '');
+    
+    // Define comprehensive tools for all module operations
+    const tools = [
+      {
+        type: 'function',
+        function: {
+          name: 'create_task',
+          description: 'Create a new task with title, priority, due date, and description',
+          parameters: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'The task title' },
+              priority: { type: 'string', enum: ['low', 'medium', 'high'], description: 'Task priority' },
+              due_date: { type: 'string', description: 'Due date in ISO format (optional)' },
+              description: { type: 'string', description: 'Task description (optional)' }
+            },
+            required: ['title']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'log_expense',
+          description: 'Log an expense with amount, category, and description',
+          parameters: {
+            type: 'object',
+            properties: {
+              amount: { type: 'number', description: 'Expense amount' },
+              description: { type: 'string', description: 'What the expense was for' },
+              category: { type: 'string', description: 'Expense category (food, transport, shopping, etc.)' },
+              date: { type: 'string', description: 'Date in ISO format (optional)' }
+            },
+            required: ['amount', 'description']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'log_income',
+          description: 'Log income with amount, source, and description',
+          parameters: {
+            type: 'object',
+            properties: {
+              amount: { type: 'number', description: 'Income amount' },
+              description: { type: 'string', description: 'Source of income' },
+              date: { type: 'string', description: 'Date in ISO format (optional)' }
+            },
+            required: ['amount', 'description']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'log_workout',
+          description: 'Log a fitness workout',
+          parameters: {
+            type: 'object',
+            properties: {
+              exercise_name: { type: 'string', description: 'Name of the exercise' },
+              exercise_type: { type: 'string', enum: ['cardio', 'strength', 'flexibility', 'sports'], description: 'Type of exercise' },
+              duration_minutes: { type: 'number', description: 'Duration in minutes' },
+              calories_burned: { type: 'number', description: 'Estimated calories burned (optional)' },
+              notes: { type: 'string', description: 'Additional notes (optional)' }
+            },
+            required: ['exercise_name', 'exercise_type']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'create_event',
+          description: 'Create a calendar event',
+          parameters: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'Event title' },
+              start_time: { type: 'string', description: 'Start time in ISO format' },
+              end_time: { type: 'string', description: 'End time in ISO format (optional)' },
+              description: { type: 'string', description: 'Event description (optional)' },
+              location: { type: 'string', description: 'Event location (optional)' }
+            },
+            required: ['title', 'start_time']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'create_note',
+          description: 'Create a note',
+          parameters: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'Note title' },
+              content: { type: 'string', description: 'Note content' },
+              category: { type: 'string', description: 'Note category (optional)' }
+            },
+            required: ['title', 'content']
+          }
+        }
+      }
+    ];
     
     // Build messages array - support both formats
     const messagesToSend = conversationMessages.length > 0
@@ -163,18 +319,30 @@ Be helpful, concise, and actionable in your responses. When users mention creati
     
     console.log('[lovable-chat] Sending', messagesToSend.length, 'messages to AI Gateway');
     
+    // Build request body
+    const requestBody: any = {
+      model: aiModel,
+      messages: messagesToSend,
+      temperature: 0.7,
+      max_tokens: 1000
+    };
+    
+    // Add tools for non-image models
+    if (!isImageRequest) {
+      requestBody.tools = tools;
+      requestBody.tool_choice = 'auto';
+    } else {
+      // For image generation, enable image modality
+      requestBody.modalities = ['image', 'text'];
+    }
+    
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: aiModel,
-        messages: messagesToSend,
-        temperature: 0.7,
-        max_tokens: 500
-      }),
+      body: JSON.stringify(requestBody),
     });
     
     console.log('[lovable-chat] AI Gateway response status:', aiResponse.status);
@@ -212,53 +380,131 @@ Be helpful, concise, and actionable in your responses. When users mention creati
     const aiData = await aiResponse.json();
     console.log('[lovable-chat] AI response data keys:', Object.keys(aiData));
     
-    const aiMessage = aiData.choices?.[0]?.message?.content;
+    const choice = aiData.choices?.[0];
+    const aiMessage = choice?.message?.content;
+    const toolCalls = choice?.message?.tool_calls;
+    const images = choice?.message?.images;
     
-    if (!aiMessage) {
-      console.error('[lovable-chat] No message content in AI response:', JSON.stringify(aiData));
-      return new Response(
-        JSON.stringify({ error: 'No content in AI response' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log('[lovable-chat] Response has:', {
+      message: !!aiMessage,
+      toolCalls: toolCalls?.length || 0,
+      images: images?.length || 0
+    });
     
-    console.log('[lovable-chat] AI message length:', aiMessage.length);
-
-    // Check if user is trying to create a task (only for single message format)
-    if (sanitizedMessage) {
-      const taskIntent = /create.*task|add.*task|new.*task|make.*task/i.test(sanitizedMessage);
+    // Handle tool calls
+    let actionResults: any[] = [];
+    if (toolCalls && toolCalls.length > 0) {
+      console.log('[lovable-chat] Processing', toolCalls.length, 'tool calls');
       
-      if (taskIntent) {
-        const taskTitle = extractTaskTitle(sanitizedMessage);
-        const priority = extractPriority(sanitizedMessage);
+      for (const toolCall of toolCalls) {
+        const functionName = toolCall.function?.name;
+        const args = JSON.parse(toolCall.function?.arguments || '{}');
         
-        if (taskTitle) {
-          const { error: insertError } = await supabase
-            .from('tasks')
-            .insert({
-              title: taskTitle,
-              user_id: user.id,
-              priority: priority,
-              status: 'todo'
-            });
-          
-          if (insertError) {
-            console.error('[lovable-chat] Error creating task:', insertError);
-          } else {
-            console.log('[lovable-chat] Task created successfully');
+        console.log('[lovable-chat] Executing tool:', functionName, 'with args:', args);
+        
+        try {
+          switch (functionName) {
+            case 'create_task':
+              const { error: taskError } = await supabase.from('tasks').insert({
+                title: args.title,
+                user_id: user.id,
+                priority: args.priority || 'medium',
+                due_date: args.due_date || null,
+                description: args.description || null,
+                status: 'inactive'
+              });
+              if (taskError) throw taskError;
+              actionResults.push({ action: 'task_created', title: args.title });
+              break;
+              
+            case 'log_expense':
+              const { error: expenseError } = await supabase.from('expenses').insert({
+                user_id: user.id,
+                amount: args.amount,
+                description: args.description,
+                category: args.category || 'other',
+                date: args.date || new Date().toISOString()
+              });
+              if (expenseError) throw expenseError;
+              actionResults.push({ action: 'expense_logged', amount: args.amount });
+              break;
+              
+            case 'log_income':
+              const { error: incomeError } = await supabase.from('income').insert({
+                user_id: user.id,
+                amount: args.amount,
+                description: args.description,
+                category: 'other',
+                date: args.date || new Date().toISOString()
+              });
+              if (incomeError) throw incomeError;
+              actionResults.push({ action: 'income_logged', amount: args.amount });
+              break;
+              
+            case 'log_workout':
+              const { error: workoutError } = await supabase.from('fitness_workouts').insert({
+                user_id: user.id,
+                exercise_name: args.exercise_name,
+                exercise_type: args.exercise_type,
+                duration_minutes: args.duration_minutes || null,
+                calories_burned: args.calories_burned || null,
+                notes: args.notes || null,
+                workout_date: new Date().toISOString().split('T')[0]
+              });
+              if (workoutError) throw workoutError;
+              actionResults.push({ action: 'workout_logged', exercise: args.exercise_name });
+              break;
+              
+            case 'create_event':
+              const { error: eventError } = await supabase.from('events').insert({
+                user_id: user.id,
+                title: args.title,
+                start_time: args.start_time,
+                end_time: args.end_time || null,
+                description: args.description || null,
+                location: args.location || null
+              });
+              if (eventError) throw eventError;
+              actionResults.push({ action: 'event_created', title: args.title });
+              break;
+              
+            case 'create_note':
+              const { error: noteError } = await supabase.from('notes').insert({
+                user_id: user.id,
+                title: args.title,
+                content: args.content,
+                category: args.category || null
+              });
+              if (noteError) throw noteError;
+              actionResults.push({ action: 'note_created', title: args.title });
+              break;
           }
+        } catch (error) {
+          console.error('[lovable-chat] Tool execution error:', error);
+          actionResults.push({ action: 'error', tool: functionName, error: error.message });
         }
       }
     }
 
+    console.log('[lovable-chat] Action results:', actionResults);
     console.log('[lovable-chat] Returning successful response');
 
+    // Build response
+    const responseData: any = {
+      choices: [{ 
+        message: { 
+          content: aiMessage || 'I processed your request.',
+          images: images || undefined
+        } 
+      }],
+      response: aiMessage || 'I processed your request.',
+      source: aiModel,
+      actions: actionResults.length > 0 ? actionResults : undefined,
+      images: images || undefined
+    };
+
     return new Response(
-      JSON.stringify({ 
-        choices: [{ message: { content: aiMessage } }],
-        response: aiMessage,
-        source: model || (forceGPT5 ? 'gpt-5-mini' : 'gemini-flash')
-      }),
+      JSON.stringify(responseData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

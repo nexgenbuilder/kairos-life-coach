@@ -69,10 +69,49 @@ export function SimplifiedAIChat({ engine, title, description }: SimplifiedAICha
       const aiContent = engine === 'perplexity' 
         ? data.response 
         : data.choices?.[0]?.message?.content || data.response || 'No response';
+      
+      const images = data.choices?.[0]?.message?.images || data.images;
+      const actions = data.actions;
 
       console.log(`[${title}] AI content:`, aiContent);
+      console.log(`[${title}] Images:`, images?.length || 0);
+      console.log(`[${title}] Actions:`, actions?.length || 0);
 
-      setMessages(prev => [...prev, { role: 'assistant', content: aiContent }]);
+      // Build rich message with images and action confirmations
+      let fullContent = aiContent;
+      
+      // Add action confirmations
+      if (actions && actions.length > 0) {
+        const actionText = actions.map((a: any) => {
+          if (a.action === 'task_created') return `✅ Created task: "${a.title}"`;
+          if (a.action === 'expense_logged') return `💰 Logged expense: $${a.amount}`;
+          if (a.action === 'income_logged') return `💵 Logged income: $${a.amount}`;
+          if (a.action === 'workout_logged') return `🏃 Logged workout: ${a.exercise}`;
+          if (a.action === 'event_created') return `📅 Created event: "${a.title}"`;
+          if (a.action === 'note_created') return `📝 Created note: "${a.title}"`;
+          return null;
+        }).filter(Boolean).join('\n');
+        
+        if (actionText) {
+          fullContent = `${fullContent}\n\n${actionText}`;
+        }
+      }
+
+      setMessages(prev => [...prev, { role: 'assistant', content: fullContent }]);
+      
+      // Display images separately if present
+      if (images && images.length > 0) {
+        for (const img of images) {
+          const imgUrl = img.image_url?.url || img.url;
+          if (imgUrl) {
+            setMessages(prev => [...prev, { 
+              role: 'assistant', 
+              content: `![Generated Image](${imgUrl})` 
+            }]);
+          }
+        }
+      }
+      
       play('success');
     } catch (error: any) {
       console.error(`[${title}] Full error:`, error);
@@ -128,7 +167,18 @@ export function SimplifiedAIChat({ engine, title, description }: SimplifiedAICha
               <div className="text-xs font-medium mb-1 opacity-70">
                 {msg.role === 'user' ? 'You' : title}
               </div>
-              <div className="whitespace-pre-wrap">{msg.content}</div>
+              <div className="whitespace-pre-wrap">
+                {msg.content.includes('![') ? (
+                  // Render markdown images
+                  msg.content.split(/!\[([^\]]*)\]\(([^)]+)\)/g).map((part, i) => {
+                    if (i % 3 === 0) return <span key={i}>{part}</span>;
+                    if (i % 3 === 2) return <img key={i} src={part} alt={msg.content.split(/!\[([^\]]*)\]/)[i]} className="rounded-lg mt-2 max-w-full" />;
+                    return null;
+                  })
+                ) : (
+                  msg.content
+                )}
+              </div>
             </div>
           ))}
           {loading && (
