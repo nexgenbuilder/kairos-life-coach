@@ -47,7 +47,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [routingMode, setRoutingMode] = useState<'general' | 'gemini' | 'perplexity'>('general');
+  const [routingMode, setRoutingMode] = useState<'auto' | 'gpt5' | 'search'>('auto');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
@@ -129,6 +129,44 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     setInputValue(`${beforeMention}@${name} `);
     setShowMentions(false);
     inputRef.current?.focus();
+  };
+
+  // Detection patterns for different actions
+  const detectActionType = (message: string): 'task' | 'expense' | 'income' | 'fitness' | 'chat' => {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('create task') || lowerMessage.includes('add task') || 
+        lowerMessage.includes('new task') || lowerMessage.includes('make task') ||
+        lowerMessage.includes('task called') || lowerMessage.includes('todo')) {
+      return 'task';
+    }
+    
+    if (lowerMessage.includes('log expense') || lowerMessage.includes('add expense') ||
+        lowerMessage.includes('spent') || lowerMessage.includes('cost') ||
+        lowerMessage.includes('paid') || lowerMessage.includes('expense')) {
+      return 'expense';
+    }
+    
+    if (lowerMessage.includes('log income') || lowerMessage.includes('add income') ||
+        lowerMessage.includes('received') || lowerMessage.includes('earned') ||
+        lowerMessage.includes('income') || lowerMessage.includes('payment') ||
+        lowerMessage.includes('salary') || lowerMessage.includes('commission')) {
+      return 'income';
+    }
+    
+    if (lowerMessage.includes('workout') || lowerMessage.includes('exercise') ||
+        lowerMessage.includes('fitness') || lowerMessage.includes('gym') ||
+        lowerMessage.includes('ran') || lowerMessage.includes('cycling') ||
+        lowerMessage.includes('running') || lowerMessage.includes('jogging') ||
+        lowerMessage.includes('swimming') || lowerMessage.includes('lifting') ||
+        lowerMessage.includes('weights') || lowerMessage.includes('cardio') ||
+        lowerMessage.includes('yoga') || lowerMessage.includes('pilates') ||
+        lowerMessage.includes('did pushups') || lowerMessage.includes('did squats') ||
+        lowerMessage.includes('log workout') || lowerMessage.includes('track workout')) {
+      return 'fitness';
+    }
+    
+    return 'chat';
   };
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,158 +283,158 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         return;
       }
 
-      // Retry logic for rate limiting
-      let retryCount = 0;
-      const maxRetries = 3;
+      if (routingMode === 'search') {
+        const { data, error } = await supabase.functions.invoke('perplexity-search', {
+          body: { 
+            message: currentInput,
+            context: window.location.pathname.slice(1) || 'home'
+          },
+          headers: session ? {
+            'Authorization': `Bearer ${session.access_token}`
+          } : {}
+        });
 
-      while (retryCount <= maxRetries) {
+        if (error) throw error;
+
+        const aiResponseMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.response,
+          sender: 'kairos',
+          timestamp: new Date(),
+          source: 'perplexity'
+        };
+        
+        setMessages(prev => [...prev, aiResponseMessage]);
+
+      } else if (routingMode === 'gpt5') {
+        const { data, error } = await supabase.functions.invoke('lovable-chat', {
+          body: { 
+            message: currentInput,
+            context: window.location.pathname.slice(1) || 'home',
+            forceGPT5: true
+          },
+          headers: session ? {
+            'Authorization': `Bearer ${session.access_token}`
+          } : {}
+        });
+
+        if (error) throw error;
+
+        const aiResponseMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.response,
+          sender: 'kairos',
+          timestamp: new Date(),
+          source: 'lovable-ai'
+        };
+        
+        setMessages(prev => [...prev, aiResponseMessage]);
+
         try {
-          // Route based on toggle state
-          if (routingMode === 'perplexity') {
-            // Perplexity Live Search Mode
-            const { data, error } = await supabase.functions.invoke('perplexity-search', {
-              body: { 
-                message: currentInput,
-                context: window.location.pathname.slice(1) || 'home'
-              },
-              headers: session ? {
-                'Authorization': `Bearer ${session.access_token}`
-              } : {}
-            });
-
-            if (error) {
-              if (error.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
-                retryCount++;
-                const backoffDelay = Math.pow(2, retryCount) * 1000;
-                toast({
-                  title: "Rate limited",
-                  description: `Retrying in ${backoffDelay / 1000} seconds...`,
-                });
-                await new Promise(resolve => setTimeout(resolve, backoffDelay));
-                continue;
-              }
-              throw error;
+          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+            body: { 
+              text: data.response,
+              voice: 'alloy'
             }
+          });
 
-            const aiResponseMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              content: data.response,
-              sender: 'kairos',
-              timestamp: new Date(),
-              source: 'perplexity'
-            };
-            
-            setMessages(prev => [...prev, aiResponseMessage]);
-            break;
-
-          } else if (routingMode === 'gemini') {
-            // Google Gemini Mode
-            const { data, error } = await supabase.functions.invoke('lovable-chat', {
-              body: { 
-                message: currentInput,
-                context: window.location.pathname.slice(1) || 'home'
-              },
-              headers: session ? {
-                'Authorization': `Bearer ${session.access_token}`
-              } : {}
-            });
-
-            if (error) {
-              if (error.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
-                retryCount++;
-                const backoffDelay = Math.pow(2, retryCount) * 1000;
-                toast({
-                  title: "Rate limited",
-                  description: `Retrying in ${backoffDelay / 1000} seconds...`,
-                });
-                await new Promise(resolve => setTimeout(resolve, backoffDelay));
-                continue;
-              }
-              throw error;
-            }
-
-            const aiResponseMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              content: data.response,
-              sender: 'kairos',
-              timestamp: new Date(),
-              source: 'lovable-ai'
-            };
-            
-            setMessages(prev => [...prev, aiResponseMessage]);
-            break;
-
-          } else {
-            // General Mode - handles tasks, expenses, income, fitness commands
-            const { data, error } = await supabase.functions.invoke('smart-action', {
-              body: { 
-                message: currentInput,
-                context: window.location.pathname.slice(1) || 'home'
-              },
-              headers: session ? {
-                'Authorization': `Bearer ${session.access_token}`
-              } : {}
-            });
-
-            if (error) {
-              if (error.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
-                retryCount++;
-                const backoffDelay = Math.pow(2, retryCount) * 1000;
-                toast({
-                  title: "Rate limited",
-                  description: `Retrying in ${backoffDelay / 1000} seconds...`,
-                });
-                await new Promise(resolve => setTimeout(resolve, backoffDelay));
-                continue;
-              }
-              throw error;
-            }
-
-            const aiResponseMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              content: data.response,
-              sender: 'kairos',
-              timestamp: new Date()
-            };
-            
-            setMessages(prev => [...prev, aiResponseMessage]);
-
-            // Refresh dashboard/today page if action was performed
-            if ((window as any).refreshTodayPage) {
-              (window as any).refreshTodayPage();
-            }
-            if ((window as any).refreshDashboard) {
-              (window as any).refreshDashboard();
-            }
-            break;
+          if (!ttsError && ttsData.audioContent) {
+            const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
+            audio.play().catch(err => console.error('Error playing audio:', err));
           }
-        } catch (err: any) {
-          if (err.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
-            retryCount++;
-            const backoffDelay = Math.pow(2, retryCount) * 1000;
-            toast({
-              title: "Rate limited",
-              description: `Retrying in ${backoffDelay / 1000} seconds...`,
-            });
-            await new Promise(resolve => setTimeout(resolve, backoffDelay));
-            continue;
+        } catch (error) {
+          console.error('Error generating speech:', error);
+        }
+
+      } else {
+        const actionType = detectActionType(currentInput);
+
+        if (actionType !== 'chat') {
+          const { data, error } = await supabase.functions.invoke('smart-action', {
+            body: { 
+              message: currentInput,
+              actionType: actionType,
+              context: window.location.pathname.slice(1) || 'home'
+            },
+            headers: session ? {
+              'Authorization': `Bearer ${session.access_token}`
+            } : {}
+          });
+
+          if (error) throw error;
+
+          const aiResponseMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: data.response,
+            sender: 'kairos',
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, aiResponseMessage]);
+
+          if ((window as any).refreshTodayPage) {
+            (window as any).refreshTodayPage();
           }
-          throw err;
+          if ((window as any).refreshDashboard) {
+            (window as any).refreshDashboard();
+          }
+        } else {
+          const { data, error } = await supabase.functions.invoke('lovable-chat', {
+            body: { 
+              message: currentInput,
+              context: window.location.pathname.slice(1) || 'home'
+            },
+            headers: session ? {
+              'Authorization': `Bearer ${session.access_token}`
+            } : {}
+          });
+
+          if (error) throw error;
+
+          const aiResponseMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: data.response,
+            sender: 'kairos',
+            timestamp: new Date(),
+            source: data.source || 'lovable-ai'
+          };
+          
+          setMessages(prev => [...prev, aiResponseMessage]);
+
+          if ((window as any).refreshTodayPage) {
+            (window as any).refreshTodayPage();
+          }
+          if ((window as any).refreshDashboard) {
+            (window as any).refreshDashboard();
+          }
+
+          try {
+            const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+              body: { 
+                text: data.response,
+                voice: 'alloy'
+              }
+            });
+
+            if (!ttsError && ttsData.audioContent) {
+              const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
+              audio.play().catch(err => console.error('Error playing audio:', err));
+            }
+          } catch (error) {
+            console.error('Error generating speech:', error);
+          }
         }
       }
 
-      if (retryCount > maxRetries) {
-        throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+      if (routingMode !== 'auto') {
+        setTimeout(() => setRoutingMode('auto'), 100);
       }
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending message:', error);
-      const isRateLimit = error.message?.toLowerCase().includes('rate limit');
       toast({
-        title: isRateLimit ? "Rate Limit Reached" : "Error",
-        description: isRateLimit 
-          ? "You've reached the rate limit. Please wait a moment and try again."
-          : "Failed to process your request. Please try again.",
+        title: "Error",
+        description: "Failed to process your request. Please try again.",
         variant: "destructive",
       });
       
@@ -606,12 +644,12 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           </div>
 
           {/* Routing Mode Indicator */}
-          {routingMode !== 'general' && (
+          {routingMode !== 'auto' && (
             <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
               <div className="flex items-center justify-center space-x-2 text-sm text-primary">
-                {routingMode === 'gemini' ? <Sparkles className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+                {routingMode === 'gpt5' ? <Sparkles className="h-4 w-4" /> : <Search className="h-4 w-4" />}
                 <span>
-                  {routingMode === 'gemini' ? 'Google Gemini 2.5 Active' : 'Live Search Active - Real-time web search via Perplexity'}
+                  {routingMode === 'gpt5' ? 'Lovable AI Mode - Powered by Gemini' : 'Search Mode - Real-time web search capabilities'}
                 </span>
               </div>
             </div>
@@ -741,22 +779,22 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                 {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </Button>
               <Button
-                variant={routingMode === 'gemini' ? 'default' : 'outline'}
+                variant={routingMode === 'gpt5' ? 'default' : 'outline'}
                 size="icon"
-                onClick={() => setRoutingMode(routingMode === 'gemini' ? 'general' : 'gemini')}
+                onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
                 disabled={isLoading}
                 className="shrink-0"
-                title="Google Gemini 2.5"
+                title="GPT-5 Mode"
               >
                 <Sparkles className="h-4 w-4" />
               </Button>
               <Button
-                variant={routingMode === 'perplexity' ? 'default' : 'outline'}
+                variant={routingMode === 'search' ? 'default' : 'outline'}
                 size="icon"
-                onClick={() => setRoutingMode(routingMode === 'perplexity' ? 'general' : 'perplexity')}
+                onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
                 disabled={isLoading}
                 className="shrink-0"
-                title="Live Search"
+                title="Web Search Mode"
               >
                 <Search className="h-4 w-4" />
               </Button>

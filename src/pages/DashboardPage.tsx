@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -144,7 +143,6 @@ interface AllModuleStats {
 const DashboardPage = () => {
   const { user } = useAuth();
   const { activeContext, loading: orgLoading } = useOrganization();
-  const isMobile = useIsMobile();
   const [stats, setStats] = useState<AllModuleStats>({
     tasks: { inactive: 0, active: 0, completed: 0, total: 0, completionRate: 0 },
     finance: { totalIncome: 0, totalExpenses: 0, balance: 0, monthlyIncome: 0, monthlyExpenses: 0, monthlyBalance: 0 },
@@ -538,23 +536,23 @@ const DashboardPage = () => {
   return (
     <AppLayout>
       <ErrorBoundary>
-      <div className={`${isMobile ? 'p-2 space-y-3' : 'p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 md:space-y-8'}`}>
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div className="space-y-1 sm:space-y-2">
-            <h1 className={`${isMobile ? 'text-xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent`}>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Life Dashboard
             </h1>
-            <p className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm sm:text-base md:text-lg'}`}>
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg">
               Complete overview of your personal and professional life
             </p>
           </div>
           
-          <div className={`flex flex-wrap ${isMobile ? 'gap-1.5' : 'gap-2'}`}>
+          <div className="flex flex-wrap gap-2">
             {quickActions.map((action) => (
               <Link key={action.label} to={action.href}>
-                <Button variant="outline" size={isMobile ? "sm" : "sm"} className={`flex items-center ${isMobile ? 'gap-1 text-xs px-2' : 'gap-1.5 sm:gap-2 text-xs sm:text-sm'}`}>
-                  <action.icon className={`${isMobile ? 'h-3 w-3' : 'h-3 w-3 sm:h-4 sm:w-4'}`} />
+                <Button variant="outline" size="sm" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                  <action.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">{action.label}</span>
                   <span className="sm:hidden">{action.label.split(' ')[1] || action.label.split(' ')[0]}</span>
                 </Button>
@@ -564,14 +562,14 @@ const DashboardPage = () => {
         </div>
 
         {/* Key Metrics Overview */}
-        <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4'}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           <Card>
-            <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${isMobile ? 'p-2' : 'p-4 sm:p-6'}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
               <CardTitle className="text-xs sm:text-sm font-medium">Net Worth</CardTitle>
-              <DollarSign className={`${isMobile ? 'h-3 w-3' : 'h-3 w-3 sm:h-4 sm:w-4'} text-muted-foreground`} />
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className={`${isMobile ? 'p-2 pt-0' : 'p-4 pt-0 sm:p-6 sm:pt-0'}`}>
-              <div className={`${isMobile ? 'text-base' : 'text-xl sm:text-2xl'} font-bold ${stats.finance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className={`text-xl sm:text-2xl font-bold ${stats.finance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(stats.finance.balance)}
               </div>
               <p className="text-xs text-muted-foreground">

@@ -88,38 +88,17 @@ serve(async (req) => {
       );
     }
 
-    // Rate limiting with detailed logging
+    // Rate limiting
     const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc(
       'check_rate_limit',
       { p_endpoint: 'lovable-chat', p_limit: 100, p_window_minutes: 60 }
     );
 
-    if (rateLimitError) {
-      console.error('Rate limit check error:', rateLimitError);
-      logSecurityEvent('RATE_LIMIT_CHECK_ERROR', { 
-        user_id: user.id, 
-        error: rateLimitError.message 
-      }, req);
-    }
-
     if (rateLimitError || !rateLimitOk) {
-      logSecurityEvent('RATE_LIMIT_EXCEEDED', { 
-        user_id: user.id,
-        message: 'User has exceeded rate limit for AI chat requests'
-      }, req);
+      logSecurityEvent('RATE_LIMIT_EXCEEDED', { user_id: user.id }, req);
       return new Response(
-        JSON.stringify({ 
-          error: 'Rate limit exceeded. Please try again in a few minutes.',
-          retryAfter: 60
-        }),
-        { 
-          status: 429, 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'Retry-After': '60'
-          } 
-        }
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

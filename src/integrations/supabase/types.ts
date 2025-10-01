@@ -1030,25 +1030,25 @@ export type Database = {
       }
       failed_auth_attempts: {
         Row: {
-          created_at: string | null
+          attempt_type: string
+          attempted_email: string | null
+          created_at: string
           id: string
-          identifier: string
-          ip_address: string | null
-          user_agent: string | null
+          ip_address: string
         }
         Insert: {
-          created_at?: string | null
+          attempt_type: string
+          attempted_email?: string | null
+          created_at?: string
           id?: string
-          identifier: string
-          ip_address?: string | null
-          user_agent?: string | null
+          ip_address: string
         }
         Update: {
-          created_at?: string | null
+          attempt_type?: string
+          attempted_email?: string | null
+          created_at?: string
           id?: string
-          identifier?: string
-          ip_address?: string | null
-          user_agent?: string | null
+          ip_address?: string
         }
         Relationships: []
       }
@@ -2465,28 +2465,31 @@ export type Database = {
       }
       rate_limits: {
         Row: {
-          created_at: string | null
+          created_at: string
           endpoint: string
           id: string
-          request_count: number | null
+          ip_address: string | null
+          request_count: number
           user_id: string | null
-          window_start: string | null
+          window_start: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           endpoint: string
           id?: string
-          request_count?: number | null
+          ip_address?: string | null
+          request_count?: number
           user_id?: string | null
-          window_start?: string | null
+          window_start?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           endpoint?: string
           id?: string
-          request_count?: number | null
+          ip_address?: string | null
+          request_count?: number
           user_id?: string | null
-          window_start?: string | null
+          window_start?: string
         }
         Relationships: []
       }

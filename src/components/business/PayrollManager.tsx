@@ -7,13 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Users, DollarSign, Edit, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, Users, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useOrganization } from '@/hooks/useOrganization';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface PayrollRecord {
   id: string;
@@ -36,7 +34,6 @@ interface PayrollRecord {
 
 export default function PayrollManager() {
   const { user } = useAuth();
-  const { activeContext, isAdmin } = useOrganization();
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -67,20 +64,11 @@ export default function PayrollManager() {
 
   const loadPayrollRecords = async () => {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('payroll')
         .select('*')
+        .eq('user_id', user!.id)
         .order('pay_date', { ascending: false });
-
-      // If user has an active organization context, filter by that
-      if (activeContext) {
-        query = query.eq('organization_id', activeContext.id);
-      } else {
-        // Otherwise, show their personal records
-        query = query.eq('user_id', user!.id);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
       setPayrollRecords(data || []);
@@ -110,28 +98,11 @@ export default function PayrollManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !activeContext) {
-      toast({
-        title: 'Error',
-        description: 'You must be in an organization context to manage payroll',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!isAdmin()) {
-      toast({
-        title: 'Access Denied',
-        description: 'Only organization admins can manage payroll records',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!user) return;
 
     try {
       const recordData = {
         user_id: user.id,
-        organization_id: activeContext.id,
         employee_name: formData.employee_name,
         employee_email: formData.employee_email || null,
         pay_rate_cents: parseInt(formData.pay_rate_cents) * 100,
@@ -221,15 +192,6 @@ export default function PayrollManager() {
   };
 
   const handleDelete = async (recordId: string) => {
-    if (!isAdmin()) {
-      toast({
-        title: 'Access Denied',
-        description: 'Only organization admins can delete payroll records',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('payroll')
@@ -255,24 +217,6 @@ export default function PayrollManager() {
 
   return (
     <div className="space-y-6">
-      {!activeContext && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Please select an organization context to manage payroll records. Payroll is organization-specific for security and compliance.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {activeContext && !isAdmin() && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            You have view-only access to payroll records. Only organization admins can create, edit, or delete payroll data.
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -311,14 +255,13 @@ export default function PayrollManager() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Payroll Records</CardTitle>
-            {activeContext && isAdmin() && (
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => { resetForm(); setEditingRecord(null); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Payroll Record
-                  </Button>
-                </DialogTrigger>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => { resetForm(); setEditingRecord(null); }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Payroll Record
+                </Button>
+              </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>{editingRecord ? 'Edit' : 'Add'} Payroll Record</DialogTitle>
@@ -499,8 +442,7 @@ export default function PayrollManager() {
                   </div>
                 </form>
               </DialogContent>
-              </Dialog>
-            )}
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
@@ -533,18 +475,14 @@ export default function PayrollManager() {
                   <TableCell>{formatCurrency(record.net_pay_cents / 100)}</TableCell>
                   <TableCell>{new Date(record.pay_date).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    {isAdmin() ? (
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(record)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDelete(record.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">View Only</span>
-                    )}
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(record)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDelete(record.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
