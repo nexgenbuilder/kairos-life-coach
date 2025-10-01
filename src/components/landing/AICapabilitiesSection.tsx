@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Search, Sparkles, Zap, MessageSquare, TrendingUp } from 'lucide-react';
+import { Brain, Search, Sparkles, Zap, MessageSquare, TrendingUp, ScanLine } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -10,6 +10,12 @@ export function AICapabilitiesSection() {
       title: "Natural Conversations",
       description: "Chat naturally about your tasks, finances, health, or any data. Ask questions, get insights, and automate actions.",
       example: "\"Show me my expenses from last month\" or \"Schedule a workout for tomorrow\""
+    },
+    {
+      icon: ScanLine,
+      title: "Smart Receipt Scanning",
+      description: "Upload photos of receipts and invoices to automatically extract and log expenses. OCR technology instantly captures amounts, dates, and vendors.",
+      example: "Snap a photo of any receipt and AI extracts: vendor, amount, date, and category automatically"
     },
     {
       icon: Search,
