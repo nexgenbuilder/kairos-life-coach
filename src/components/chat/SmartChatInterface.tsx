@@ -335,7 +335,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           body: { 
             message: currentInput,
             context: window.location.pathname.slice(1) || 'home',
-            model: 'google/gemini-2.5-flash'
+            forceGPT5: false
           },
           headers: session ? {
             'Authorization': `Bearer ${session.access_token}`
@@ -377,82 +377,51 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         }
 
       } else {
-        const actionType = detectActionType(currentInput);
+        // General mode: default to lovable-chat
+        const { data, error } = await supabase.functions.invoke('lovable-chat', {
+          body: { 
+            message: currentInput,
+            context: window.location.pathname.slice(1) || 'home',
+            forceGPT5: false
+          },
+          headers: session ? {
+            'Authorization': `Bearer ${session.access_token}`
+          } : {}
+        });
 
-        if (actionType !== 'chat') {
-          const { data, error } = await supabase.functions.invoke('smart-action', {
+        if (error) throw error;
+
+        const aiResponseMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.response,
+          sender: 'kairos',
+          timestamp: new Date(),
+          source: data.source || 'lovable-ai'
+        };
+        
+        setMessages(prev => [...prev, aiResponseMessage]);
+
+        if ((window as any).refreshTodayPage) {
+          (window as any).refreshTodayPage();
+        }
+        if ((window as any).refreshDashboard) {
+          (window as any).refreshDashboard();
+        }
+
+        try {
+          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
             body: { 
-              message: currentInput,
-              actionType: actionType,
-              context: window.location.pathname.slice(1) || 'home'
-            },
-            headers: session ? {
-              'Authorization': `Bearer ${session.access_token}`
-            } : {}
-          });
-
-          if (error) throw error;
-
-          const aiResponseMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: data.response,
-            sender: 'kairos',
-            timestamp: new Date()
-          };
-          
-          setMessages(prev => [...prev, aiResponseMessage]);
-
-          if ((window as any).refreshTodayPage) {
-            (window as any).refreshTodayPage();
-          }
-          if ((window as any).refreshDashboard) {
-            (window as any).refreshDashboard();
-          }
-        } else {
-          const { data, error } = await supabase.functions.invoke('lovable-chat', {
-            body: { 
-              message: currentInput,
-              context: window.location.pathname.slice(1) || 'home'
-            },
-            headers: session ? {
-              'Authorization': `Bearer ${session.access_token}`
-            } : {}
-          });
-
-          if (error) throw error;
-
-          const aiResponseMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: data.response,
-            sender: 'kairos',
-            timestamp: new Date(),
-            source: data.source || 'lovable-ai'
-          };
-          
-          setMessages(prev => [...prev, aiResponseMessage]);
-
-          if ((window as any).refreshTodayPage) {
-            (window as any).refreshTodayPage();
-          }
-          if ((window as any).refreshDashboard) {
-            (window as any).refreshDashboard();
-          }
-
-          try {
-            const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
-              body: { 
-                text: data.response,
-                voice: 'alloy'
-              }
-            });
-
-            if (!ttsError && ttsData.audioContent) {
-              const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
-              audio.play().catch(err => console.error('Error playing audio:', err));
+              text: data.response,
+              voice: 'alloy'
             }
-          } catch (error) {
-            console.error('Error generating speech:', error);
+          });
+
+          if (!ttsError && ttsData.audioContent) {
+            const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
+            audio.play().catch(err => console.error('Error playing audio:', err));
           }
+        } catch (error) {
+          console.error('Error generating speech:', error);
         }
       }
     } catch (error) {
