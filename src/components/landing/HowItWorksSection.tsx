@@ -35,45 +35,45 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section className="py-24 bg-gradient-to-b from-primary/10 to-background">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+    <section className="py-12 sm:py-16 md:py-24 bg-gradient-to-b from-primary/10 to-background">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 px-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
             Get started in{' '}
             <span className="text-primary">
               4 simple steps
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
             From signup to AI-powered life management in under 5 minutes
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto space-y-8">
+        <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
           {steps.map((step, index) => (
             <Card 
               key={index}
-              className="relative overflow-hidden hover:shadow-lg transition-all duration-500 hover:-translate-x-2 bg-card/95"
+              className="relative overflow-hidden hover:shadow-lg transition-all duration-500 sm:hover:-translate-x-2 bg-card/95"
             >
               {/* Step Number Background */}
-              <div className="absolute top-0 right-0 text-[200px] font-bold text-muted/5 leading-none select-none">
+              <div className="absolute top-0 right-0 text-[120px] sm:text-[160px] md:text-[200px] font-bold text-muted/5 leading-none select-none">
                 {step.number}
               </div>
 
-              <div className="relative p-8 flex flex-col md:flex-row gap-6 items-start">
+              <div className="relative p-4 sm:p-6 md:p-8 flex flex-col md:flex-row gap-4 sm:gap-6 items-start">
                 {/* Icon */}
-                <div className={`flex-shrink-0 w-20 h-20 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center`}>
-                  <step.icon className="h-10 w-10 text-foreground" />
+                <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center`}>
+                  <step.icon className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-foreground" />
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-muted-foreground">STEP {step.number}</span>
+                <div className="flex-1 space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="text-xs sm:text-sm font-bold text-muted-foreground">STEP {step.number}</span>
                     <div className="h-px flex-1 bg-border"></div>
                   </div>
-                  <h3 className="text-2xl font-bold text-foreground">{step.title}</h3>
-                  <p className="text-muted-foreground text-lg leading-relaxed font-medium">
+                  <h3 className="text-xl sm:text-2xl font-bold text-foreground">{step.title}</h3>
+                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed font-medium">
                     {step.description}
                   </p>
                 </div>
@@ -83,15 +83,15 @@ export function HowItWorksSection() {
         </div>
 
         {/* Video Demo Placeholder */}
-        <div className="mt-16 max-w-4xl mx-auto">
+        <div className="mt-8 sm:mt-12 md:mt-16 max-w-4xl mx-auto">
           <Card className="p-2 bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/30">
             <div className="aspect-video rounded-lg bg-muted flex items-center justify-center">
-              <div className="text-center space-y-3">
-                <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-                  <MessageSquare className="h-10 w-10 text-primary" />
+              <div className="text-center space-y-2 sm:space-y-3 px-4">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                  <MessageSquare className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-primary" />
                 </div>
-                <p className="text-muted-foreground">Watch the demo video</p>
-                <p className="text-sm text-muted-foreground">(Coming Soon)</p>
+                <p className="text-sm sm:text-base text-muted-foreground">Watch the demo video</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">(Coming Soon)</p>
               </div>
             </div>
           </Card>

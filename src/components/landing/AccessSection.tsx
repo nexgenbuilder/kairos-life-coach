@@ -43,21 +43,21 @@ export function AccessSection() {
   };
 
   return (
-    <section id="access" className="py-24 bg-gradient-to-b from-background to-primary/5">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-12 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+    <section id="access" className="py-12 sm:py-16 md:py-24 bg-gradient-to-b from-background to-primary/5">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-10 md:mb-12 space-y-3 sm:space-y-4 px-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
             Ready to get{' '}
             <span className="text-primary">
               started?
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
             Join the private beta and experience the future of life management
           </p>
         </div>
 
-        <Card className="max-w-2xl mx-auto p-8 bg-card/95 backdrop-blur-sm border-2 border-primary/20">
+        <Card className="max-w-2xl mx-auto p-4 sm:p-6 md:p-8 bg-card/95 backdrop-blur-sm border-2 border-primary/20">
           <Tabs defaultValue="beta" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="beta">

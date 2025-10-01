@@ -44,41 +44,41 @@ export function AICapabilitiesSection() {
   ];
 
   return (
-    <section className="py-24 bg-gradient-to-b from-background to-primary/10">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16 space-y-4">
-          <Badge variant="secondary" className="mb-4 bg-primary/10 border-primary/30 text-primary font-semibold">
+    <section className="py-12 sm:py-16 md:py-24 bg-gradient-to-b from-background to-primary/10">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 px-4">
+          <Badge variant="secondary" className="mb-3 sm:mb-4 bg-primary/10 border-primary/30 text-primary font-semibold text-xs sm:text-sm">
             Powered by AI
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
             Intelligence that{' '}
             <span className="text-primary">
               understands you
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
             Google Gemini 2.5 integration brings conversational AI to every aspect of your life management
           </p>
         </div>
 
         {/* Main AI Demo Card */}
-        <Card className="max-w-5xl mx-auto mb-12 p-8 bg-card/95 border-2 border-primary/30 backdrop-blur-sm">
-          <div className="flex flex-col md:flex-row gap-8 items-center">
+        <Card className="max-w-5xl mx-auto mb-8 sm:mb-10 md:mb-12 p-4 sm:p-6 md:p-8 bg-card/95 border-2 border-primary/30 backdrop-blur-sm">
+          <div className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-center">
             <div className="flex-shrink-0">
-              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center">
-                <Brain className="h-12 w-12 text-purple-500" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl sm:rounded-3xl bg-primary/10 flex items-center justify-center">
+                <Brain className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-primary" />
               </div>
             </div>
-            <div className="flex-1 space-y-4">
-              <h3 className="text-2xl font-bold text-foreground">Try the AI Assistant</h3>
-              <div className="space-y-3">
-                <div className="p-4 rounded-lg bg-muted/80 border border-border">
-                  <p className="text-sm text-muted-foreground mb-1 font-semibold">You:</p>
-                  <p className="text-foreground font-medium">"What are my top expenses this month and how can I save money?"</p>
+            <div className="flex-1 space-y-3 sm:space-y-4 w-full">
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground">Try the AI Assistant</h3>
+              <div className="space-y-2 sm:space-y-3">
+                <div className="p-3 sm:p-4 rounded-lg bg-muted/80 border border-border">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1 font-semibold">You:</p>
+                  <p className="text-sm sm:text-base text-foreground font-medium">"What are my top expenses this month and how can I save money?"</p>
                 </div>
-                <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-                  <p className="text-sm text-muted-foreground mb-1 font-semibold">Kairos AI:</p>
-                  <p className="text-foreground font-medium">
+                <div className="p-3 sm:p-4 rounded-lg bg-primary/10 border border-primary/30">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1 font-semibold">Kairos AI:</p>
+                  <p className="text-sm sm:text-base text-foreground font-medium">
                     "Your top expenses are: Dining ($450), Entertainment ($200), and Transportation ($180). 
                     I notice you're dining out 15+ times monthly. Meal prepping could save ~$250/month. 
                     I can help create a meal prep schedule if you'd like."
@@ -90,18 +90,18 @@ export function AICapabilitiesSection() {
         </Card>
 
         {/* Capabilities Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           {capabilities.map((capability, index) => (
             <Card 
               key={index}
-              className="p-6 hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border-border bg-card/95 backdrop-blur-sm"
+              className="p-4 sm:p-5 md:p-6 hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border-border bg-card/95 backdrop-blur-sm"
             >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                <capability.icon className="h-6 w-6 text-primary" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
+                <capability.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">{capability.title}</h3>
-              <p className="text-muted-foreground text-sm mb-3 leading-relaxed font-medium">{capability.description}</p>
-              <div className="p-3 bg-muted/80 rounded-lg border border-border">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 text-foreground">{capability.title}</h3>
+              <p className="text-muted-foreground text-xs sm:text-sm mb-2 sm:mb-3 leading-relaxed font-medium">{capability.description}</p>
+              <div className="p-2 sm:p-3 bg-muted/80 rounded-lg border border-border">
                 <p className="text-xs text-muted-foreground font-medium">
                   {capability.example}
                 </p>
@@ -111,15 +111,15 @@ export function AICapabilitiesSection() {
         </div>
 
         {/* Free AI Usage Banner */}
-        <div className="mt-12 max-w-3xl mx-auto">
-          <Card className="p-6 bg-primary/5 border-2 border-primary/30">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Sparkles className="h-6 w-6 text-primary" />
+        <div className="mt-8 sm:mt-10 md:mt-12 max-w-3xl mx-auto">
+          <Card className="p-4 sm:p-5 md:p-6 bg-primary/5 border-2 border-primary/30">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
               <div>
-                <h4 className="font-semibold text-lg mb-1 text-foreground">Free AI Usage Included</h4>
-                <p className="text-sm text-muted-foreground font-medium">
+                <h4 className="font-semibold text-base sm:text-lg mb-1 text-foreground">Free AI Usage Included</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground font-medium">
                   All Gemini models are currently free to use until October 6, 2025. Experience the full power of AI without limits.
                 </p>
               </div>
