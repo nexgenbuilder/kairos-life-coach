@@ -104,19 +104,33 @@ serve(async (req) => {
     
     console.log('[lovable-chat] User authenticated:', user.id);
 
-    // Rate limiting
+    // Rate limiting - use correct function signature
     const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc(
       'check_rate_limit',
-      { p_endpoint: 'lovable-chat', p_limit: 100, p_window_minutes: 60 }
+      { 
+        p_endpoint: 'lovable-chat', 
+        p_limit: 100, 
+        p_window_minutes: 60 
+      }
     );
 
-    if (rateLimitError || !rateLimitOk) {
+    if (rateLimitError) {
+      console.error('[lovable-chat] Rate limit check error:', rateLimitError);
+    }
+
+    if (rateLimitOk === false) {
       logSecurityEvent('RATE_LIMIT_EXCEEDED', { user_id: user.id }, req);
+      console.log('[lovable-chat] Rate limit exceeded for user:', user.id);
       return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again later.',
+          response: 'I\'m receiving too many requests right now. Please try again in a moment.'
+        }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    console.log('[lovable-chat] Rate limit check passed');
 
     // Build system prompt with context
     const systemPrompt = `You are Kairos, an intelligent AI life assistant. You help users manage their daily life, including tasks, finances, fitness, health, and more.

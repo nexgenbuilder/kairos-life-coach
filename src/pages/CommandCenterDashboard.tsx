@@ -106,11 +106,11 @@ export default function CommandCenterDashboard() {
             { key:'notifs', title:'Notifications', value:'2', foot:'unread', openKey:'notifications' as ModuleKey }
           ].map(c => (
             <button key={c.key} onClick={()=>{ play('ui'); setOpen(c.openKey); }} className='rounded-2xl w-full text-left'>
-              <Card className='glass-card rounded-2xl h-full'>
+              <Card className='glass-card border-white/10 rounded-2xl h-full hover:border-white/20 transition-all'>
                 <CardContent className='p-4'>
-                  <div className='text-xs text-white/90'>{c.title}</div>
-                  <div className='text-xl font-semibold mt-1 text-white'>{c.value}</div>
-                  <div className='text-xs text-white/70 mt-1'>{c.foot}</div>
+                  <div className='text-xs font-medium text-white/95 mb-1'>{c.title}</div>
+                  <div className='text-2xl font-bold text-white mb-1'>{c.value}</div>
+                  <div className='text-xs text-white/80'>{c.foot}</div>
                 </CardContent>
               </Card>
             </button>

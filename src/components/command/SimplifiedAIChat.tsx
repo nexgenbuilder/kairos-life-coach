@@ -76,9 +76,17 @@ export function SimplifiedAIChat({ engine, title, description }: SimplifiedAICha
       play('success');
     } catch (error: any) {
       console.error(`[${title}] Full error:`, error);
+      
+      let errorMessage = error.message || 'Failed to get response. Please check console for details.';
+      
+      // Provide specific feedback for rate limits
+      if (error.message?.includes('Rate limit') || error.message?.includes('429')) {
+        errorMessage = 'Rate limit reached. Please wait a moment before trying again.';
+      }
+      
       toast({ 
         title: `${title} Error`, 
-        description: error.message || 'Failed to get response. Please check console for details.',
+        description: errorMessage,
         variant: 'destructive' 
       });
       play('warn');
