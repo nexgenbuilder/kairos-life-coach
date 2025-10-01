@@ -64,93 +64,56 @@ export const useOrganization = () => {
         return;
       }
 
-      console.log('[useOrganization] Fetching user data for:', user.id);
       setLoading(true);
       setError(null);
 
-      // Timeout after 10 seconds
-      const timeoutId = setTimeout(() => {
-        console.warn('[useOrganization] ⚠️ Loading timeout - forcing completion');
-        setLoading(false);
-        setError('Loading timed out. Please refresh the page.');
-      }, 10000);
-
       try {
-        // Get user's contexts
-        const { data: contextsData, error: contextsError } = await supabase
-          .rpc('get_user_contexts', { user_uuid: user.id });
+        // Parallel fetch: user contexts and active context
+        const [contextsResult, activeContextResult] = await Promise.all([
+          supabase.rpc('get_user_contexts', { user_uuid: user.id }),
+          supabase.rpc('get_user_active_context', { user_uuid: user.id })
+        ]);
 
-        if (contextsError) {
-          console.error('[useOrganization] Error fetching user contexts:', contextsError);
-          setError('Failed to load contexts');
+        if (contextsResult.error) {
+          console.error('[useOrganization] Error fetching user contexts:', contextsResult.error);
         } else {
-          console.log('[useOrganization] User contexts:', contextsData);
-          setUserContexts(contextsData || []);
+          setUserContexts(contextsResult.data || []);
         }
 
-        // Get active context
-        const { data: activeContextId, error: activeError } = await supabase
-          .rpc('get_user_active_context', { user_uuid: user.id });
-
-        if (activeError) {
-          console.error('[useOrganization] Error fetching active context:', activeError);
-          setError('Failed to load active context');
+        const activeContextId = activeContextResult.data;
+        
+        if (activeContextResult.error) {
+          console.error('[useOrganization] Error fetching active context:', activeContextResult.error);
         } else if (activeContextId) {
-          console.log('[useOrganization] Active context ID:', activeContextId);
-          // Get active context details
-          const { data: contextData, error: contextError } = await supabase
-            .from('organizations')
-            .select('*')
-            .eq('id', activeContextId)
-            .maybeSingle();
+          // Parallel fetch: context details, membership, and module settings
+          const [contextResult, membershipResult, settingsResult] = await Promise.all([
+            supabase.from('organizations').select('*').eq('id', activeContextId).maybeSingle(),
+            supabase.from('organization_memberships').select('*').eq('user_id', user.id).eq('organization_id', activeContextId).eq('is_active', true).maybeSingle(),
+            supabase.from('module_permissions').select('*').eq('organization_id', activeContextId)
+          ]);
 
-          if (contextError) {
-            console.error('[useOrganization] Error fetching context details:', contextError);
-            setError('Failed to load workspace details');
-          } else if (contextData) {
-            console.log('[useOrganization] Context data loaded:', contextData);
+          if (contextResult.error) {
+            console.error('[useOrganization] Error fetching context details:', contextResult.error);
+          } else if (contextResult.data) {
             setActiveContext({
-              ...contextData,
-              type: contextData.type as Group['type']
+              ...contextResult.data,
+              type: contextResult.data.type as Group['type']
             });
-          } else {
-            console.log('[useOrganization] No context data found for ID:', activeContextId);
           }
 
-          // Get membership details
-          const { data: membershipData, error: membershipError } = await supabase
-            .from('organization_memberships')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('organization_id', activeContextId)
-            .eq('is_active', true)
-            .maybeSingle();
-
-          if (membershipError) {
-            console.error('[useOrganization] Error fetching membership:', membershipError);
-            setError('Failed to load membership details');
-          } else if (membershipData) {
-            console.log('[useOrganization] Membership data loaded');
+          if (membershipResult.error) {
+            console.error('[useOrganization] Error fetching membership:', membershipResult.error);
+          } else if (membershipResult.data) {
             setMembership({
-              ...membershipData,
-              group_id: membershipData.organization_id
+              ...membershipResult.data,
+              group_id: membershipResult.data.organization_id
             });
-          } else {
-            console.log('[useOrganization] No membership found');
           }
 
-          // Get module settings
-          const { data: settingsData, error: settingsError } = await supabase
-            .from('module_permissions')
-            .select('*')
-            .eq('organization_id', activeContextId);
-
-          if (settingsError) {
-            console.error('[useOrganization] Error fetching module settings:', settingsError);
-            setError('Failed to load module settings');
+          if (settingsResult.error) {
+            console.error('[useOrganization] Error fetching module settings:', settingsResult.error);
           } else {
-            console.log('[useOrganization] Module settings loaded:', settingsData?.length || 0);
-            setModuleSettings((settingsData || []).map(setting => ({
+            setModuleSettings((settingsResult.data || []).map(setting => ({
               ...setting,
               group_id: setting.organization_id,
               visibility: (setting.visibility as ModuleSetting['visibility']) || 'all_members',
@@ -161,16 +124,12 @@ export const useOrganization = () => {
             })));
           }
         } else {
-          console.log('[useOrganization] No active context found');
-          // User has no active context - they need onboarding
           setActiveContext(null);
         }
       } catch (error) {
         console.error('[useOrganization] Error fetching user data:', error);
         setError('Failed to load user data');
       } finally {
-        clearTimeout(timeoutId);
-        console.log('[useOrganization] Finished loading, activeContext:', activeContext?.id || 'none');
         setLoading(false);
       }
     };

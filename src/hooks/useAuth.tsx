@@ -33,19 +33,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('[useAuth] Initializing auth...');
-    
-    // Timeout after 8 seconds to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.warn('[useAuth] ⚠️ Auth loading timeout - forcing completion');
-      setLoading(false);
-    }, 8000);
-
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('[useAuth] Auth state change:', event, session?.user?.id);
-        clearTimeout(timeout);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -54,39 +44,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[useAuth] Initial session check:', session?.user?.id);
-      clearTimeout(timeout);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     }).catch((error) => {
       console.error('[useAuth] Error getting session:', error);
-      clearTimeout(timeout);
       setLoading(false);
     });
 
     return () => {
-      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
 
   const signOut = async () => {
     try {
-      // Clean up auth state first
+      await supabase.auth.signOut({ scope: 'global' });
       cleanupAuthState();
-      // Attempt global sign out
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
       setUser(null);
       setSession(null);
-      // Force page reload for clean state
       window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
+      // Clean up even if sign out fails
+      cleanupAuthState();
+      setUser(null);
+      setSession(null);
+      window.location.href = '/';
     }
   };
 

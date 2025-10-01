@@ -17,9 +17,11 @@ export function ProtectedRoute({ children, requireOnboarding = false }: Protecte
     if (loading) {
       const timer = setTimeout(() => {
         setShowTimeout(true);
-      }, 15000); // Show timeout message after 15 seconds
+      }, 30000); // Show timeout message after 30 seconds
       
       return () => clearTimeout(timer);
+    } else {
+      setShowTimeout(false);
     }
   }, [loading]);
 
