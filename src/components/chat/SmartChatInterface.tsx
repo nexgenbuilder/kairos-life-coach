@@ -155,9 +155,12 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             description: `Successfully added ${receiptData.itemsAdded} expense items`,
           });
 
-          // Refresh Today page if it exists
+          // Refresh Today page and Dashboard if they exist
           if ((window as any).refreshTodayPage) {
             (window as any).refreshTodayPage();
+          }
+          if ((window as any).refreshDashboard) {
+            (window as any).refreshDashboard();
           }
 
           setIsLoading(false);
@@ -283,9 +286,12 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           
           setMessages(prev => [...prev, aiResponseMessage]);
 
-          // Refresh Today page if it exists  
+          // Refresh Today page and Dashboard if they exist  
           if ((window as any).refreshTodayPage) {
             (window as any).refreshTodayPage();
+          }
+          if ((window as any).refreshDashboard) {
+            (window as any).refreshDashboard();
           }
         } else {
           // Use Lovable AI for general conversation
@@ -311,9 +317,12 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           
           setMessages(prev => [...prev, aiResponseMessage]);
 
-          // Refresh Today page if it exists for AI chat responses too
+          // Refresh Today page and Dashboard if they exist for AI chat responses too
           if ((window as any).refreshTodayPage) {
             (window as any).refreshTodayPage();
+          }
+          if ((window as any).refreshDashboard) {
+            (window as any).refreshDashboard();
           }
 
           // Add text-to-speech for conversational responses

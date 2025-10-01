@@ -152,6 +152,14 @@ const DashboardPage = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  // Expose refresh function globally for chat interface
+  useEffect(() => {
+    (window as any).refreshDashboard = fetchAllModuleStats;
+    return () => {
+      delete (window as any).refreshDashboard;
+    };
+  }, [user]);
+
   const fetchAllModuleStats = async () => {
     if (!user) return;
 
