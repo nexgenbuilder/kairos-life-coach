@@ -46,13 +46,13 @@ export function FeaturesShowcase() {
     <section className="py-24 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
             Everything you need to{' '}
-            <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+            <span className="text-primary">
               manage life
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
             A complete platform that adapts to your needs, powered by cutting-edge AI
           </p>
         </div>
@@ -61,14 +61,14 @@ export function FeaturesShowcase() {
           {features.map((feature, index) => (
             <Card 
               key={index}
-              className="group p-8 hover:shadow-glow-soft transition-all duration-500 hover:-translate-y-2 border-border/50 backdrop-blur-sm bg-card/50"
+              className="group p-8 hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border-border bg-card/95 backdrop-blur-sm"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                 <feature.icon className="h-8 w-8 text-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+              <h3 className="text-xl font-semibold mb-3 text-foreground">{feature.title}</h3>
+              <p className="text-muted-foreground leading-relaxed font-medium">{feature.description}</p>
             </Card>
           ))}
         </div>

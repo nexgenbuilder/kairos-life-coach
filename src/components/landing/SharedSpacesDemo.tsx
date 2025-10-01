@@ -40,13 +40,13 @@ export function SharedSpacesDemo() {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 space-y-4">
           <Badge variant="secondary" className="mb-4">Shared Spaces</Badge>
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
             Collaborate with{' '}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="text-primary">
               anyone, anywhere
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
             Create organizations, invite members, and control exactly who can see and do what
           </p>
         </div>
@@ -56,27 +56,27 @@ export function SharedSpacesDemo() {
           {useCases.map((useCase, index) => (
             <Card 
               key={index}
-              className="p-8 hover:shadow-glow-soft transition-all duration-500 hover:-translate-y-2 border-border/50 backdrop-blur-sm bg-card/50"
+              className="p-8 hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border-border bg-card/95 backdrop-blur-sm"
             >
               <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${useCase.color} flex items-center justify-center mb-6`}>
                 <useCase.icon className="h-8 w-8 text-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">{useCase.title}</h3>
-              <p className="text-muted-foreground mb-4 leading-relaxed">{useCase.description}</p>
+              <h3 className="text-xl font-semibold mb-3 text-foreground">{useCase.title}</h3>
+              <p className="text-muted-foreground mb-4 leading-relaxed font-medium">{useCase.description}</p>
               <Badge variant="outline" className="mt-2">{useCase.members}</Badge>
             </Card>
           ))}
         </div>
 
         {/* Permission System */}
-        <Card className="max-w-4xl mx-auto p-8 bg-gradient-to-br from-card to-muted/30 border-2 border-primary/20">
+        <Card className="max-w-4xl mx-auto p-8 bg-card/95 border-2 border-primary/20 backdrop-blur-sm">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
               <Shield className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold">Granular Permission Controls</h3>
-              <p className="text-muted-foreground">Fine-tune access for every module and member</p>
+              <h3 className="text-2xl font-bold text-foreground">Granular Permission Controls</h3>
+              <p className="text-muted-foreground font-medium">Fine-tune access for every module and member</p>
             </div>
           </div>
 

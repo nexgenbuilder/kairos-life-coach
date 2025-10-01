@@ -38,13 +38,13 @@ export function HowItWorksSection() {
     <section className="py-24 bg-gradient-to-b from-primary/10 to-background">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
             Get started in{' '}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="text-primary">
               4 simple steps
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
             From signup to AI-powered life management in under 5 minutes
           </p>
         </div>
@@ -53,7 +53,7 @@ export function HowItWorksSection() {
           {steps.map((step, index) => (
             <Card 
               key={index}
-              className="relative overflow-hidden hover:shadow-glow-soft transition-all duration-500 hover:-translate-x-2"
+              className="relative overflow-hidden hover:shadow-lg transition-all duration-500 hover:-translate-x-2 bg-card/95"
             >
               {/* Step Number Background */}
               <div className="absolute top-0 right-0 text-[200px] font-bold text-muted/5 leading-none select-none">
@@ -72,8 +72,8 @@ export function HowItWorksSection() {
                     <span className="text-sm font-bold text-muted-foreground">STEP {step.number}</span>
                     <div className="h-px flex-1 bg-border"></div>
                   </div>
-                  <h3 className="text-2xl font-bold">{step.title}</h3>
-                  <p className="text-muted-foreground text-lg leading-relaxed">
+                  <h3 className="text-2xl font-bold text-foreground">{step.title}</h3>
+                  <p className="text-muted-foreground text-lg leading-relaxed font-medium">
                     {step.description}
                   </p>
                 </div>

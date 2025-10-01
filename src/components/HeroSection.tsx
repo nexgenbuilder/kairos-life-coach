@@ -67,13 +67,13 @@ export function HeroSection() {
           
           {/* Main heading with staggered animation */}
           <div className="space-y-6 animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground drop-shadow-sm">
               Meet{' '}
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-gradient">
+              <span className="text-primary">
                 Kairos
               </span>
             </h1>
-            <p className="text-xl md:text-2xl lg:text-3xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl lg:text-3xl text-muted-foreground max-w-4xl mx-auto leading-relaxed font-medium">
               The AI for your life — coach, planner, partner.
               <br />
               <span className="text-foreground font-semibold">Manage everything through simple conversation.</span>
@@ -88,7 +88,7 @@ export function HeroSection() {
             <Button 
               size="lg"
               onClick={scrollToAccess}
-              className="bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-all text-lg px-10 py-7 rounded-2xl shadow-glow-primary hover:shadow-glow-primary hover:scale-105"
+              className="bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-all text-lg px-10 py-7 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105"
             >
               Start with Kairos
               <ArrowRight className="ml-2 h-6 w-6" />

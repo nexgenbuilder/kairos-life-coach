@@ -46,18 +46,18 @@ export function AccessSection() {
     <section id="access" className="py-24 bg-gradient-to-b from-background to-primary/5">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
             Ready to get{' '}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="text-primary">
               started?
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
             Join the private beta and experience the future of life management
           </p>
         </div>
 
-        <Card className="max-w-2xl mx-auto p-8 bg-gradient-to-br from-card to-primary/5 border-2 border-primary/20">
+        <Card className="max-w-2xl mx-auto p-8 bg-card/95 backdrop-blur-sm border-2 border-primary/20">
           <Tabs defaultValue="beta" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="beta">
@@ -76,8 +76,8 @@ export function AccessSection() {
 
             <TabsContent value="beta" className="space-y-6">
               <div className="text-center space-y-2 mb-6">
-                <h3 className="text-2xl font-bold">Request Beta Access</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-2xl font-bold text-foreground">Request Beta Access</h3>
+                <p className="text-muted-foreground font-medium">
                   We'll send you an access code to get started
                 </p>
               </div>
