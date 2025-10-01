@@ -68,10 +68,17 @@ export function useSpaceBranding() {
     root.style.removeProperty('--primary');
     root.style.removeProperty('--secondary');
     root.style.removeProperty('--accent');
+    root.style.removeProperty('--background');
+    root.style.removeProperty('--foreground');
     root.style.removeProperty('--background-image');
     body.style.fontFamily = '';
     
-    if (!activeContext?.settings) return;
+    if (!activeContext?.settings) {
+      console.log('[useSpaceBranding] No active context settings');
+      return;
+    }
+    
+    console.log('[useSpaceBranding] Applying branding:', activeContext.settings);
 
     const settings = activeContext.settings as SpaceBranding;
     const brandColors = settings.brand_colors;
@@ -104,7 +111,10 @@ export function useSpaceBranding() {
 
       // Apply background image as CSS custom property for proper layering
       if (backgroundImage) {
-        root.style.setProperty('--background-image', `url(${backgroundImage})`);
+        console.log('[useSpaceBranding] Setting background image:', backgroundImage);
+        root.style.setProperty('--background-image', `url("${backgroundImage}")`);
+      } else {
+        console.log('[useSpaceBranding] No background image');
       }
 
       // Apply typography

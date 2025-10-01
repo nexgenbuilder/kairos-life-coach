@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Upload, Download, Trash2, Eye, Share2, Image, Video, FileAudio, File as FileIcon, FileText } from "lucide-react";
+import { Upload, Download, Trash2, Eye, Share2, Image, Video, FileAudio, File as FileIcon, FileText, ImageIcon } from "lucide-react";
 import { FilePreviewModal } from "@/components/cloud/FilePreviewModal";
 import { FileShareDialog } from "@/components/cloud/FileShareDialog";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -52,6 +52,41 @@ export default function CloudPage() {
       return data as FileMetadata[];
     },
     enabled: !!activeContext?.id
+  });
+
+  // Set as background mutation
+  const setBackgroundMutation = useMutation({
+    mutationFn: async (file: FileMetadata) => {
+      if (!activeContext?.id) throw new Error('No active context');
+      
+      // Get the public URL for the file
+      const { data: { publicUrl } } = supabase.storage
+        .from('organization-files')
+        .getPublicUrl(file.file_path);
+      
+      // Update organization settings with the background image URL
+      const currentSettings = activeContext.settings || {};
+      const { error } = await supabase
+        .from('organizations')
+        .update({
+          settings: {
+            ...currentSettings,
+            background_image_url: publicUrl
+          }
+        })
+        .eq('id', activeContext.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization', activeContext?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-contexts'] });
+      toast.success("Background image applied successfully");
+    },
+    onError: (error: Error) => {
+      console.error('Error setting background:', error);
+      toast.error("Failed to apply background image");
+    }
   });
 
   // Delete file mutation
@@ -295,6 +330,17 @@ export default function CloudPage() {
                       >
                         <Share2 className="h-4 w-4" />
                       </Button>
+                      {isAdmin && file.mime_type.startsWith('image/') && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setBackgroundMutation.mutate(file)}
+                          disabled={setBackgroundMutation.isPending}
+                          title="Apply as background"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                        </Button>
+                      )}
                       {isAdmin && (
                         <Button
                           variant="destructive"
