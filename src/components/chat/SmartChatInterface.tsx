@@ -99,10 +99,68 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     fetchAvailableFiles();
   }, [activeContext]);
 
-  // Handle input changes to detect @mentions
+  // Keyboard shortcuts for mode switching
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd (Mac) or Ctrl (Windows/Linux)
+      if (e.metaKey || e.ctrlKey) {
+        switch (e.key) {
+          case '1':
+            e.preventDefault();
+            toggleMode('general');
+            toast({
+              title: "Switched to General Mode",
+              description: "Using Lovable AI",
+              duration: 2000
+            });
+            break;
+          case '2':
+            e.preventDefault();
+            if (modeState.allowed.perplexity) {
+              toggleMode('perplexity');
+              toast({
+                title: "Switched to Search Mode",
+                description: "Using live web search",
+                duration: 2000
+              });
+            }
+            break;
+          case '3':
+            e.preventDefault();
+            if (modeState.allowed.gemini) {
+              toggleMode('gemini');
+              toast({
+                title: "Switched to Gemini Mode",
+                description: "Using Google Gemini AI",
+                duration: 2000
+              });
+            }
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [modeState.allowed, toggleMode, toast]);
+
+  // Handle input changes to detect @mentions and slash commands
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
+
+    // Check for slash commands
+    const parsed = parseSlashCommand(value);
+    if (parsed.mode) {
+      // Switch mode and clear the slash command from input
+      toggleMode(parsed.mode);
+      setInputValue(parsed.cleanText);
+      toast({
+        title: `Switched to ${parsed.mode.charAt(0).toUpperCase() + parsed.mode.slice(1)} Mode`,
+        duration: 2000
+      });
+      return;
+    }
 
     // Detect @ mentions
     const lastAtSymbol = value.lastIndexOf('@');
@@ -556,7 +614,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
               >
                 <div
                   className={cn(
-                    "max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 transition-smooth",
+                    "max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 transition-smooth relative group",
                     message.sender === 'user'
                       ? 'bg-primary-gradient text-primary-foreground shadow-glow-soft'
                       : 'bg-chat-gradient border border-border text-foreground'
@@ -571,6 +629,73 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                     />
                   )}
                   <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
+                  
+                  {/* Re-run dropdown for user messages */}
+                  {message.sender === 'user' && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs bg-background/80 backdrop-blur-sm"
+                          >
+                            Re-run
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-1">
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="justify-start"
+                              onClick={() => {
+                                setInputValue(message.content);
+                                toggleMode('general');
+                                setTimeout(() => handleSendMessage(), 100);
+                              }}
+                            >
+                              <Bot className="h-4 w-4 mr-2" />
+                              Re-run with General
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="justify-start"
+                              onClick={() => {
+                                if (modeState.allowed.perplexity) {
+                                  setInputValue(message.content);
+                                  toggleMode('perplexity');
+                                  setTimeout(() => handleSendMessage(), 100);
+                                }
+                              }}
+                              disabled={!modeState.allowed.perplexity}
+                            >
+                              <Search className="h-4 w-4 mr-2" />
+                              Re-run with Search
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="justify-start"
+                              onClick={() => {
+                                if (modeState.allowed.gemini) {
+                                  setInputValue(message.content);
+                                  toggleMode('gemini');
+                                  setTimeout(() => handleSendMessage(), 100);
+                                }
+                              }}
+                              disabled={!modeState.allowed.gemini}
+                            >
+                              <Sparkles className="h-4 w-4 mr-2" />
+                              Re-run with Gemini
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+                  
                   {message.sender === 'kairos' && message.source && (
                     <div className="mt-2 flex justify-end">
                       <span className={cn(
@@ -719,21 +844,29 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
               </Button>
             </div>
 
-            {/* Input Field Row - Full Width */}
+            {/* Input Field Row with Mode Status - Full Width */}
             <div className="px-3 pb-3 flex items-end gap-2">
-              <Input
-                ref={inputRef}
-                value={inputValue}
-                onChange={handleInputChange}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !showMentions) {
-                    handleSendMessage();
-                  }
-                }}
-                placeholder={activeContext ? "Message AI or @mention teammates..." : "Ask Kairos anything..."}
-                disabled={isLoading}
-                className="flex-1 min-h-[48px] h-auto py-3 px-4"
-              />
+              <div className="flex-1 flex flex-col gap-2">
+                <div className="flex items-center justify-between px-2">
+                  <ModeStatusChip mode={modeState.activeMode} className="text-xs" />
+                  <span className="text-xs text-muted-foreground">
+                    Tip: Use /general, /search, /gemini or Cmd+1/2/3
+                  </span>
+                </div>
+                <Input
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !showMentions) {
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder={activeContext ? "Message AI or @mention teammates..." : "Ask Kairos anything..."}
+                  disabled={isLoading}
+                  className="min-h-[48px] h-auto py-3 px-4"
+                />
+              </div>
               <Button 
                 onClick={handleSendMessage} 
                 disabled={isLoading || (!inputValue.trim() && !selectedImage && attachedFiles.length === 0)}
