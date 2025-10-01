@@ -347,12 +347,12 @@ const SocialPage = () => {
     <AppLayout>
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Social
-            </h1>
-            <p className="text-muted-foreground mt-2">Manage your friendships and social connections</p>
-          </div>
+      <div>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          Connections
+        </h1>
+        <p className="text-muted-foreground mt-2">Manage your connections and social network</p>
+      </div>
           
           <div className="space-x-2">
             <Dialog open={isInteractionDialogOpen} onOpenChange={setIsInteractionDialogOpen}>
@@ -448,12 +448,12 @@ const SocialPage = () => {
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Friend
+                  Add Connection
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>{editingPerson ? 'Edit Friend' : 'Add New Friend'}</DialogTitle>
+                  <DialogTitle>{editingPerson ? 'Edit Connection' : 'Add New Connection'}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handlePersonSubmit} className="space-y-4">
                   <div>

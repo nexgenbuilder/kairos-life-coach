@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useOrganization } from '@/hooks/useOrganization';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, Search, Users, Shield, Crown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessageSquare, Search, Users, Shield, Crown, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,13 +20,16 @@ interface Member {
   avatar_url?: string;
   role: string;
   joined_at: string;
+  category?: string;
 }
 
 export default function MembersPage() {
+  const { user } = useAuth();
   const { activeContext, loading: orgLoading } = useOrganization();
   const [members, setMembers] = useState<Member[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,15 +41,20 @@ export default function MembersPage() {
   }, [activeContext?.id]);
 
   useEffect(() => {
+    let filtered = members;
+    
     if (searchQuery) {
-      const filtered = members.filter(member =>
+      filtered = filtered.filter(member =>
         member.full_name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setFilteredMembers(filtered);
-    } else {
-      setFilteredMembers(members);
     }
-  }, [searchQuery, members]);
+    
+    if (categoryFilter && categoryFilter !== 'all') {
+      filtered = filtered.filter(member => member.category === categoryFilter);
+    }
+    
+    setFilteredMembers(filtered);
+  }, [searchQuery, categoryFilter, members]);
 
   const fetchMembers = async () => {
     try {
@@ -63,14 +74,23 @@ export default function MembersPage() {
 
       if (profilesError) throw profilesError;
 
+      // Get connection categories
+      const { data: categoriesData } = await supabase
+        .from('connection_categories')
+        .select('connection_user_id, category')
+        .eq('user_id', user!.id)
+        .eq('space_id', activeContext!.id);
+
       const combinedMembers = membershipsData.map(membership => {
         const profile = profilesData.find(p => p.user_id === membership.user_id);
+        const categoryInfo = categoriesData?.find(c => c.connection_user_id === membership.user_id);
         return {
           user_id: membership.user_id,
           full_name: profile?.full_name || 'Unknown User',
           avatar_url: profile?.avatar_url,
           role: membership.role,
           joined_at: membership.created_at,
+          category: categoryInfo?.category,
         };
       });
 
@@ -86,6 +106,59 @@ export default function MembersPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCategoryChange = async (memberId: string, category: string) => {
+    try {
+      const { error } = await supabase
+        .from('connection_categories')
+        .upsert({
+          user_id: user!.id,
+          connection_user_id: memberId,
+          space_id: activeContext!.id,
+          category,
+        });
+
+      if (error) throw error;
+
+      // Update local state
+      setMembers(prev => prev.map(m => 
+        m.user_id === memberId ? { ...m, category } : m
+      ));
+
+      toast({
+        title: 'Category updated',
+        description: 'Connection category has been updated successfully.',
+      });
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update category',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getCategoryLabel = (category?: string) => {
+    if (!category) return 'Uncategorized';
+    const labels: Record<string, string> = {
+      social: 'Social',
+      community: 'Community',
+      groups: 'Groups',
+      work_business: 'Work/Business',
+    };
+    return labels[category] || 'Uncategorized';
+  };
+
+  const getCategoryColor = (category?: string) => {
+    const colors: Record<string, string> = {
+      social: 'bg-pink-100 text-pink-800',
+      community: 'bg-blue-100 text-blue-800',
+      groups: 'bg-green-100 text-green-800',
+      work_business: 'bg-purple-100 text-purple-800',
+    };
+    return colors[category || ''] || 'bg-gray-100 text-gray-800';
   };
 
   const handleMessageMember = (memberId: string, memberName: string) => {

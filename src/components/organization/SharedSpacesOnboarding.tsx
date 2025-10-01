@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   Users, 
   Building2, 
@@ -16,10 +17,14 @@ import {
   ArrowRight,
   Check,
   Share,
-  Lock
+  Lock,
+  Globe,
+  Shield
 } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/components/ui/use-toast';
+import { ProfileSetupForm } from './ProfileSetupForm';
+import { supabase } from '@/integrations/supabase/client';
 
 type SpaceType = 'individual' | 'family' | 'team' | 'organization' | 'project';
 
@@ -68,6 +73,7 @@ const AVAILABLE_MODULES = [
   { name: 'money', label: 'Personal Finance', description: 'Income and expense tracking' },
   { name: 'health', label: 'Health Tracker', description: 'Medical records and health metrics' },
   { name: 'fitness', label: 'Fitness Tracker', description: 'Workout and exercise logging' },
+  { name: 'feed', label: 'Social Feed', description: 'Collaborative posts and team updates' },
   { name: 'social', label: 'Social Network', description: 'Social connections and interactions' },
   { name: 'love', label: 'Relationships', description: 'Personal relationship management' },
   { name: 'business', label: 'Business Management', description: 'Business operations and tracking' },
@@ -88,6 +94,9 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
   const [selectedType, setSelectedType] = useState<SpaceType>('individual');
   const [spaceName, setSpaceName] = useState('');
   const [spaceDescription, setSpaceDescription] = useState('');
+  const [visibility, setVisibility] = useState<'public' | 'private'>('private');
+  const [joinApprovalRequired, setJoinApprovalRequired] = useState(true);
+  const [discoverable, setDiscoverable] = useState(false);
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [moduleSettings, setModuleSettings] = useState<Record<string, { shared: boolean; visibility: string }>>({});
   const [isCreating, setIsCreating] = useState(false);
@@ -97,6 +106,15 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
 
   const handleTypeSelection = (type: SpaceType) => {
     setSelectedType(type);
+    
+    // Set default visibility based on type
+    if (type === 'organization') {
+      setVisibility('public');
+      setDiscoverable(true);
+    } else {
+      setVisibility('private');
+      setDiscoverable(false);
+    }
     
     // Set default modules based on type
     const defaultModules = getDefaultModulesForType(type);
@@ -111,8 +129,8 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     setModuleSettings(defaultSettings);
     
     if (type === 'individual') {
-      // Skip name/description for individual
-      setStep(3);
+      // Profile setup for individual
+      setStep(2);
     } else {
       setStep(2);
     }
@@ -164,6 +182,18 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         // Create individual context - still needs an organization for the app to work
         const newSpace = await createGroup('Personal Space', 'individual', 'Your personal workspace');
         
+        if (newSpace?.id) {
+          // Update visibility settings
+          await supabase
+            .from('organizations')
+            .update({
+              visibility: 'private',
+              discoverable: false,
+              join_approval_required: false,
+            })
+            .eq('id', newSpace.id);
+        }
+        
         console.log('[Onboarding] Individual space created:', newSpace?.id);
         
         // Wait a moment for the database to update
@@ -190,6 +220,18 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
       }
 
       const newSpace = await createGroup(spaceName, selectedType, spaceDescription);
+      
+      if (newSpace?.id) {
+        // Update visibility settings for the new space
+        await supabase
+          .from('organizations')
+          .update({
+            visibility,
+            discoverable: visibility === 'public' && discoverable,
+            join_approval_required: joinApprovalRequired,
+          })
+          .eq('id', newSpace.id);
+      }
       
       console.log('[Onboarding] Space created:', newSpace?.id);
       
@@ -247,6 +289,15 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
           </Card>
         </div>
       </div>
+    );
+  }
+
+  if (step === 2 && selectedType === 'individual') {
+    return (
+      <ProfileSetupForm 
+        onComplete={() => setStep(4)}
+        onBack={() => setStep(1)}
+      />
     );
   }
 
@@ -311,6 +362,112 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     );
   }
 
+  if (step === 3) {
+    return (
+      <ProfileSetupForm 
+        onComplete={() => setStep(4)}
+        onBack={() => setStep(2)}
+      />
+    );
+  }
+
+  // Visibility settings step (step 4, only for non-individual)
+  if (step === 4 && selectedType !== 'individual') {
+    const selectedTypeInfo = SPACE_TYPES.find(t => t.value === selectedType)!;
+    
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="max-w-2xl mx-auto p-6">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Space Visibility</CardTitle>
+              <CardDescription>
+                Choose who can discover and join your space
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <RadioGroup value={visibility} onValueChange={(value: any) => setVisibility(value)}>
+                <div className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-accent/50" onClick={() => setVisibility('private')}>
+                  <RadioGroupItem value="private" id="private" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-muted-foreground" />
+                      <Label htmlFor="private" className="text-base font-semibold cursor-pointer">
+                        Private Space
+                      </Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Invitation-only. Only people you invite can join this space.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-accent/50" onClick={() => setVisibility('public')}>
+                  <RadioGroupItem value="public" id="public" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-muted-foreground" />
+                      <Label htmlFor="public" className="text-base font-semibold cursor-pointer">
+                        Public Space
+                      </Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      People can discover and request to join this space.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+
+              {visibility === 'public' && (
+                <div className="space-y-4 p-4 bg-accent/20 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="discoverable" 
+                      checked={discoverable}
+                      onCheckedChange={(checked) => setDiscoverable(checked as boolean)}
+                    />
+                    <Label htmlFor="discoverable" className="cursor-pointer">
+                      Make this space discoverable in public listings
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="approval" 
+                      checked={joinApprovalRequired}
+                      onCheckedChange={(checked) => setJoinApprovalRequired(checked as boolean)}
+                    />
+                    <Label htmlFor="approval" className="cursor-pointer">
+                      Require approval for join requests
+                    </Label>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(3)}
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => setStep(5)}
+                  className="px-8"
+                >
+                  Next
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const finalStep = selectedType === 'individual' ? 4 : 5;
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="max-w-4xl mx-auto p-6">
@@ -323,7 +480,13 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 gap-4">
-              {AVAILABLE_MODULES.map((module) => (
+              {AVAILABLE_MODULES.filter(module => {
+                // Filter out feed module for individual spaces
+                if (selectedType === 'individual' && module.name === 'feed') {
+                  return false;
+                }
+                return true;
+              }).map((module) => (
                 <div
                   key={module.name}
                   className={`p-4 border rounded-lg transition-colors ${
@@ -409,7 +572,7 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
             <div className="flex justify-between">
               <Button
                 variant="outline"
-                onClick={() => selectedType === 'individual' ? setStep(1) : setStep(2)}
+                onClick={() => selectedType === 'individual' ? setStep(3) : setStep(4)}
               >
                 Back
               </Button>
@@ -438,12 +601,12 @@ function getDefaultModulesForType(type: SpaceType): string[] {
     case 'individual':
       return ['today', 'tasks', 'calendar', 'money', 'health', 'fitness', 'news'];
     case 'family':
-      return ['today', 'tasks', 'calendar', 'money', 'fitness', 'news'];
+      return ['today', 'tasks', 'calendar', 'money', 'fitness', 'feed', 'news'];
     case 'team':
     case 'project':
-      return ['today', 'tasks', 'calendar', 'professional', 'creators'];
+      return ['today', 'tasks', 'calendar', 'professional', 'creators', 'feed'];
     case 'organization':
-      return ['today', 'tasks', 'calendar', 'professional', 'business', 'money', 'creators'];
+      return ['today', 'tasks', 'calendar', 'professional', 'business', 'money', 'creators', 'feed'];
     default:
       return ['today', 'tasks', 'calendar'];
   }

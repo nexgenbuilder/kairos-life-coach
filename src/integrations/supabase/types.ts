@@ -210,6 +210,51 @@ export type Database = {
           },
         ]
       }
+      connection_categories: {
+        Row: {
+          category: string
+          connection_user_id: string
+          created_at: string
+          id: string
+          space_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          connection_user_id: string
+          created_at?: string
+          id?: string
+          space_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          connection_user_id?: string
+          created_at?: string
+          id?: string
+          space_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connection_categories_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connection_categories_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_catalog: {
         Row: {
           ad_spend_cents: number | null
@@ -1999,34 +2044,43 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          discoverable: boolean
           id: string
+          join_approval_required: boolean
           logo_url: string | null
           name: string
           settings: Json | null
           type: string | null
           updated_at: string
+          visibility: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          discoverable?: boolean
           id?: string
+          join_approval_required?: boolean
           logo_url?: string | null
           name: string
           settings?: Json | null
           type?: string | null
           updated_at?: string
+          visibility?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          discoverable?: boolean
           id?: string
+          join_approval_required?: boolean
           logo_url?: string | null
           name?: string
           settings?: Json | null
           type?: string | null
           updated_at?: string
+          visibility?: string
         }
         Relationships: []
       }
@@ -2449,6 +2503,57 @@ export type Database = {
             columns: ["person_id"]
             isOneToOne: false
             referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_join_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          space_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          space_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          space_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_join_requests_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_join_requests_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -3131,6 +3236,17 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: string
       }
+      get_user_connections_by_category: {
+        Args: { user_uuid?: string }
+        Returns: {
+          category: string
+          count: number
+        }[]
+      }
+      get_user_connections_count: {
+        Args: { user_uuid?: string }
+        Returns: number
+      }
       get_user_contexts: {
         Args: { user_uuid?: string }
         Returns: {
@@ -3185,6 +3301,10 @@ export type Database = {
               p_user_id?: string
             }
         Returns: string
+      }
+      process_join_request: {
+        Args: { approve: boolean; request_id: string }
+        Returns: boolean
       }
       switch_user_context: {
         Args: { new_context_id: string; user_uuid?: string }

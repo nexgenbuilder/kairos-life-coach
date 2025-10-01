@@ -31,6 +31,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import CloudPage from "./pages/CloudPage";
 import FeedPage from "./pages/FeedPage";
 import MembersPage from "./pages/MembersPage";
+import PublicSpacesPage from "./pages/PublicSpacesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
             <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
             <Route path="/members" element={<ProtectedRoute><MembersPage /></ProtectedRoute>} />
+            <Route path="/public-spaces" element={<ProtectedRoute><PublicSpacesPage /></ProtectedRoute>} />
             <Route path="/love" element={<ProtectedRoute><LovePage /></ProtectedRoute>} />
             <Route path="/creators" element={<ProtectedRoute><CreatorsPage /></ProtectedRoute>} />
             <Route path="/crypto" element={<ProtectedRoute><CryptoPage /></ProtectedRoute>} />
