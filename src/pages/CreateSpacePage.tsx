@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 type SpaceType = 'individual' | 'family' | 'team' | 'organization' | 'project';
 
@@ -21,6 +22,7 @@ interface ModuleOption {
 }
 
 const AVAILABLE_MODULES: ModuleOption[] = [
+  { name: 'today', label: 'Today', description: 'Daily overview and quick actions' },
   { name: 'tasks', label: 'Tasks', description: 'Manage tasks and to-dos' },
   { name: 'calendar', label: 'Calendar', description: 'Schedule and events' },
   { name: 'money', label: 'Money', description: 'Track income and expenses' },
@@ -29,24 +31,29 @@ const AVAILABLE_MODULES: ModuleOption[] = [
   { name: 'business', label: 'Business', description: 'Business finances and payroll' },
   { name: 'professional', label: 'Professional', description: 'Work schedule and PTO' },
   { name: 'creators', label: 'Creators', description: 'Content management' },
-  { name: 'social', label: 'Social', description: 'Social connections' },
+  { name: 'connections', label: 'Connections', description: 'Manage relationships' },
+  { name: 'social', label: 'Social', description: 'Social feed and posts' },
+  { name: 'love', label: 'Love', description: 'Relationship tracking' },
+  { name: 'crypto', label: 'Crypto', description: 'Cryptocurrency portfolio' },
+  { name: 'stocks', label: 'Stocks', description: 'Stock portfolio tracking' },
+  { name: 'news', label: 'News', description: 'News and updates' },
   { name: 'cloud', label: 'Cloud', description: 'File storage and sharing' },
 ];
 
 const getDefaultModules = (type: SpaceType): string[] => {
   switch (type) {
     case 'individual':
-      return ['tasks', 'calendar', 'money', 'health', 'fitness'];
+      return ['today', 'tasks', 'calendar', 'money', 'health', 'fitness'];
     case 'family':
-      return ['tasks', 'calendar', 'money', 'health'];
+      return ['today', 'tasks', 'calendar', 'money', 'health'];
     case 'team':
-      return ['tasks', 'calendar', 'professional', 'cloud'];
+      return ['today', 'tasks', 'calendar', 'professional', 'cloud'];
     case 'organization':
-      return ['tasks', 'calendar', 'business', 'professional', 'cloud'];
+      return ['today', 'tasks', 'calendar', 'business', 'professional', 'cloud'];
     case 'project':
-      return ['tasks', 'calendar', 'cloud'];
+      return ['today', 'tasks', 'calendar', 'cloud'];
     default:
-      return ['tasks', 'calendar'];
+      return ['today', 'tasks', 'calendar'];
   }
 };
 
@@ -61,6 +68,9 @@ export default function CreateSpacePage() {
   const [description, setDescription] = useState('');
   const [selectedModules, setSelectedModules] = useState<string[]>(getDefaultModules('individual'));
   const [isDiscoverable, setIsDiscoverable] = useState(false);
+  const [pricingType, setPricingType] = useState<'free' | 'paid'>('free');
+  const [priceAmount, setPriceAmount] = useState('');
+  const [subscriptionInterval, setSubscriptionInterval] = useState<'monthly' | 'yearly'>('monthly');
 
   const handleTypeChange = (value: SpaceType) => {
     setSpaceType(value);
@@ -94,9 +104,20 @@ export default function CreateSpacePage() {
       return;
     }
 
+    if (pricingType === 'paid' && (!priceAmount || parseFloat(priceAmount) <= 0)) {
+      toast({
+        title: 'Price Required',
+        description: 'Please enter a valid price for paid spaces',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsCreating(true);
 
     try {
+      console.log('[CreateSpace] Creating space with:', { spaceName, spaceType, selectedModules, pricingType });
+      
       const result = await createGroup(
         spaceName.trim(),
         spaceType,
@@ -105,21 +126,40 @@ export default function CreateSpacePage() {
         isDiscoverable
       );
 
-      if (result.success) {
-        toast({
-          title: 'Space Created!',
-          description: `${spaceName} has been created successfully`,
-        });
-        
-        // Navigate to dashboard after successful creation
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 500);
-      } else {
+      if (!result.success || !result.groupId) {
         throw new Error(result.error || 'Failed to create space');
       }
+
+      console.log('[CreateSpace] Space created, updating settings...');
+
+      // Update pricing and other settings
+      const { error: updateError } = await supabase
+        .from('organizations')
+        .update({
+          pricing_type: pricingType,
+          price_amount_cents: pricingType === 'paid' ? Math.round(parseFloat(priceAmount) * 100) : 0,
+          subscription_interval: pricingType === 'paid' ? subscriptionInterval : null,
+        })
+        .eq('id', result.groupId);
+
+      if (updateError) {
+        console.error('[CreateSpace] Error updating pricing:', updateError);
+        throw updateError;
+      }
+
+      console.log('[CreateSpace] Space created successfully!');
+      
+      toast({
+        title: 'Space Created!',
+        description: `${spaceName} has been created successfully`,
+      });
+      
+      // Navigate to dashboard after successful creation
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } catch (error: any) {
-      console.error('Space creation error:', error);
+      console.error('[CreateSpace] Space creation error:', error);
       toast({
         title: 'Creation Failed',
         description: error.message || 'Failed to create space. Please try again.',
@@ -225,6 +265,51 @@ export default function CreateSpacePage() {
                 ))}
               </div>
             </div>
+
+            {/* Pricing Type */}
+            <div className="space-y-3">
+              <Label>Pricing</Label>
+              <Select value={pricingType} onValueChange={(value: 'free' | 'paid') => setPricingType(value)} disabled={isCreating}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free - No charge to join</SelectItem>
+                  <SelectItem value="paid">Paid - Requires subscription</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Price Details (shown only for paid) */}
+            {pricingType === 'paid' && (
+              <div className="space-y-3 p-4 rounded-lg border border-border bg-accent/10">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price (USD) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="9.99"
+                    value={priceAmount}
+                    onChange={(e) => setPriceAmount(e.target.value)}
+                    disabled={isCreating}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Billing Interval</Label>
+                  <Select value={subscriptionInterval} onValueChange={(value: 'monthly' | 'yearly') => setSubscriptionInterval(value)} disabled={isCreating}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
 
             {/* Visibility */}
             <div className="flex items-start space-x-3 p-4 rounded-lg border border-border">
