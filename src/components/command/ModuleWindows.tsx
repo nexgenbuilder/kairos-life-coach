@@ -24,7 +24,7 @@ import { startOfWeek } from 'date-fns';
 
 const SmartChatInterface = React.lazy(() => import('@/components/chat/SmartChatInterface'));
 
-export type ModuleKey = 'perplexity'|'gemini'|'messages'|'tasks'|'money'|'receipts'|'calendar'|'fitness'|'health'|'spaces'|'notifications'|'security'|'settings'|'assets'|'locations'|'leads'|'content';
+export type ModuleKey = 'perplexity'|'gemini'|'messages'|'tasks'|'money'|'receipts'|'calendar'|'fitness'|'health'|'spaces'|'notifications'|'security'|'settings'|'assets'|'locations';
 
 export function ModuleWindow({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (v: boolean) => void; title: string; children: React.ReactNode }) {
   return (
@@ -2061,24 +2061,24 @@ export function LocationsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}
 }
 
 export function AIPerplexityWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
-  const SimplifiedAIChat = React.lazy(() => import('@/components/chat/SimplifiedAIChat').then(m => ({ default: m.SimplifiedAIChat })));
+  const SimplifiedAIChatLazy = React.lazy(() => import('@/components/command/SimplifiedAIChat').then(m => ({ default: m.SimplifiedAIChat })));
   
   return (
     <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Perplexity Search'>
       <Suspense fallback={<div className='p-6 text-soft'>Loading…</div>}>
-        <SimplifiedAIChat mode='perplexity' />
+        <SimplifiedAIChatLazy engine='perplexity' title='Perplexity' description='Live web search with real-time answers' />
       </Suspense>
     </ModuleWindow>
   );
 }
 
 export function AIGeminiWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
-  const SimplifiedAIChat = React.lazy(() => import('@/components/chat/SimplifiedAIChat').then(m => ({ default: m.SimplifiedAIChat })));
+  const SimplifiedAIChatLazy = React.lazy(() => import('@/components/command/SimplifiedAIChat').then(m => ({ default: m.SimplifiedAIChat })));
   
   return (
     <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Gemini Chat'>
       <Suspense fallback={<div className='p-6 text-soft'>Loading…</div>}>
-        <SimplifiedAIChat mode='gemini' />
+        <SimplifiedAIChatLazy engine='gemini' title='Gemini' description='Google AI for creative and analytical tasks' />
       </Suspense>
     </ModuleWindow>
   );

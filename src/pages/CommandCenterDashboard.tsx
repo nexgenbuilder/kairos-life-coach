@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Bot, Search, Sparkles, MessageSquare, Mail, Banknote, ReceiptText, CheckSquare, Calendar, Dumbbell, HeartPulse, Users, Shield, Bell, LayoutDashboard, Settings, Boxes, MapPin } from 'lucide-react';
+import { Search, Sparkles, MessageSquare, Mail, Banknote, ReceiptText, CheckSquare, Calendar, Dumbbell, HeartPulse, Users, Shield, Bell, LayoutDashboard, Settings, Boxes, MapPin } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useSound } from '@/hooks/useSound';
 import {
@@ -22,11 +22,11 @@ function CommandTile({ icon: Icon, label, subtitle, onClick }: any) {
     >
       <div className='flex items-center gap-3'>
         <div className='rounded-xl p-2 bg-white/10 group-hover:bg-white/20'>
-          <Icon className='h-5 w-5' />
+          <Icon className='h-5 w-5 text-white' />
         </div>
         <div>
-          <div className='font-medium leading-none text-strong'>{label}</div>
-          {subtitle ? <div className='text-xs text-muted mt-1'>{subtitle}</div> : null}
+          <div className='font-medium leading-none text-white'>{label}</div>
+          {subtitle ? <div className='text-xs text-white/70 mt-1'>{subtitle}</div> : null}
         </div>
       </div>
     </motion.button>
@@ -61,18 +61,18 @@ export default function CommandCenterDashboard() {
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-3'>
           <div className='rounded-xl p-2 glass-card'>
-            <LayoutDashboard className='h-5 w-5' />
+            <LayoutDashboard className='h-5 w-5 text-white' />
           </div>
           <div>
-            <h1 className='text-xl font-semibold leading-tight text-strong'>Command Center</h1>
-            <p className='text-sm text-muted'>One roof. One snapshot. Launch any workflow instantly.</p>
+            <h1 className='text-xl font-semibold leading-tight text-white'>Command Center</h1>
+            <p className='text-sm text-white/70'>One roof. One snapshot. Launch any workflow instantly.</p>
           </div>
         </div>
         <div className='hidden md:flex gap-2'>
-          <Button variant='outline' onClick={() => { play('ui'); setOpen('messages'); }} className='glass-card text-white border-white/10'>
+          <Button variant='outline' onClick={() => { play('ui'); setOpen('messages'); }} className='glass-card text-white border-white/10 hover:bg-white/10'>
             <Mail className='h-4 w-4 mr-2' />Compose
           </Button>
-          <Button onClick={() => { play('ui'); setOpen('tasks'); }} className='glass-card text-white border-white/10'>
+          <Button onClick={() => { play('ui'); setOpen('tasks'); }} className='glass-card text-white border-white/10 hover:bg-white/10'>
             <CheckSquare className='h-4 w-4 mr-2' />Quick Task
           </Button>
         </div>
@@ -80,7 +80,7 @@ export default function CommandCenterDashboard() {
 
       <Card className='border-0 bg-transparent shadow-none'>
         <CardHeader className='pb-2'>
-          <CardTitle className='text-base text-strong'>Controls</CardTitle>
+          <CardTitle className='text-base text-white'>Controls</CardTitle>
         </CardHeader>
         <CardContent>
           <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3'>
@@ -93,8 +93,8 @@ export default function CommandCenterDashboard() {
 
       <section>
         <div className='mb-2 flex items-center justify-between'>
-          <h2 className='text-base font-semibold text-strong'>Quick Overview</h2>
-          <Button variant='ghost' size='sm' className='text-muted hover:text-strong'>Customize</Button>
+          <h2 className='text-base font-semibold text-white'>Quick Overview</h2>
+          <Button variant='ghost' size='sm' className='text-white/70 hover:text-white hover:bg-white/10'>Customize</Button>
         </div>
         <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3'>
           {[
@@ -108,9 +108,9 @@ export default function CommandCenterDashboard() {
             <button key={c.key} onClick={()=>{ play('ui'); setOpen(c.openKey); }} className='rounded-2xl w-full text-left'>
               <Card className='glass-card rounded-2xl h-full'>
                 <CardContent className='p-4'>
-                  <div className='text-xs text-muted'>{c.title}</div>
-                  <div className='text-xl font-semibold mt-1 text-strong'>{c.value}</div>
-                  <div className='text-xs text-soft mt-1'>{c.foot}</div>
+                  <div className='text-xs text-white/70'>{c.title}</div>
+                  <div className='text-xl font-semibold mt-1 text-white'>{c.value}</div>
+                  <div className='text-xs text-white/60 mt-1'>{c.foot}</div>
                 </CardContent>
               </Card>
             </button>
