@@ -68,6 +68,13 @@ export const useOrganization = () => {
       setLoading(true);
       setError(null);
 
+      // Timeout after 10 seconds
+      const timeoutId = setTimeout(() => {
+        console.warn('[useOrganization] ⚠️ Loading timeout - forcing completion');
+        setLoading(false);
+        setError('Loading timed out. Please refresh the page.');
+      }, 10000);
+
       try {
         // Get user's contexts
         const { data: contextsData, error: contextsError } = await supabase
@@ -162,6 +169,7 @@ export const useOrganization = () => {
         console.error('[useOrganization] Error fetching user data:', error);
         setError('Failed to load user data');
       } finally {
+        clearTimeout(timeoutId);
         console.log('[useOrganization] Finished loading, activeContext:', activeContext?.id || 'none');
         setLoading(false);
       }
