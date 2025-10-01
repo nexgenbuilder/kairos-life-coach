@@ -313,7 +313,8 @@ function extractExpenseData(message: string, userId: string) {
     amount: amount,
     category: category,
     description: description,
-    date: new Date().toISOString()
+    date: new Date().toISOString(),
+    is_recurring: false
   };
 }
 

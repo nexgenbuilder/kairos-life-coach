@@ -58,7 +58,7 @@ const Index = () => {
             onLogExpense={() => setExpenseSheetOpen(true)}
             onLogWorkout={() => navigate('/fitness')}
             onAddLead={() => setLeadSheetOpen(true)}
-            className="border-b border-border"
+            className="border-b border-border flex-shrink-0"
           />
 
           {/* Smart Suggestions */}
@@ -66,21 +66,21 @@ const Index = () => {
             onPlanDay={() => navigate('/today')}
             onCreateTask={() => setTaskSheetOpen(true)}
             onLogExpense={() => setExpenseSheetOpen(true)}
-            className="border-b border-border py-2"
+            className="border-b border-border py-2 flex-shrink-0"
           />
 
           {/* Chat Interface */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0">
             <SmartChatInterface className="h-full" />
           </div>
         </div>
 
         {/* Right: Mini Dashboard - Mobile Below, Desktop 40% */}
-        <div className="lg:w-[40%] bg-muted/30">
-          <div className="sticky top-0">
-            <div className="p-4 border-b border-border">
+        <div className="w-full lg:w-[40%] bg-muted/30 min-h-[400px] lg:min-h-0">
+          <div className="lg:sticky lg:top-0 lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto">
+            <div className="p-4 pb-3 border-b border-border">
               <h2 className="text-lg font-semibold">Quick Overview</h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 Tap cards to explore modules
               </p>
             </div>

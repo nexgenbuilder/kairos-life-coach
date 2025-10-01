@@ -130,23 +130,23 @@ export function MiniDashGrid({ className }: MiniDashGridProps) {
   }, [user]);
 
   return (
-    <div className={cn("grid grid-cols-2 gap-3 p-4", className)}>
+    <div className={cn("grid grid-cols-2 gap-3 p-3 md:p-4", className)}>
       {cards.map((card) => {
         const Icon = card.icon;
         return (
           <Card
             key={card.id}
-            className="cursor-pointer hover:shadow-glow-soft transition-all hover:scale-105"
+            className="cursor-pointer hover:shadow-glow-soft transition-all hover:scale-105 active:scale-95"
             onClick={() => navigate(card.route)}
           >
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-3">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col gap-2 md:gap-3">
                 <div className="flex items-center justify-between">
-                  <Icon className="h-5 w-5 text-primary" />
+                  <Icon className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{card.metric.value}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{card.title}</div>
+                  <div className="text-xl md:text-2xl font-bold">{card.metric.value}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 md:mt-1">{card.title}</div>
                 </div>
               </div>
             </CardContent>

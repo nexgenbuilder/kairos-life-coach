@@ -38,9 +38,11 @@ export function QuickActionsBar({
   return (
     <div className={cn(
       "w-full overflow-x-auto scrollbar-hide",
+      "relative after:absolute after:right-0 after:top-0 after:bottom-0 after:w-8",
+      "after:bg-gradient-to-l after:from-background/80 after:to-transparent after:pointer-events-none",
       className
     )}>
-      <div className="flex gap-2 p-4 min-w-max">
+      <div className="flex gap-2 p-3 md:p-4 min-w-max">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
@@ -49,10 +51,10 @@ export function QuickActionsBar({
               onClick={action.action}
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 hover:bg-accent hover:scale-105 transition-all"
+              className="flex items-center gap-2 whitespace-nowrap rounded-full px-3 md:px-4 py-2 hover:bg-accent hover:scale-105 transition-all text-xs md:text-sm"
             >
-              <Icon className="h-4 w-4" />
-              <span className="text-sm font-medium">{action.label}</span>
+              <Icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="font-medium">{action.label}</span>
             </Button>
           );
         })}
