@@ -1,0 +1,102 @@
+import React from 'react';
+import { UserPlus, Settings, MessageSquare, TrendingUp } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+
+export function HowItWorksSection() {
+  const steps = [
+    {
+      number: "01",
+      icon: UserPlus,
+      title: "Sign Up & Get Access",
+      description: "Request beta access, create your account, and join the Kairos community. Set up your personal or organization space in minutes.",
+      color: "from-blue-500/20 to-cyan-500/20"
+    },
+    {
+      number: "02",
+      icon: Settings,
+      title: "Choose Your Modules",
+      description: "Enable only the modules you need—Money, Health, Tasks, Calendar, and more. Customize permissions for team members if you're in a shared space.",
+      color: "from-purple-500/20 to-pink-500/20"
+    },
+    {
+      number: "03",
+      icon: MessageSquare,
+      title: "Chat with AI",
+      description: "Start conversations with Kairos AI. Add data, ask questions, get insights, and automate tasks—all through natural language.",
+      color: "from-orange-500/20 to-yellow-500/20"
+    },
+    {
+      number: "04",
+      icon: TrendingUp,
+      title: "Track & Optimize",
+      description: "Watch your dashboard come alive with insights. AI learns your patterns, suggests improvements, and helps you achieve your goals.",
+      color: "from-green-500/20 to-emerald-500/20"
+    }
+  ];
+
+  return (
+    <section className="py-24 bg-gradient-to-b from-primary/10 to-background">
+      <div className="container mx-auto px-6">
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="text-4xl md:text-5xl font-bold">
+            Get started in{' '}
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              4 simple steps
+            </span>
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            From signup to AI-powered life management in under 5 minutes
+          </p>
+        </div>
+
+        <div className="max-w-5xl mx-auto space-y-8">
+          {steps.map((step, index) => (
+            <Card 
+              key={index}
+              className="relative overflow-hidden hover:shadow-glow-soft transition-all duration-500 hover:-translate-x-2"
+            >
+              {/* Step Number Background */}
+              <div className="absolute top-0 right-0 text-[200px] font-bold text-muted/5 leading-none select-none">
+                {step.number}
+              </div>
+
+              <div className="relative p-8 flex flex-col md:flex-row gap-6 items-start">
+                {/* Icon */}
+                <div className={`flex-shrink-0 w-20 h-20 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center`}>
+                  <step.icon className="h-10 w-10 text-foreground" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-muted-foreground">STEP {step.number}</span>
+                    <div className="h-px flex-1 bg-border"></div>
+                  </div>
+                  <h3 className="text-2xl font-bold">{step.title}</h3>
+                  <p className="text-muted-foreground text-lg leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Video Demo Placeholder */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <Card className="p-2 bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/30">
+            <div className="aspect-video rounded-lg bg-muted flex items-center justify-center">
+              <div className="text-center space-y-3">
+                <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                  <MessageSquare className="h-10 w-10 text-primary" />
+                </div>
+                <p className="text-muted-foreground">Watch the demo video</p>
+                <p className="text-sm text-muted-foreground">(Coming Soon)</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </section>
+  );
+}
