@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,10 @@ import { createTaskQuick, logExpenseQuick, logIncomeQuick, scanReceiptQuick, cre
 import { supabase } from '@/integrations/supabase/client';
 import { TaskList } from '@/components/tasks/TaskList';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { NotificationSettings } from '@/components/notifications/NotificationSettings';
+import { SecurityDashboard } from '@/components/security/SecurityDashboard';
 import { InboxView } from '@/components/chat/InboxView';
-import { Activity, Dumbbell, Heart, Pill, Calendar as CalendarIcon, Upload, Loader2, Send, Bell } from 'lucide-react';
+import { Activity, Dumbbell, Heart, Pill, Calendar as CalendarIcon, Upload, Loader2, Send, Bell, FileIcon, MapPin as MapPinIcon } from 'lucide-react';
 import { startOfWeek } from 'date-fns';
 
 const SmartChatInterface = React.lazy(() => import('@/components/chat/SmartChatInterface'));
@@ -1613,33 +1615,309 @@ export function NotificationsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>v
 }
 
 export function SecurityWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (p.open) {
+      fetchAuditLogs();
+    }
+  }, [p.open]);
+
+  const fetchAuditLogs = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    
+    if (!error && data) {
+      setAuditLogs(data);
+    }
+    setLoading(false);
+  };
+
   return (
     <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Security'>
-      <div className='text-soft text-sm'>Security dashboard and audit logs placeholder</div>
+      <Tabs defaultValue='logs' className='w-full'>
+        <TabsList className='w-full grid grid-cols-2'>
+          <TabsTrigger value='logs'>Audit Logs</TabsTrigger>
+          <TabsTrigger value='dashboard'>Dashboard</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value='logs' className='space-y-3'>
+          {loading ? (
+            <div className='text-soft text-sm'>Loading logs...</div>
+          ) : auditLogs.length === 0 ? (
+            <div className='text-soft text-sm'>No audit logs found</div>
+          ) : (
+            <ScrollArea className='h-[400px]'>
+              <div className='space-y-2 pr-4'>
+                {auditLogs.map((log) => (
+                  <div key={log.id} className='p-3 rounded-lg bg-muted/30 space-y-1'>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm font-medium'>{log.operation}</span>
+                      <span className='text-xs text-soft'>
+                        {new Date(log.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className='text-xs text-soft'>Table: {log.table_name}</div>
+                    {log.ip_address && (
+                      <div className='text-xs text-soft'>IP: {log.ip_address}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </TabsContent>
+
+        <TabsContent value='dashboard'>
+          <SecurityDashboard />
+        </TabsContent>
+      </Tabs>
     </ModuleWindow>
   );
 }
 
 export function SettingsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (p.open) {
+      fetchProfile();
+    }
+  }, [p.open]);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      setProfile(data);
+    }
+    setLoading(false);
+  };
+
   return (
     <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Settings'>
-      <div className='text-soft text-sm'>Personal and organization settings placeholder</div>
+      <Tabs defaultValue='profile' className='w-full'>
+        <TabsList className='w-full grid grid-cols-2'>
+          <TabsTrigger value='profile'>Profile</TabsTrigger>
+          <TabsTrigger value='notifications'>Notifications</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value='profile' className='space-y-3'>
+          {loading ? (
+            <div className='text-soft text-sm'>Loading profile...</div>
+          ) : (
+            <div className='space-y-3'>
+              <div>
+                <Label>Full Name</Label>
+                <div className='text-sm text-soft'>{profile?.full_name || 'Not set'}</div>
+              </div>
+              <div>
+                <Label>Role</Label>
+                <div className='text-sm text-soft capitalize'>{profile?.role || 'user'}</div>
+              </div>
+              <Button variant='outline' size='sm' onClick={() => window.location.href = '/settings'}>
+                Open Full Settings
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value='notifications'>
+          <NotificationSettings />
+        </TabsContent>
+      </Tabs>
     </ModuleWindow>
   );
 }
 
 export function AssetsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
+  const [files, setFiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { play } = useSound();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (p.open) {
+      fetchFiles();
+    }
+  }, [p.open]);
+
+  const fetchFiles = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from('file_metadata')
+        .select('*')
+        .eq('uploaded_by', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (data) setFiles(data);
+    }
+    setLoading(false);
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const filePath = `${user.id}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('organization-files')
+      .upload(filePath, file);
+
+    if (!uploadError) {
+      await supabase.from('file_metadata').insert({
+        uploaded_by: user.id,
+        file_path: filePath,
+        file_name: file.name,
+        mime_type: file.type,
+        file_size: file.size,
+        organization_id: null
+      });
+
+      play('success');
+      toast({ title: 'File uploaded successfully' });
+      fetchFiles();
+    } else {
+      toast({ title: 'Upload failed', variant: 'destructive' });
+    }
+    
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Assets'>
-      <div className='text-soft text-sm'>Files and media management placeholder</div>
+      <Tabs defaultValue='files' className='w-full'>
+        <TabsList className='w-full grid grid-cols-2'>
+          <TabsTrigger value='files'>My Files</TabsTrigger>
+          <TabsTrigger value='upload'>Upload</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value='files' className='space-y-3'>
+          {loading ? (
+            <div className='text-soft text-sm'>Loading files...</div>
+          ) : files.length === 0 ? (
+            <div className='text-soft text-sm'>No files uploaded yet</div>
+          ) : (
+            <ScrollArea className='h-[400px]'>
+              <div className='space-y-2 pr-4'>
+                {files.map((file) => (
+                  <div key={file.id} className='p-3 rounded-lg bg-muted/30 space-y-1'>
+                    <div className='flex items-center gap-2'>
+                      <FileIcon className='h-4 w-4 text-soft' />
+                      <span className='text-sm font-medium truncate flex-1'>{file.file_name}</span>
+                    </div>
+                    <div className='text-xs text-soft'>
+                      {(file.file_size / 1024 / 1024).toFixed(2)} MB • {new Date(file.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </TabsContent>
+
+        <TabsContent value='upload' className='space-y-3'>
+          <div className='space-y-3'>
+            <Label>Upload File</Label>
+            <input
+              ref={fileInputRef}
+              type='file'
+              onChange={handleUpload}
+              disabled={uploading}
+              className='block w-full text-sm text-soft file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90'
+            />
+            {uploading && <div className='text-sm text-soft'>Uploading...</div>}
+          </div>
+        </TabsContent>
+      </Tabs>
     </ModuleWindow>
   );
 }
 
 export function LocationsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
+  const [locations, setLocations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (p.open) {
+      fetchLocations();
+    }
+  }, [p.open]);
+
+  const fetchLocations = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // Get unique locations from events
+      const { data: events } = await supabase
+        .from('events')
+        .select('location, start_time')
+        .eq('user_id', user.id)
+        .not('location', 'is', null)
+        .order('start_time', { ascending: false })
+        .limit(50);
+      
+      if (events) {
+        const uniqueLocations = events
+          .reduce((acc: any[], event) => {
+            if (!acc.find(l => l.location === event.location)) {
+              acc.push(event);
+            }
+            return acc;
+          }, []);
+        setLocations(uniqueLocations);
+      }
+    }
+    setLoading(false);
+  };
+
   return (
     <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Locations'>
-      <div className='text-soft text-sm'>Places and visits log placeholder</div>
+      <div className='space-y-3'>
+        <div className='text-sm text-soft'>Recent locations from your calendar events</div>
+        {loading ? (
+          <div className='text-soft text-sm'>Loading locations...</div>
+        ) : locations.length === 0 ? (
+          <div className='text-soft text-sm'>No locations found in your events</div>
+        ) : (
+          <ScrollArea className='h-[400px]'>
+            <div className='space-y-2 pr-4'>
+              {locations.map((loc, idx) => (
+                <div key={idx} className='p-3 rounded-lg bg-muted/30 space-y-1'>
+                  <div className='flex items-center gap-2'>
+                    <MapPinIcon className='h-4 w-4 text-soft' />
+                    <span className='text-sm font-medium'>{loc.location}</span>
+                  </div>
+                  <div className='text-xs text-soft'>
+                    Last visited: {new Date(loc.start_time).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
     </ModuleWindow>
   );
 }
