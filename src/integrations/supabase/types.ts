@@ -997,6 +997,7 @@ export type Database = {
           id: string
           mime_type: string
           organization_id: string
+          shared_with_users: string[] | null
           tags: string[] | null
           updated_at: string
           uploaded_by: string
@@ -1010,6 +1011,7 @@ export type Database = {
           id?: string
           mime_type: string
           organization_id: string
+          shared_with_users?: string[] | null
           tags?: string[] | null
           updated_at?: string
           uploaded_by: string
@@ -1023,6 +1025,7 @@ export type Database = {
           id?: string
           mime_type?: string
           organization_id?: string
+          shared_with_users?: string[] | null
           tags?: string[] | null
           updated_at?: string
           uploaded_by?: string
@@ -2715,6 +2718,7 @@ export type Database = {
       }
       user_messages: {
         Row: {
+          attached_files: string[] | null
           content: string
           created_at: string | null
           id: string
@@ -2725,6 +2729,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          attached_files?: string[] | null
           content: string
           created_at?: string | null
           id?: string
@@ -2735,6 +2740,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          attached_files?: string[] | null
           content?: string
           created_at?: string | null
           id?: string

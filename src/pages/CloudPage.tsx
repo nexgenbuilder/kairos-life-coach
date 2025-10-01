@@ -1,37 +1,44 @@
-import { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useOrganization } from '@/hooks/useOrganization';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Upload, File, Trash2, Download } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useOrganization } from "@/hooks/useOrganization";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useState } from "react";
+import { Upload, Download, Trash2, Eye, Share2, Image, Video, FileAudio, File as FileIcon, FileText } from "lucide-react";
+import { FilePreviewModal } from "@/components/cloud/FilePreviewModal";
+import { FileShareDialog } from "@/components/cloud/FileShareDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface FileMetadata {
   id: string;
   file_name: string;
+  file_path: string;
   file_size: number;
   mime_type: string;
   description: string | null;
   uploaded_by: string;
   created_at: string;
-  file_path: string;
+  shared_with_users?: string[];
 }
 
-const CloudPage = () => {
-  const { activeContext, isAdmin } = useOrganization();
-  const { toast } = useToast();
+export default function CloudPage() {
+  const { activeContext } = useOrganization();
+  const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [previewFile, setPreviewFile] = useState<FileMetadata | null>(null);
+  const [shareFile, setShareFile] = useState<FileMetadata | null>(null);
 
-  const { data: files = [], isLoading } = useQuery({
-    queryKey: ['organization-files', activeContext?.id],
+  // Fetch files
+  const { data: files, isLoading } = useQuery({
+    queryKey: ['files', activeContext?.id],
     queryFn: async () => {
       if (!activeContext?.id) return [];
       
@@ -47,6 +54,7 @@ const CloudPage = () => {
     enabled: !!activeContext?.id
   });
 
+  // Delete file mutation
   const deleteMutation = useMutation({
     mutationFn: async (file: FileMetadata) => {
       // Delete from storage
@@ -65,18 +73,12 @@ const CloudPage = () => {
       if (dbError) throw dbError;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organization-files'] });
-      toast({
-        title: "File deleted",
-        description: "File has been removed successfully"
-      });
+      queryClient.invalidateQueries({ queryKey: ['files', activeContext?.id] });
+      toast.success("File deleted successfully");
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
+    onError: (error: Error) => {
+      console.error('Error deleting file:', error);
+      toast.error("Failed to delete file");
     }
   });
 
@@ -101,6 +103,10 @@ const CloudPage = () => {
 
       if (uploadError) throw uploadError;
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       // Save metadata
       const { error: dbError } = await supabase
         .from('file_metadata')
@@ -111,24 +117,18 @@ const CloudPage = () => {
           file_size: selectedFile.size,
           mime_type: selectedFile.type,
           description: description || null,
-          uploaded_by: (await supabase.auth.getUser()).data.user?.id
+          uploaded_by: user.id
         });
 
       if (dbError) throw dbError;
 
-      queryClient.invalidateQueries({ queryKey: ['organization-files'] });
+      queryClient.invalidateQueries({ queryKey: ['files', activeContext.id] });
       setSelectedFile(null);
       setDescription('');
-      toast({
-        title: "File uploaded",
-        description: "File has been uploaded successfully"
-      });
+      toast.success("File uploaded successfully");
     } catch (error: any) {
-      toast({
-        title: "Upload failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      console.error('Error uploading file:', error);
+      toast.error("Failed to upload file");
     } finally {
       setUploading(false);
     }
@@ -146,21 +146,30 @@ const CloudPage = () => {
       const a = document.createElement('a');
       a.href = url;
       a.download = file.file_name;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (error: any) {
-      toast({
-        title: "Download failed",
-        description: error.message,
-        variant: "destructive"
-      });
+
+      toast.success("File downloaded successfully");
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast.error("Failed to download file");
     }
   };
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith('image/')) return <Image className="h-4 w-4" />;
+    if (mimeType.startsWith('video/')) return <Video className="h-4 w-4" />;
+    if (mimeType.startsWith('audio/')) return <FileAudio className="h-4 w-4" />;
+    if (mimeType === 'application/pdf') return <FileText className="h-4 w-4" />;
+    return <FileIcon className="h-4 w-4" />;
   };
 
   if (!activeContext) {
@@ -226,7 +235,7 @@ const CloudPage = () => {
               disabled={!selectedFile || uploading}
               className="w-full"
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="h-4 w-4 mr-2" />
               {uploading ? 'Uploading...' : 'Upload File'}
             </Button>
           </CardContent>
@@ -240,18 +249,18 @@ const CloudPage = () => {
           <CardContent>
             {isLoading ? (
               <p className="text-muted-foreground">Loading files...</p>
-            ) : files.length === 0 ? (
+            ) : !files || files.length === 0 ? (
               <p className="text-muted-foreground">No files uploaded yet</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {files.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="flex items-center space-x-3">
-                      <File className="w-5 h-5 text-muted-foreground" />
-                      <div>
+                    <div className="flex items-center gap-3 flex-1">
+                      {getFileIcon(file.mime_type)}
+                      <div className="flex-1">
                         <p className="font-medium">{file.file_name}</p>
                         <p className="text-sm text-muted-foreground">
                           {formatFileSize(file.file_size)} • {new Date(file.created_at).toLocaleDateString()}
@@ -261,21 +270,40 @@ const CloudPage = () => {
                         )}
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPreviewFile(file)}
+                        title="View file"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDownload(file)}
+                        title="Download file"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShareFile(file)}
+                        title="Share with members"
+                      >
+                        <Share2 className="h-4 w-4" />
                       </Button>
                       {isAdmin && (
                         <Button
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
                           onClick={() => deleteMutation.mutate(file)}
+                          disabled={deleteMutation.isPending}
+                          title="Delete file"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -286,8 +314,19 @@ const CloudPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      <FilePreviewModal
+        file={previewFile}
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+      />
+
+      <FileShareDialog
+        file={shareFile}
+        isOpen={!!shareFile}
+        onClose={() => setShareFile(null)}
+        onShareUpdate={() => queryClient.invalidateQueries({ queryKey: ['files', activeContext?.id] })}
+      />
     </AppLayout>
   );
-};
-
-export default CloudPage;
+}

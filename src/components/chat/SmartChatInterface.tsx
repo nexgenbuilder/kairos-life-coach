@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, Bot, Search, Sparkles, Image, X, Inbox, MessageSquare } from 'lucide-react';
+import { Send, Mic, MicOff, Bot, Search, Sparkles, Image, X, Inbox, MessageSquare, Paperclip, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,8 @@ import { useOrganization } from '@/hooks/useOrganization';
 import { MentionAutocomplete } from './MentionAutocomplete';
 import { InboxView } from './InboxView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Message {
   id: string;
@@ -52,10 +54,12 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [members, setMembers] = useState<Member[]>([]);
   const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
   const [activeTab, setActiveTab] = useState<'chat' | 'inbox'>('chat');
+  const [attachedFiles, setAttachedFiles] = useState<Array<{ id: string; file_name: string }>>([]);
+  const [availableFiles, setAvailableFiles] = useState<Array<{ id: string; file_name: string; mime_type: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch organization members for @mentions
+  // Fetch organization members and files for @mentions and attachments
   useEffect(() => {
     if (!activeContext) return;
 
@@ -68,7 +72,20 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       }
     };
 
+    const fetchAvailableFiles = async () => {
+      const { data, error } = await supabase
+        .from('file_metadata')
+        .select('id, file_name, mime_type')
+        .eq('organization_id', activeContext.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setAvailableFiles(data);
+      }
+    };
+
     fetchMembers();
+    fetchAvailableFiles();
   }, [activeContext]);
 
   // Handle input changes to detect @mentions
@@ -79,7 +96,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     // Detect @ mentions
     const lastAtSymbol = value.lastIndexOf('@');
     if (lastAtSymbol !== -1 && lastAtSymbol === value.length - 1) {
-      // Just typed @
       setShowMentions(true);
       setMentionSearch('');
       updateMentionPosition();
@@ -119,21 +135,18 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const detectActionType = (message: string): 'task' | 'expense' | 'income' | 'fitness' | 'chat' => {
     const lowerMessage = message.toLowerCase();
     
-    // Task-related keywords
     if (lowerMessage.includes('create task') || lowerMessage.includes('add task') || 
         lowerMessage.includes('new task') || lowerMessage.includes('make task') ||
         lowerMessage.includes('task called') || lowerMessage.includes('todo')) {
       return 'task';
     }
     
-    // Expense-related keywords
     if (lowerMessage.includes('log expense') || lowerMessage.includes('add expense') ||
         lowerMessage.includes('spent') || lowerMessage.includes('cost') ||
         lowerMessage.includes('paid') || lowerMessage.includes('expense')) {
       return 'expense';
     }
     
-    // Income-related keywords
     if (lowerMessage.includes('log income') || lowerMessage.includes('add income') ||
         lowerMessage.includes('received') || lowerMessage.includes('earned') ||
         lowerMessage.includes('income') || lowerMessage.includes('payment') ||
@@ -141,7 +154,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       return 'income';
     }
     
-    // Fitness-related keywords
     if (lowerMessage.includes('workout') || lowerMessage.includes('exercise') ||
         lowerMessage.includes('fitness') || lowerMessage.includes('gym') ||
         lowerMessage.includes('ran') || lowerMessage.includes('cycling') ||
@@ -161,7 +173,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "Error",
@@ -171,7 +182,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       return;
     }
 
-    // Read file as base64
     const reader = new FileReader();
     reader.onload = () => {
       setSelectedImage(reader.result as string);
@@ -180,21 +190,20 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   };
 
   const handleSendMessage = async () => {
-    if ((!inputValue.trim() && !selectedImage) || isLoading) return;
+    if ((!inputValue.trim() && !selectedImage && attachedFiles.length === 0) || isLoading) return;
 
     // Check if message contains @mentions (peer-to-peer message)
     const mentionPattern = /@(\w+)/g;
     const mentions = [...inputValue.matchAll(mentionPattern)];
     
     if (mentions.length > 0 && activeContext) {
-      // This is a user-to-user message
-      await handleUserMessage(inputValue, mentions);
+      await handleUserMessage(inputValue, mentions, attachedFiles.map(f => f.id));
       return;
     }
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue || (selectedImage ? 'Uploaded an image' : ''),
+      content: inputValue || (selectedImage ? 'Uploaded an image' : attachedFiles.length > 0 ? `Attached ${attachedFiles.length} file(s)` : ''),
       sender: 'user',
       timestamp: new Date(),
       imageUrl: selectedImage || undefined
@@ -205,6 +214,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     const currentImage = selectedImage;
     setInputValue('');
     setSelectedImage(null);
+    setAttachedFiles([]);
     setIsLoading(true);
 
     try {
@@ -212,12 +222,9 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       if (currentImage) {
         try {
           console.log('Processing receipt image...');
-          // Strip the data URL prefix (data:image/jpeg;base64,) before sending
           const base64Data = currentImage.split(',')[1];
           const { data: receiptData, error: receiptError } = await supabase.functions.invoke('process-receipt', {
-            body: {
-              image: base64Data
-            }
+            body: { image: base64Data }
           });
 
           console.log('Receipt processing response:', { data: receiptData, error: receiptError });
@@ -242,7 +249,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             description: `Successfully added ${receiptData.itemsAdded} expense items`,
           });
 
-          // Refresh Today page and Dashboard if they exist
           if ((window as any).refreshTodayPage) {
             (window as any).refreshTodayPage();
           }
@@ -272,14 +278,12 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         }
       }
 
-      // Continue with existing text-based message handling
       if (!currentInput.trim()) {
         setIsLoading(false);
         return;
       }
 
       if (routingMode === 'search') {
-        // Force Perplexity for real-time search
         const { data, error } = await supabase.functions.invoke('perplexity-search', {
           body: { 
             message: currentInput,
@@ -303,7 +307,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         setMessages(prev => [...prev, aiResponseMessage]);
 
       } else if (routingMode === 'gpt5') {
-        // Force Lovable AI for reasoning/conversation
         const { data, error } = await supabase.functions.invoke('lovable-chat', {
           body: { 
             message: currentInput,
@@ -327,7 +330,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         
         setMessages(prev => [...prev, aiResponseMessage]);
 
-        // Add text-to-speech for GPT-5 responses
         try {
           const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
             body: { 
@@ -345,12 +347,9 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         }
 
       } else {
-        // Auto mode - keep existing logic
-        // Normal mode - detect action type and route accordingly
         const actionType = detectActionType(currentInput);
 
         if (actionType !== 'chat') {
-          // Use our centralized smart-action edge function for structured operations
           const { data, error } = await supabase.functions.invoke('smart-action', {
             body: { 
               message: currentInput,
@@ -373,7 +372,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           
           setMessages(prev => [...prev, aiResponseMessage]);
 
-          // Refresh Today page and Dashboard if they exist  
           if ((window as any).refreshTodayPage) {
             (window as any).refreshTodayPage();
           }
@@ -381,7 +379,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             (window as any).refreshDashboard();
           }
         } else {
-          // Use Lovable AI for general conversation
           const { data, error } = await supabase.functions.invoke('lovable-chat', {
             body: { 
               message: currentInput,
@@ -404,7 +401,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           
           setMessages(prev => [...prev, aiResponseMessage]);
 
-          // Refresh Today page and Dashboard if they exist for AI chat responses too
           if ((window as any).refreshTodayPage) {
             (window as any).refreshTodayPage();
           }
@@ -412,7 +408,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             (window as any).refreshDashboard();
           }
 
-          // Add text-to-speech for conversational responses
           try {
             const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
               body: { 
@@ -431,7 +426,6 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         }
       }
 
-      // Reset routing mode to auto after sending (unless it's a specific mode selection)
       if (routingMode !== 'auto') {
         setTimeout(() => setRoutingMode('auto'), 100);
       }
@@ -456,25 +450,22 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
     }
   };
 
-  const handleUserMessage = async (content: string, mentions: RegExpMatchArray[]) => {
+  const handleUserMessage = async (content: string, mentions: RegExpMatchArray[], fileIds: string[] = []) => {
     if (!activeContext || !session?.user) return;
 
     try {
       setIsLoading(true);
 
-      // Parse mentions
       const mentionedNames = mentions.map(m => m[1]);
       const isAllMention = mentionedNames.includes('all');
       
       let recipientIds: string[] = [];
       
       if (isAllMention) {
-        // Send to all members in the organization
         const { data: allMembers } = await supabase
           .rpc('get_organization_members', { org_id: activeContext.id });
         recipientIds = allMembers?.map((m: Member) => m.user_id) || [];
       } else {
-        // Send to specific mentioned users
         recipientIds = members
           .filter(m => mentionedNames.includes(m.full_name))
           .map(m => m.user_id);
@@ -490,23 +481,22 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         return;
       }
 
-      // Create the message
       const { error } = await supabase
         .from('user_messages')
         .insert({
           sender_id: session.user.id,
-          organization_id: activeContext.id,
-          content,
+          content: content,
           recipients: recipientIds,
-          is_all_mention: isAllMention
+          organization_id: activeContext.id,
+          is_all_mention: isAllMention,
+          attached_files: fileIds.length > 0 ? fileIds : null,
         });
 
       if (error) throw error;
 
-      // Add confirmation message to chat
       const confirmMessage: Message = {
         id: Date.now().toString(),
-        content: `Message sent to ${isAllMention ? '@all' : mentionedNames.map(n => '@' + n).join(', ')}`,
+        content: `Message sent to ${isAllMention ? '@all' : mentionedNames.map(n => '@' + n).join(', ')}${fileIds.length > 0 ? ` with ${fileIds.length} file(s) attached` : ''}`,
         sender: 'kairos',
         timestamp: new Date()
       };
@@ -519,6 +509,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       });
 
       setInputValue('');
+      setAttachedFiles([]);
     } catch (error) {
       console.error('Error sending user message:', error);
       toast({
@@ -610,159 +601,229 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={cn(
-              "flex w-full",
-              message.sender === 'user' ? 'justify-end' : 'justify-start'
-            )}
-          >
-            <div
-              className={cn(
-                "max-w-[80%] rounded-2xl px-4 py-3 transition-smooth",
-                message.sender === 'user'
-                  ? 'bg-primary-gradient text-primary-foreground shadow-glow-soft'
-                  : 'bg-chat-gradient border border-border text-foreground'
-              )}
-            >
-              {message.imageUrl && (
-                <img 
-                  src={message.imageUrl} 
-                  alt="Uploaded receipt" 
-                  className="max-w-full rounded-lg mb-2"
-                  style={{ maxHeight: '200px' }}
-                />
-              )}
-              <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
-              {message.sender === 'kairos' && message.source && (
-                <div className="mt-2 flex justify-end">
-                  <span className={cn(
-                    "text-xs px-2 py-1 rounded-full font-medium",
-                    message.source === 'perplexity' 
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' 
-                      : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
-                  )}>
-                    {message.source === 'perplexity' ? '🌐 Live Search' : '✨ Lovable AI'}
-                  </span>
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={cn(
+                  "flex w-full",
+                  message.sender === 'user' ? 'justify-end' : 'justify-start'
+                )}
+              >
+                <div
+                  className={cn(
+                    "max-w-[80%] rounded-2xl px-4 py-3 transition-smooth",
+                    message.sender === 'user'
+                      ? 'bg-primary-gradient text-primary-foreground shadow-glow-soft'
+                      : 'bg-chat-gradient border border-border text-foreground'
+                  )}
+                >
+                  {message.imageUrl && (
+                    <img 
+                      src={message.imageUrl} 
+                      alt="Uploaded receipt" 
+                      className="max-w-full rounded-lg mb-2"
+                      style={{ maxHeight: '200px' }}
+                    />
+                  )}
+                  <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
+                  {message.sender === 'kairos' && message.source && (
+                    <div className="mt-2 flex justify-end">
+                      <span className={cn(
+                        "text-xs px-2 py-1 rounded-full font-medium",
+                        message.source === 'perplexity' 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' 
+                          : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                      )}>
+                        {message.source === 'perplexity' ? '🌐 Live Search' : '✨ Lovable AI'}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            ))}
+          </div>
+
+          {/* Routing Mode Indicator */}
+          {routingMode !== 'auto' && (
+            <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
+              <div className="flex items-center justify-center space-x-2 text-sm text-primary">
+                {routingMode === 'gpt5' ? <Sparkles className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+                <span>
+                  {routingMode === 'gpt5' ? 'Lovable AI Mode - Powered by Gemini' : 'Search Mode - Real-time web search capabilities'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Attached Files Display */}
+          {attachedFiles.length > 0 && (
+            <div className="border-t p-3 bg-muted/30">
+              <div className="flex flex-wrap gap-2">
+                {attachedFiles.map((file) => (
+                  <div
+                    key={file.id}
+                    className="flex items-center gap-2 bg-background px-3 py-1.5 rounded-md border text-sm"
+                  >
+                    <FileText className="h-3 w-3" />
+                    <span className="max-w-[150px] truncate">{file.file_name}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0"
+                      onClick={() => setAttachedFiles(attachedFiles.filter(f => f.id !== file.id))}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Input Area */}
+          <div className="p-4 border-t border-border">
+            {showMentions && activeContext && (
+              <MentionAutocomplete
+                searchTerm={mentionSearch}
+                members={members}
+                onSelect={handleMentionSelect}
+                position={mentionPosition}
+              />
+            )}
+            {selectedImage && (
+              <div className="mb-2 relative inline-block">
+                <img 
+                  src={selectedImage} 
+                  alt="Selected" 
+                  className="max-h-20 rounded-lg"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive hover:bg-destructive/90"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            <div className="flex space-x-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={isLoading || !activeContext}
+                    className="shrink-0"
+                    title="Attach files from Cloud Storage"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium mb-2">Attach files from Cloud Storage</p>
+                      {availableFiles.length > 0 ? (
+                        availableFiles.map((file) => (
+                          <Button
+                            key={file.id}
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              if (!attachedFiles.find(f => f.id === file.id)) {
+                                setAttachedFiles([...attachedFiles, file]);
+                              }
+                            }}
+                            disabled={attachedFiles.some(f => f.id === file.id)}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            <span className="truncate">{file.file_name}</span>
+                          </Button>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No files available. Upload files in Cloud Storage first.
+                        </p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+              
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageSelect}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="shrink-0"
+                title="Upload receipt image"
+              >
+                <Image className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleListening}
+                disabled={isLoading}
+                className={cn("shrink-0", isListening && "bg-destructive text-destructive-foreground")}
+                title="Voice input"
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant={routingMode === 'gpt5' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
+                disabled={isLoading}
+                className="shrink-0"
+                title="GPT-5 Mode"
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={routingMode === 'search' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
+                disabled={isLoading}
+                className="shrink-0"
+                title="Web Search Mode"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+              <Input
+                ref={inputRef}
+                value={inputValue}
+                onChange={handleInputChange}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !showMentions) {
+                    handleSendMessage();
+                  }
+                }}
+                placeholder={activeContext ? "Message AI or @mention teammates..." : "Ask Kairos anything..."}
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={isLoading || (!inputValue.trim() && !selectedImage && attachedFiles.length === 0)}
+                className="shrink-0"
+              >
+                {isLoading ? (
+                  <Bot className="h-4 w-4 animate-pulse" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Routing Mode Indicator */}
-      {routingMode !== 'auto' && (
-        <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
-          <div className="flex items-center justify-center space-x-2 text-sm text-primary">
-            {routingMode === 'gpt5' ? <Sparkles className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-            <span>
-              {routingMode === 'gpt5' ? 'Lovable AI Mode - Powered by Gemini' : 'Search Mode - Real-time web search capabilities'}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Input Area */}
-      <div className="p-4 border-t border-border">
-        {showMentions && activeContext && (
-          <MentionAutocomplete
-            searchTerm={mentionSearch}
-            members={members}
-            onSelect={handleMentionSelect}
-            position={mentionPosition}
-          />
-        )}
-        {selectedImage && (
-          <div className="mb-2 relative inline-block">
-            <img 
-              src={selectedImage} 
-              alt="Selected" 
-              className="max-h-20 rounded-lg"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive hover:bg-destructive/90"
-              onClick={() => setSelectedImage(null)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-        <div className="flex space-x-2">
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*"
-            onChange={handleImageSelect}
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading}
-            className="shrink-0"
-          >
-            <Image className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleListening}
-            disabled={isLoading}
-            className={cn("shrink-0", isListening && "bg-destructive text-destructive-foreground")}
-          >
-            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant={routingMode === 'gpt5' ? 'default' : 'outline'}
-            size="icon"
-            onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
-            disabled={isLoading}
-            className="shrink-0"
-            title="GPT-5 Mode"
-          >
-            <Sparkles className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={routingMode === 'search' ? 'default' : 'outline'}
-            size="icon"
-            onClick={() => setRoutingMode(routingMode === 'search' ? 'auto' : 'search')}
-            disabled={isLoading}
-            className="shrink-0"
-            title="Web Search Mode"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-          <Input
-            ref={inputRef}
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !showMentions) {
-                handleSendMessage();
-              }
-            }}
-            placeholder={activeContext ? "Message AI or @mention teammates..." : "Ask Kairos anything..."}
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={isLoading || (!inputValue.trim() && !selectedImage)}
-            className="shrink-0"
-          >
-            {isLoading ? (
-              <Bot className="h-4 w-4 animate-pulse" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      </div>
         </TabsContent>
 
         <TabsContent value="inbox" className="flex-1 mt-0">
