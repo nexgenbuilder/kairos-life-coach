@@ -319,28 +319,24 @@ export const useOrganization = () => {
 
       if (error) throw error;
 
-      // Update local state
-      setModuleSettings(prev => {
-        const existing = prev.find(s => s.module_name === moduleName);
-        if (existing) {
-          return prev.map(s => 
-            s.module_name === moduleName 
-              ? { ...s, ...settings }
-              : s
-          );
-        } else {
-          return [...prev, {
-            id: '',
-            group_id: activeContext.id,
-            module_name: moduleName,
-            is_enabled: true,
-            is_shared: true,
-            visibility: 'all_members',
-            settings: {},
-            ...settings,
-          }];
-        }
-      });
+      // Refetch module settings to ensure UI is in sync
+      const { data: updatedSettings, error: fetchError } = await supabase
+        .from('module_permissions')
+        .select('*')
+        .eq('organization_id', activeContext.id);
+
+      if (fetchError) throw fetchError;
+
+      // Update local state with fresh data from database
+      setModuleSettings((updatedSettings || []).map(setting => ({
+        ...setting,
+        group_id: setting.organization_id,
+        visibility: (setting.visibility as ModuleSetting['visibility']) || 'all_members',
+        is_shared: setting.is_shared ?? true,
+        can_view: setting.can_view ?? true,
+        can_edit: setting.can_edit ?? true,
+        can_admin: setting.can_admin ?? false
+      })));
 
       return true;
     } catch (error) {

@@ -22,6 +22,7 @@ const AVAILABLE_MODULES = [
   { name: 'crypto', label: 'Crypto Portfolio', description: 'Cryptocurrency tracking' },
   { name: 'stocks', label: 'Stock Portfolio', description: 'Stock market investments' },
   { name: 'news', label: 'News Feed', description: 'Personalized news and updates' },
+  { name: 'cloud', label: 'Cloud Storage', description: 'Shared file storage and management' },
 ];
 
 interface ModulePermission {
