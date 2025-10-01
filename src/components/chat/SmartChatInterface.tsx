@@ -283,158 +283,239 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         return;
       }
 
-      if (routingMode === 'search') {
-        const { data, error } = await supabase.functions.invoke('perplexity-search', {
-          body: { 
-            message: currentInput,
-            context: window.location.pathname.slice(1) || 'home'
-          },
-          headers: session ? {
-            'Authorization': `Bearer ${session.access_token}`
-          } : {}
-        });
+      // Retry logic for rate limiting
+      let retryCount = 0;
+      const maxRetries = 3;
+      let lastError: any = null;
 
-        if (error) throw error;
-
-        const aiResponseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.response,
-          sender: 'kairos',
-          timestamp: new Date(),
-          source: 'perplexity'
-        };
-        
-        setMessages(prev => [...prev, aiResponseMessage]);
-
-      } else if (routingMode === 'gpt5') {
-        const { data, error } = await supabase.functions.invoke('lovable-chat', {
-          body: { 
-            message: currentInput,
-            context: window.location.pathname.slice(1) || 'home',
-            forceGPT5: true
-          },
-          headers: session ? {
-            'Authorization': `Bearer ${session.access_token}`
-          } : {}
-        });
-
-        if (error) throw error;
-
-        const aiResponseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.response,
-          sender: 'kairos',
-          timestamp: new Date(),
-          source: 'lovable-ai'
-        };
-        
-        setMessages(prev => [...prev, aiResponseMessage]);
-
+      while (retryCount <= maxRetries) {
         try {
-          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
-            body: { 
-              text: data.response,
-              voice: 'alloy'
-            }
-          });
-
-          if (!ttsError && ttsData.audioContent) {
-            const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
-            audio.play().catch(err => console.error('Error playing audio:', err));
-          }
-        } catch (error) {
-          console.error('Error generating speech:', error);
-        }
-
-      } else {
-        const actionType = detectActionType(currentInput);
-
-        if (actionType !== 'chat') {
-          const { data, error } = await supabase.functions.invoke('smart-action', {
-            body: { 
-              message: currentInput,
-              actionType: actionType,
-              context: window.location.pathname.slice(1) || 'home'
-            },
-            headers: session ? {
-              'Authorization': `Bearer ${session.access_token}`
-            } : {}
-          });
-
-          if (error) throw error;
-
-          const aiResponseMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: data.response,
-            sender: 'kairos',
-            timestamp: new Date()
-          };
-          
-          setMessages(prev => [...prev, aiResponseMessage]);
-
-          if ((window as any).refreshTodayPage) {
-            (window as any).refreshTodayPage();
-          }
-          if ((window as any).refreshDashboard) {
-            (window as any).refreshDashboard();
-          }
-        } else {
-          const { data, error } = await supabase.functions.invoke('lovable-chat', {
-            body: { 
-              message: currentInput,
-              context: window.location.pathname.slice(1) || 'home'
-            },
-            headers: session ? {
-              'Authorization': `Bearer ${session.access_token}`
-            } : {}
-          });
-
-          if (error) throw error;
-
-          const aiResponseMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: data.response,
-            sender: 'kairos',
-            timestamp: new Date(),
-            source: data.source || 'lovable-ai'
-          };
-          
-          setMessages(prev => [...prev, aiResponseMessage]);
-
-          if ((window as any).refreshTodayPage) {
-            (window as any).refreshTodayPage();
-          }
-          if ((window as any).refreshDashboard) {
-            (window as any).refreshDashboard();
-          }
-
-          try {
-            const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+          if (routingMode === 'search') {
+            const { data, error } = await supabase.functions.invoke('perplexity-search', {
               body: { 
-                text: data.response,
-                voice: 'alloy'
-              }
+                message: currentInput,
+                context: window.location.pathname.slice(1) || 'home'
+              },
+              headers: session ? {
+                'Authorization': `Bearer ${session.access_token}`
+              } : {}
             });
 
-            if (!ttsError && ttsData.audioContent) {
-              const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
-              audio.play().catch(err => console.error('Error playing audio:', err));
+            if (error) {
+              if (error.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
+                retryCount++;
+                const backoffDelay = Math.pow(2, retryCount) * 1000;
+                toast({
+                  title: "Rate limited",
+                  description: `Retrying in ${backoffDelay / 1000} seconds...`,
+                });
+                await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                continue;
+              }
+              throw error;
             }
-          } catch (error) {
-            console.error('Error generating speech:', error);
+
+            const aiResponseMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              content: data.response,
+              sender: 'kairos',
+              timestamp: new Date(),
+              source: 'perplexity'
+            };
+            
+            setMessages(prev => [...prev, aiResponseMessage]);
+            break;
+
+          } else if (routingMode === 'gpt5') {
+            const { data, error } = await supabase.functions.invoke('lovable-chat', {
+              body: { 
+                message: currentInput,
+                context: window.location.pathname.slice(1) || 'home',
+                forceGPT5: true
+              },
+              headers: session ? {
+                'Authorization': `Bearer ${session.access_token}`
+              } : {}
+            });
+
+            if (error) {
+              if (error.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
+                retryCount++;
+                const backoffDelay = Math.pow(2, retryCount) * 1000;
+                toast({
+                  title: "Rate limited",
+                  description: `Retrying in ${backoffDelay / 1000} seconds...`,
+                });
+                await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                continue;
+              }
+              throw error;
+            }
+
+            const aiResponseMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              content: data.response,
+              sender: 'kairos',
+              timestamp: new Date(),
+              source: 'lovable-ai'
+            };
+            
+            setMessages(prev => [...prev, aiResponseMessage]);
+            break;
+
+            try {
+              const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+                body: { 
+                  text: data.response,
+                  voice: 'alloy'
+                }
+              });
+
+              if (!ttsError && ttsData.audioContent) {
+                const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
+                audio.play().catch(err => console.error('Error playing audio:', err));
+              }
+            } catch (error) {
+              console.error('Error generating speech:', error);
+            }
+
+          } else {
+            const actionType = detectActionType(currentInput);
+
+            if (actionType !== 'chat') {
+              const { data, error } = await supabase.functions.invoke('smart-action', {
+                body: { 
+                  message: currentInput,
+                  actionType: actionType,
+                  context: window.location.pathname.slice(1) || 'home'
+                },
+                headers: session ? {
+                  'Authorization': `Bearer ${session.access_token}`
+                } : {}
+              });
+
+              if (error) {
+                if (error.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
+                  retryCount++;
+                  const backoffDelay = Math.pow(2, retryCount) * 1000;
+                  toast({
+                    title: "Rate limited",
+                    description: `Retrying in ${backoffDelay / 1000} seconds...`,
+                  });
+                  await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                  continue;
+                }
+                throw error;
+              }
+
+              const aiResponseMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                content: data.response,
+                sender: 'kairos',
+                timestamp: new Date()
+              };
+              
+              setMessages(prev => [...prev, aiResponseMessage]);
+
+              if ((window as any).refreshTodayPage) {
+                (window as any).refreshTodayPage();
+              }
+              if ((window as any).refreshDashboard) {
+                (window as any).refreshDashboard();
+              }
+              break;
+            } else {
+              const { data, error } = await supabase.functions.invoke('lovable-chat', {
+                body: { 
+                  message: currentInput,
+                  context: window.location.pathname.slice(1) || 'home'
+                },
+                headers: session ? {
+                  'Authorization': `Bearer ${session.access_token}`
+                } : {}
+              });
+
+              if (error) {
+                if (error.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
+                  retryCount++;
+                  const backoffDelay = Math.pow(2, retryCount) * 1000;
+                  toast({
+                    title: "Rate limited",
+                    description: `Retrying in ${backoffDelay / 1000} seconds...`,
+                  });
+                  await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                  continue;
+                }
+                throw error;
+              }
+
+              const aiResponseMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                content: data.response,
+                sender: 'kairos',
+                timestamp: new Date(),
+                source: data.source || 'lovable-ai'
+              };
+              
+              setMessages(prev => [...prev, aiResponseMessage]);
+
+              if ((window as any).refreshTodayPage) {
+                (window as any).refreshTodayPage();
+              }
+              if ((window as any).refreshDashboard) {
+                (window as any).refreshDashboard();
+              }
+
+              try {
+                const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+                  body: { 
+                    text: data.response,
+                    voice: 'alloy'
+                  }
+                });
+
+                if (!ttsError && ttsData.audioContent) {
+                  const audio = new Audio(`data:audio/mp3;base64,${ttsData.audioContent}`);
+                  audio.play().catch(err => console.error('Error playing audio:', err));
+                }
+              } catch (error) {
+                console.error('Error generating speech:', error);
+              }
+              break;
+            }
           }
+        } catch (err) {
+          lastError = err;
+          if (err.message?.toLowerCase().includes('rate limit') && retryCount < maxRetries) {
+            retryCount++;
+            const backoffDelay = Math.pow(2, retryCount) * 1000;
+            toast({
+              title: "Rate limited",
+              description: `Retrying in ${backoffDelay / 1000} seconds...`,
+            });
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            continue;
+          }
+          throw err;
         }
+      }
+
+      if (retryCount > maxRetries) {
+        throw new Error('Rate limit exceeded. Please try again in a few minutes.');
       }
 
       if (routingMode !== 'auto') {
         setTimeout(() => setRoutingMode('auto'), 100);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
+      const isRateLimit = error.message?.toLowerCase().includes('rate limit');
       toast({
-        title: "Error",
-        description: "Failed to process your request. Please try again.",
+        title: isRateLimit ? "Rate Limit Reached" : "Error",
+        description: isRateLimit 
+          ? "You've reached the rate limit. Please wait a moment and try again."
+          : "Failed to process your request. Please try again.",
         variant: "destructive",
       });
       
