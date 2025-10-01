@@ -43,10 +43,11 @@ import {
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
+// Feed and Members only show in shared spaces (not individual)
 const lifeCategories = [
   { title: 'Today', url: '/today', icon: Clock },
-  { title: 'Feed', url: '/feed', icon: Rss },
-  { title: 'Members', url: '/members', icon: UserCircle },
+  { title: 'Feed', url: '/feed', icon: Rss, sharedOnly: true },
+  { title: 'Members', url: '/members', icon: UserCircle, sharedOnly: true },
   { title: 'Connections', url: '/connections', icon: MessageSquare },
   { title: 'Money', url: '/money', icon: DollarSign },
   { title: 'Health', url: '/health', icon: Heart },
@@ -75,7 +76,10 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const { hasModuleAccess, loading: orgLoading } = useOrganization();
+  const { hasModuleAccess, loading: orgLoading, activeContext } = useOrganization();
+  
+  // Check if current space is a shared space (not individual)
+  const isSharedSpace = activeContext?.type !== 'individual';
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
@@ -121,6 +125,9 @@ export function AppSidebar() {
                 .filter(item => {
                   // Don't show any modules during loading
                   if (orgLoading) return false;
+                  
+                  // Filter out shared-only items when in individual space
+                  if (item.sharedOnly && !isSharedSpace) return false;
                   
                   // Map routes to module names
                   const moduleMap: Record<string, string> = {

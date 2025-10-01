@@ -1120,7 +1120,7 @@ const DashboardPage = () => {
                           {stats.connections.needsFollowUp + stats.love.needsAttention} contacts haven't been reached out to recently
                         </p>
                       </div>
-                      <Link to="/social" className="w-full sm:w-auto sm:ml-auto">
+                      <Link to="/connections" className="w-full sm:w-auto sm:ml-auto">
                         <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">Review Contacts</Button>
                       </Link>
                     </div>

@@ -111,11 +111,46 @@ export default function FeedPage() {
         <div className="flex items-center justify-center h-full">
           <Card className="max-w-md">
             <CardHeader>
-              <CardTitle>No Active Space</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Rss className="h-6 w-6 text-primary" />
+                No Active Space
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
-                Please select or create a shared space to view the feed.
+              <p className="text-muted-foreground mb-4">
+                The Feed is only available in shared spaces. Please select or create a shared space to view the feed.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <strong>Note:</strong> Feed is not available in personal/individual spaces to help you focus on your own data.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Check if the active context is an individual space
+  if (activeContext.type === 'individual') {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-full">
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Rss className="h-6 w-6 text-primary" />
+                Feed Not Available
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                The Feed is only available in shared spaces (Family, Team, Organization, Project).
+              </p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Your current space "<strong>{activeContext.name}</strong>" is a personal space where you can focus on your individual data.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Switch to a shared space or create one to start collaborating with your team!
               </p>
             </CardContent>
           </Card>
