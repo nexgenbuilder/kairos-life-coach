@@ -76,7 +76,12 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         features: featureMap,
-        usage: usageMap
+        usage: usageMap,
+        allowed: {
+          perplexity: featureMap.perplexity.enabled && usageMap.perplexity.used < usageMap.perplexity.limit,
+          gemini: featureMap.gemini.enabled && usageMap.gemini.used < usageMap.gemini.limit,
+          lovable: featureMap.lovable.enabled && usageMap.lovable.used < usageMap.lovable.limit
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
