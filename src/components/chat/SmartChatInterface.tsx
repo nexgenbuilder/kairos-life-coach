@@ -125,9 +125,11 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       if (currentImage) {
         try {
           console.log('Processing receipt image...');
+          // Strip the data URL prefix (data:image/jpeg;base64,) before sending
+          const base64Data = currentImage.split(',')[1];
           const { data: receiptData, error: receiptError } = await supabase.functions.invoke('process-receipt', {
             body: {
-              image: currentImage
+              image: base64Data
             }
           });
 
