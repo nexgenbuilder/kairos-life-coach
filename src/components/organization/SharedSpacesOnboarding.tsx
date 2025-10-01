@@ -182,38 +182,72 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
     
     try {
       console.log('[Onboarding] Creating space, type:', selectedType);
+      console.log('[Onboarding] Selected modules:', selectedModules);
+      console.log('[Onboarding] Module settings:', moduleSettings);
       
       if (selectedType === 'individual') {
-        // Create individual context - still needs an organization for the app to work
-        const newSpace = await createGroup('Personal Space', 'individual', 'Your personal workspace');
+        // For individual, use default name if empty
+        const individualName = spaceName.trim() || 'Personal Space';
+        const newSpace = await createGroup(individualName, 'individual', 'Your personal workspace');
         
-        if (newSpace?.id) {
-          // Update visibility settings
-          await supabase
-            .from('organizations')
-            .update({
-              visibility: 'private',
-              discoverable: false,
-              join_approval_required: false,
-            })
-            .eq('id', newSpace.id);
+        if (!newSpace?.id) {
+          throw new Error('Failed to create space');
         }
         
-        console.log('[Onboarding] Individual space created:', newSpace?.id);
+        console.log('[Onboarding] Individual space created:', newSpace.id);
         
-        // Wait a moment for the database to update
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Update visibility settings
+        const { error: updateError } = await supabase
+          .from('organizations')
+          .update({
+            visibility: 'private',
+            discoverable: false,
+            join_approval_required: false,
+          })
+          .eq('id', newSpace.id);
+        
+        if (updateError) {
+          console.error('[Onboarding] Error updating visibility:', updateError);
+        }
+        
+        // Update module permissions with selected modules
+        if (selectedModules.length > 0) {
+          const { error: modulesError } = await supabase
+            .from('module_permissions')
+            .delete()
+            .eq('organization_id', newSpace.id);
+
+          if (!modulesError) {
+            await supabase
+              .from('module_permissions')
+              .insert(
+                selectedModules.map(moduleName => ({
+                  organization_id: newSpace.id,
+                  module_name: moduleName,
+                  is_enabled: true,
+                  is_shared: false, // Individual spaces don't share
+                  visibility: 'private',
+                  can_view: true,
+                  can_edit: true,
+                  can_admin: true,
+                }))
+              );
+          }
+        }
+        
+        // Small delay to ensure DB writes complete
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         toast({
           title: "Welcome to Kairos!",
           description: "Your personal workspace is ready.",
         });
         
-        // Use React Router navigate instead of hard redirect
         navigate('/', { replace: true });
         return;
       }
 
+      // For non-individual spaces
       if (!spaceName.trim()) {
         toast({
           title: "Space name required",
@@ -224,36 +258,74 @@ export const SharedSpacesOnboarding: React.FC<SharedSpacesOnboardingProps> = ({ 
         return;
       }
 
-      const newSpace = await createGroup(spaceName, selectedType, spaceDescription);
+      const newSpace = await createGroup(spaceName.trim(), selectedType, spaceDescription.trim());
       
-      if (newSpace?.id) {
-        // Update visibility settings and additional fields for the new space
-        await supabase
-          .from('organizations')
-          .update({
-            visibility,
-            discoverable: visibility === 'public' && discoverable,
-            join_approval_required: joinApprovalRequired,
-            category: category || null,
-            location: location || null,
-            pricing_type: pricingType,
-            price_amount_cents: pricingType === 'paid' ? Math.round(parseFloat(priceAmount || '0') * 100) : 0,
-            subscription_interval: pricingType === 'paid' ? subscriptionInterval : null,
-          })
-          .eq('id', newSpace.id);
+      if (!newSpace?.id) {
+        throw new Error('Failed to create space');
       }
       
-      console.log('[Onboarding] Space created:', newSpace?.id);
+      console.log('[Onboarding] Space created:', newSpace.id);
       
-      // Wait a moment for the database to update
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Update visibility settings and additional fields
+      const { error: updateError } = await supabase
+        .from('organizations')
+        .update({
+          visibility,
+          discoverable: visibility === 'public' && discoverable,
+          join_approval_required: joinApprovalRequired,
+          category: category || null,
+          location: location || null,
+          pricing_type: pricingType,
+          price_amount_cents: pricingType === 'paid' ? Math.round(parseFloat(priceAmount || '0') * 100) : 0,
+          subscription_interval: pricingType === 'paid' ? subscriptionInterval : null,
+        })
+        .eq('id', newSpace.id);
+      
+      if (updateError) {
+        console.error('[Onboarding] Error updating space settings:', updateError);
+      }
+      
+      // Update module permissions with selected modules and settings
+      if (selectedModules.length > 0) {
+        // Delete default modules first
+        const { error: deleteError } = await supabase
+          .from('module_permissions')
+          .delete()
+          .eq('organization_id', newSpace.id);
+
+        if (!deleteError) {
+          const { error: insertError } = await supabase
+            .from('module_permissions')
+            .insert(
+              selectedModules.map(moduleName => {
+                const settings = moduleSettings[moduleName] || { shared: true, visibility: 'all_members' };
+                return {
+                  organization_id: newSpace.id,
+                  module_name: moduleName,
+                  is_enabled: true,
+                  is_shared: settings.shared,
+                  visibility: settings.visibility,
+                  can_view: true,
+                  can_edit: settings.shared,
+                  can_admin: settings.visibility === 'admin_only',
+                };
+              })
+            );
+          
+          if (insertError) {
+            console.error('[Onboarding] Error inserting module permissions:', insertError);
+          }
+        }
+      }
+      
+      // Small delay to ensure all DB writes complete
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       toast({
         title: "Space created successfully!",
         description: `Your ${selectedType} is ready to use.`,
       });
       
-      // Use React Router navigate instead of hard redirect
       navigate('/', { replace: true });
     } catch (error) {
       console.error('[Onboarding] Error creating space:', error);

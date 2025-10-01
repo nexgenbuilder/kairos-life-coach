@@ -18,11 +18,41 @@ interface ProfileSetupFormProps {
 export const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({ onComplete, onBack }) => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     full_name: '',
     avatar_url: '',
     bio: ''
   });
+
+  // Check if profile already exists
+  React.useEffect(() => {
+    const checkExistingProfile = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existingProfile) {
+          setFormData({
+            full_name: existingProfile.full_name || '',
+            avatar_url: existingProfile.avatar_url || '',
+            bio: ''
+          });
+        }
+      } catch (error) {
+        console.error('Error checking profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkExistingProfile();
+  }, [user?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +73,10 @@ export const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({ onComplete, 
         .from('profiles')
         .upsert({
           user_id: user!.id,
-          full_name: formData.full_name,
-          avatar_url: formData.avatar_url || null,
+          full_name: formData.full_name.trim(),
+          avatar_url: formData.avatar_url.trim() || null,
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;
@@ -54,12 +86,15 @@ export const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({ onComplete, 
         description: "Your profile has been created successfully.",
       });
 
+      // Small delay to ensure DB write completes
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       onComplete();
     } catch (error) {
       console.error('Error saving profile:', error);
       toast({
         title: "Error",
-        description: "Failed to save profile. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to save profile. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -75,6 +110,17 @@ export const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({ onComplete, 
       .toUpperCase()
       .slice(0, 2);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -139,18 +185,34 @@ export const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({ onComplete, 
                 >
                   Back
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !formData.full_name.trim()}
-                  className="px-8"
-                >
-                  {isSubmitting ? 'Saving...' : (
-                    <>
-                      Continue
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      toast({
+                        title: "Profile setup skipped",
+                        description: "You can update your profile later in settings.",
+                      });
+                      onComplete();
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    Skip for now
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !formData.full_name.trim()}
+                    className="px-8"
+                  >
+                    {isSubmitting ? 'Saving...' : (
+                      <>
+                        Continue
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </form>
           </CardContent>
