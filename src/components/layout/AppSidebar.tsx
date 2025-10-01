@@ -19,7 +19,10 @@ import {
   Bitcoin,
   TrendingUp,
   Newspaper,
-  Cloud
+  Cloud,
+  Rss,
+  UserCircle,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -42,11 +45,13 @@ import { cn } from '@/lib/utils';
 
 const lifeCategories = [
   { title: 'Today', url: '/today', icon: Clock },
+  { title: 'Feed', url: '/feed', icon: Rss },
+  { title: 'Members', url: '/members', icon: UserCircle },
+  { title: 'Chat', url: '/social', icon: MessageSquare },
   { title: 'Money', url: '/money', icon: DollarSign },
   { title: 'Health', url: '/health', icon: Heart },
   { title: 'Fitness', url: '/fitness', icon: Dumbbell },
   { title: 'Tasks', url: '/tasks', icon: CheckSquare },
-  { title: 'Social', url: '/social', icon: Users },
   { title: 'Love', url: '/love', icon: Heart },
   { title: 'Business', url: '/business', icon: Briefcase },
   { title: 'Professional', url: '/professional', icon: User },
@@ -120,6 +125,8 @@ export function AppSidebar() {
                   // Map routes to module names
                   const moduleMap: Record<string, string> = {
                     '/today': 'today',
+                    '/feed': 'feed',
+                    '/members': 'feed',
                     '/professional': 'professional',
                     '/tasks': 'tasks',
                     '/calendar': 'calendar',

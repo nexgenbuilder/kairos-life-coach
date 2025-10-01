@@ -29,6 +29,8 @@ import NewsPage from "./pages/NewsPage";
 import LandingPage from "./pages/LandingPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import CloudPage from "./pages/CloudPage";
+import FeedPage from "./pages/FeedPage";
+import MembersPage from "./pages/MembersPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +59,8 @@ const App = () => (
             <Route path="/business" element={<ProtectedRoute><BusinessPage /></ProtectedRoute>} />
             <Route path="/professional" element={<ProtectedRoute><ProfessionalPage /></ProtectedRoute>} />
             <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
+            <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
+            <Route path="/members" element={<ProtectedRoute><MembersPage /></ProtectedRoute>} />
             <Route path="/love" element={<ProtectedRoute><LovePage /></ProtectedRoute>} />
             <Route path="/creators" element={<ProtectedRoute><CreatorsPage /></ProtectedRoute>} />
             <Route path="/crypto" element={<ProtectedRoute><CryptoPage /></ProtectedRoute>} />
