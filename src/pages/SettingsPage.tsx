@@ -10,12 +10,14 @@ import { InvitationManager } from '@/components/organization/InvitationManager';
 import { JoinRequestsManager } from '@/components/organization/JoinRequestsManager';
 import { ModulePermissionsManager } from '@/components/organization/ModulePermissionsManager';
 import { PendingInvitations } from '@/components/organization/PendingInvitations';
+import { DashboardPreferences } from '@/components/settings/DashboardPreferences';
 import { 
   Settings as SettingsIcon, 
   Bell, 
   Shield, 
   Link,
-  Building2
+  Building2,
+  LayoutDashboard
 } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 
@@ -51,6 +53,10 @@ const SettingsPage = () => {
                   Modules
                 </TabsTrigger>
               )}
+              <TabsTrigger value="dashboard" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+                <LayoutDashboard className="h-3 w-3 sm:h-4 sm:w-4" />
+                Dashboard
+              </TabsTrigger>
               <TabsTrigger value="integrations" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
                 <Link className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Integrations</span>
@@ -77,6 +83,10 @@ const SettingsPage = () => {
               <ModulePermissionsManager />
             </TabsContent>
           )}
+
+          <TabsContent value="dashboard" className="space-y-6">
+            <DashboardPreferences />
+          </TabsContent>
 
           {activeContext?.type !== 'individual' && (
             <TabsContent value="organization" className="space-y-6">
