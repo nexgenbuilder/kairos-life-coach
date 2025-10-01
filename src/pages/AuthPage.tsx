@@ -44,15 +44,6 @@ const AuthPage = () => {
         throw new Error('Invalid beta password. Please contact support for access.');
       }
 
-      // Clean up existing state first
-      cleanupAuthState();
-      // Attempt global sign out to clear any existing session
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -86,15 +77,6 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
-      // Clean up existing state first
-      cleanupAuthState();
-      // Attempt global sign out to clear any existing session
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
