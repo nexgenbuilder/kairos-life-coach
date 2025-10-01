@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.stocks-list]
 verify_jwt = false
+
+[functions.lovable-chat]
+verify_jwt = true

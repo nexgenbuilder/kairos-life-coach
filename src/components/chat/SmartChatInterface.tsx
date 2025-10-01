@@ -118,8 +118,8 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
         setMessages(prev => [...prev, aiResponseMessage]);
 
       } else if (routingMode === 'gpt5') {
-        // Force GPT-5 for reasoning/conversation
-        const { data, error } = await supabase.functions.invoke('ai-chat', {
+        // Force Lovable AI for reasoning/conversation
+        const { data, error } = await supabase.functions.invoke('lovable-chat', {
           body: { 
             message: currentInput,
             context: window.location.pathname.slice(1) || 'home',
@@ -137,7 +137,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
           content: data.response,
           sender: 'kairos',
           timestamp: new Date(),
-          source: 'gpt-5'
+          source: 'lovable-ai'
         };
         
         setMessages(prev => [...prev, aiResponseMessage]);
@@ -193,8 +193,8 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             (window as any).refreshTodayPage();
           }
         } else {
-          // Use regular AI chat for general conversation
-          const { data, error } = await supabase.functions.invoke('ai-chat', {
+          // Use Lovable AI for general conversation
+          const { data, error } = await supabase.functions.invoke('lovable-chat', {
             body: { 
               message: currentInput,
               context: window.location.pathname.slice(1) || 'home'
@@ -211,7 +211,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
             content: data.response,
             sender: 'kairos',
             timestamp: new Date(),
-            source: data.source || 'gpt-5'
+            source: data.source || 'lovable-ai'
           };
           
           setMessages(prev => [...prev, aiResponseMessage]);
@@ -354,9 +354,9 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
                     "text-xs px-2 py-1 rounded-full font-medium",
                     message.source === 'perplexity' 
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' 
-                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                      : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
                   )}>
-                    {message.source === 'perplexity' ? '🌐 Live Search' : '🧠 GPT-5'}
+                    {message.source === 'perplexity' ? '🌐 Live Search' : '✨ Lovable AI'}
                   </span>
                 </div>
               )}
@@ -369,9 +369,9 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
       {routingMode !== 'auto' && (
         <div className="px-4 py-2 bg-primary/10 border-t border-primary/20">
           <div className="flex items-center justify-center space-x-2 text-sm text-primary">
-            {routingMode === 'gpt5' ? <Bot className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            {routingMode === 'gpt5' ? <Sparkles className="h-4 w-4" /> : <Search className="h-4 w-4" />}
             <span>
-              {routingMode === 'gpt5' ? 'GPT-5 Mode - Advanced reasoning and conversation' : 'Search Mode - Real-time web search capabilities'}
+              {routingMode === 'gpt5' ? 'Lovable AI Mode - Powered by Gemini' : 'Search Mode - Real-time web search capabilities'}
             </span>
           </div>
         </div>
@@ -385,23 +385,23 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder={routingMode === 'gpt5' ? "Chat with GPT-5..." : routingMode === 'search' ? "Search the web..." : "Create tasks, log expenses, track fitness..."}
+              placeholder={routingMode === 'gpt5' ? "Chat with Lovable AI..." : routingMode === 'search' ? "Search the web..." : "Create tasks, log expenses, track fitness..."}
               className="pr-12 border-border focus:ring-primary"
             />
           </div>
           
-          {/* GPT-5 Button */}
+          {/* Lovable AI Button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setRoutingMode(routingMode === 'gpt5' ? 'auto' : 'gpt5')}
             className={cn(
               "transition-smooth",
-              routingMode === 'gpt5' ? 'text-blue-600 bg-blue-100 dark:bg-blue-900/50 shadow-glow-soft' : 'text-muted-foreground hover:text-blue-600'
+              routingMode === 'gpt5' ? 'text-purple-600 bg-purple-100 dark:bg-purple-900/50 shadow-glow-soft' : 'text-muted-foreground hover:text-purple-600'
             )}
-            title="GPT-5 - Advanced reasoning and conversation"
+            title="Lovable AI - Powered by Gemini"
           >
-            <Bot className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" />
           </Button>
 
           {/* Perplexity Search Button */}
