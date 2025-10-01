@@ -19,16 +19,7 @@ import { PageLoading } from '@/components/ui/loading-spinner';
 const LandingPage = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [showIntro, setShowIntro] = useState(false);
-
-  useEffect(() => {
-    // Only show intro on first visit per session and if user is not logged in
-    const hasSeenIntro = sessionStorage.getItem('kairos_intro_seen');
-    if (!hasSeenIntro && !user) {
-      setShowIntro(true);
-      sessionStorage.setItem('kairos_intro_seen', 'true');
-    }
-  }, [user]);
+  const [showIntro, setShowIntro] = useState(true);
 
   const handleIntroComplete = () => {
     setShowIntro(false);
@@ -40,8 +31,8 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Cosmic Reveal Intro */}
-      {showIntro && <CosmicRevealIntro onComplete={handleIntroComplete} />}
+      {/* Cosmic Reveal Intro - Shows every time */}
+      {showIntro && !user && <CosmicRevealIntro onComplete={handleIntroComplete} />}
       
       {/* Authenticated User Banner */}
       {user && (

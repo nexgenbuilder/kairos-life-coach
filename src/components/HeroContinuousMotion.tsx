@@ -40,7 +40,7 @@ export function HeroContinuousMotion({
         />
       )}
 
-      {/* Floating orbs */}
+      {/* Floating orbs - Enhanced with more movement */}
       <motion.div
         aria-hidden
         className="absolute -top-24 -left-24 h-80 w-80 rounded-full blur-3xl"
@@ -49,8 +49,9 @@ export function HeroContinuousMotion({
           shouldReduceMotion
             ? {}
             : {
-                x: [0, orbAmplitude * 0.75, 0],
-                y: [0, -orbAmplitude, 0],
+                x: [0, orbAmplitude * 1.2, -orbAmplitude * 0.5, 0],
+                y: [0, -orbAmplitude, -orbAmplitude * 0.8, 0],
+                scale: [1, 1.1, 0.95, 1],
               }
         }
         transition={{ duration: 14, ease: "easeInOut", repeat: Infinity }}
@@ -63,8 +64,9 @@ export function HeroContinuousMotion({
           shouldReduceMotion
             ? {}
             : {
-                x: [0, -orbAmplitude, 0],
-                y: [0, orbAmplitude, 0],
+                x: [0, -orbAmplitude * 1.3, orbAmplitude * 0.6, 0],
+                y: [0, orbAmplitude, -orbAmplitude * 0.4, 0],
+                scale: [1, 0.9, 1.15, 1],
               }
         }
         transition={{
@@ -74,18 +76,60 @@ export function HeroContinuousMotion({
           delay: 1.2,
         }}
       />
+      <motion.div
+        aria-hidden
+        className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full blur-3xl"
+        style={{ background: "rgba(147,51,234,0.15)" }}
+        animate={
+          shouldReduceMotion
+            ? {}
+            : {
+                x: [0, orbAmplitude * 0.8, -orbAmplitude * 1.1, 0],
+                y: [0, orbAmplitude * 1.2, orbAmplitude * 0.5, 0],
+                rotate: [0, 90, 180, 360],
+                scale: [1, 1.2, 0.85, 1],
+              }
+        }
+        transition={{
+          duration: 20,
+          ease: "easeInOut",
+          repeat: Infinity,
+          delay: 2.5,
+        }}
+      />
+      <motion.div
+        aria-hidden
+        className="absolute top-2/3 right-1/4 h-72 w-72 rounded-full blur-3xl"
+        style={{ background: "rgba(59,130,246,0.16)" }}
+        animate={
+          shouldReduceMotion
+            ? {}
+            : {
+                x: [0, -orbAmplitude * 0.9, orbAmplitude * 1.4, 0],
+                y: [0, -orbAmplitude * 0.7, orbAmplitude * 1.1, 0],
+                rotate: [0, -90, -180, -360],
+                scale: [1, 0.95, 1.15, 1],
+              }
+        }
+        transition={{
+          duration: 18,
+          ease: "easeInOut",
+          repeat: Infinity,
+          delay: 4.8,
+        }}
+      />
 
-      {/* Time rings */}
+      {/* Time rings - Subtle and off-center */}
       {!shouldReduceMotion && (
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[52vmin] h-[52vmin] opacity-50">
+        <div className="absolute left-[45%] top-[55%] -translate-x-1/2 -translate-y-1/2 w-[35vmin] h-[35vmin] opacity-20">
           <motion.div
-            className="absolute inset-0 rounded-full border border-primary/35"
+            className="absolute inset-0 rounded-full border border-primary/30"
             animate={{ rotate: [0, 360] }}
             transition={{ duration: 42, ease: "linear", repeat: Infinity }}
             style={{ willChange: "transform" }}
           />
           <motion.div
-            className="absolute inset-0 rounded-full border border-secondary/25"
+            className="absolute inset-0 rounded-full border border-secondary/20"
             animate={{ rotate: [360, 0] }}
             transition={{ duration: 56, ease: "linear", repeat: Infinity }}
             style={{ willChange: "transform" }}

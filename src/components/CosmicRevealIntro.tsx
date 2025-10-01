@@ -38,18 +38,18 @@ export function CosmicRevealIntro({ onComplete }: { onComplete: () => void }) {
   }, [onComplete]);
 
   const particles = useMemo(
-    () => buildParticles(shouldReduceMotion ? 30 : 90),
+    () => buildParticles(shouldReduceMotion ? 30 : 60), // Optimized from 90
     [shouldReduceMotion]
   );
 
   const shards = useMemo(
-    () => buildParticles(shouldReduceMotion ? 8 : 22),
+    () => buildParticles(shouldReduceMotion ? 8 : 18), // Optimized from 22
     [shouldReduceMotion]
   );
 
   const stars = useMemo(
     () =>
-      Array.from({ length: 150 }).map((_, i) => ({
+      Array.from({ length: 100 }).map((_, i) => ({ // Optimized from 150
         id: i,
         size: Math.random() * 2 + 1,
         x: Math.random() * 100,

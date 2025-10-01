@@ -156,7 +156,7 @@ export function HeroSection() {
 
       {/* Scroll indicator */}
       <motion.div
-        className="relative pb-12"
+        className="relative pb-12 flex justify-center"
         animate={shouldReduceMotion ? {} : { y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
