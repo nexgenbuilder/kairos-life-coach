@@ -154,20 +154,6 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        className="relative pb-12 flex justify-center"
-        animate={shouldReduceMotion ? {} : { y: [0, 10, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        <div className="w-7 h-12 rounded-full border-2 border-primary/30 flex items-start justify-center p-1">
-          <motion.div
-            className="w-2 h-2 bg-primary rounded-full"
-            animate={shouldReduceMotion ? {} : { y: [0, 6, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity }}
-          />
-        </div>
-      </motion.div>
     </section>
   );
 }
