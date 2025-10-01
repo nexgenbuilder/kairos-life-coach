@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HeroSection } from '@/components/HeroSection';
+import { CosmicRevealIntro } from '@/components/CosmicRevealIntro';
 import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
 import { ModulesExplorer } from '@/components/landing/ModulesExplorer';
 import { SharedSpacesDemo } from '@/components/landing/SharedSpacesDemo';
@@ -18,6 +19,20 @@ import { PageLoading } from '@/components/ui/loading-spinner';
 const LandingPage = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [showIntro, setShowIntro] = useState(false);
+
+  useEffect(() => {
+    // Only show intro on first visit per session and if user is not logged in
+    const hasSeenIntro = sessionStorage.getItem('kairos_intro_seen');
+    if (!hasSeenIntro && !user) {
+      setShowIntro(true);
+      sessionStorage.setItem('kairos_intro_seen', 'true');
+    }
+  }, [user]);
+
+  const handleIntroComplete = () => {
+    setShowIntro(false);
+  };
 
   if (loading) {
     return <PageLoading message="Loading Kairos..." />;
@@ -25,6 +40,9 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Cosmic Reveal Intro */}
+      {showIntro && <CosmicRevealIntro onComplete={handleIntroComplete} />}
+      
       {/* Authenticated User Banner */}
       {user && (
         <div className="sticky top-0 z-50 bg-primary/90 backdrop-blur-sm border-b border-primary/20">
