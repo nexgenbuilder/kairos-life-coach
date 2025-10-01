@@ -9,7 +9,7 @@ import { useSound } from '@/hooks/useSound';
 import {
   TasksWindow, MoneyWindow, ReceiptsWindow, SpacesWindow, MessagesWindow,
   CalendarWindow, FitnessWindow, HealthWindow, NotificationsWindow, SecurityWindow, SettingsWindow, AssetsWindow, LocationsWindow,
-  AIGeneralWindow, AIPerplexityWindow, AIGeminiWindow, ModuleKey
+  AIPerplexityWindow, AIGeminiWindow, ModuleKey
 } from '@/components/command/ModuleWindows';
 
 function CommandTile({ icon: Icon, label, subtitle, onClick }: any) {
@@ -38,7 +38,6 @@ export default function CommandCenterDashboard() {
   const { play } = useSound();
 
   const tiles = useMemo(() => [
-    { key: 'general_ai', label: 'General AI', icon: Bot, subtitle: 'Assistant for everything', action: () => { play('ui'); setOpen('general_ai'); } },
     { key: 'perplexity', label: 'Perplexity', icon: Search, subtitle: 'Live web answers', action: () => { play('ui'); setOpen('perplexity'); } },
     { key: 'gemini', label: 'Gemini', icon: Sparkles, subtitle: 'Google AI chat', action: () => { play('ui'); setOpen('gemini'); } },
     { key: 'messages', label: 'Messages', icon: MessageSquare, subtitle: 'Inbox / Compose', action: () => { play('ui'); setOpen('messages'); } },
@@ -135,7 +134,6 @@ export default function CommandCenterDashboard() {
     <SettingsWindow open={open==='settings'} onOpenChange={()=>setOpen(null)} />
     <AssetsWindow open={open==='assets'} onOpenChange={()=>setOpen(null)} />
     <LocationsWindow open={open==='locations'} onOpenChange={()=>setOpen(null)} />
-    <AIGeneralWindow open={open==='general_ai'} onOpenChange={()=>setOpen(null)} />
     <AIPerplexityWindow open={open==='perplexity'} onOpenChange={()=>setOpen(null)} />
     <AIGeminiWindow open={open==='gemini'} onOpenChange={()=>setOpen(null)} />
     </AppLayout>

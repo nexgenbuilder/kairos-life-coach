@@ -24,7 +24,7 @@ import { startOfWeek } from 'date-fns';
 
 const SmartChatInterface = React.lazy(() => import('@/components/chat/SmartChatInterface'));
 
-export type ModuleKey = 'general_ai'|'perplexity'|'gemini'|'messages'|'tasks'|'money'|'receipts'|'calendar'|'fitness'|'health'|'spaces'|'notifications'|'security'|'settings'|'assets'|'locations'|'leads'|'content';
+export type ModuleKey = 'perplexity'|'gemini'|'messages'|'tasks'|'money'|'receipts'|'calendar'|'fitness'|'health'|'spaces'|'notifications'|'security'|'settings'|'assets'|'locations'|'leads'|'content';
 
 export function ModuleWindow({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (v: boolean) => void; title: string; children: React.ReactNode }) {
   return (
@@ -1856,8 +1856,15 @@ export function AssetsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
 }
 
 export function LocationsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
+  const [activeTab, setActiveTab] = useState('bookmarks');
   const [locations, setLocations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [category, setCategory] = useState('restaurant');
+  const [notes, setNotes] = useState('');
+  const { toast } = useToast();
+  const { play } = useSound();
 
   useEffect(() => {
     if (p.open) {
@@ -1869,84 +1876,209 @@ export function LocationsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      // Get unique locations from events
-      const { data: events } = await supabase
-        .from('events')
-        .select('location, start_time')
+      const { data } = await supabase
+        .from('locations')
+        .select('*')
         .eq('user_id', user.id)
-        .not('location', 'is', null)
-        .order('start_time', { ascending: false })
-        .limit(50);
-      
-      if (events) {
-        const uniqueLocations = events
-          .reduce((acc: any[], event) => {
-            if (!acc.find(l => l.location === event.location)) {
-              acc.push(event);
-            }
-            return acc;
-          }, []);
-        setLocations(uniqueLocations);
-      }
+        .order('created_at', { ascending: false });
+      setLocations(data || []);
     }
     setLoading(false);
   };
 
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast({ title: 'Name required', variant: 'destructive' });
+      play('warn');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      await supabase.from('locations').insert([{
+        user_id: user.id,
+        name: name.trim(),
+        address: address.trim() || null,
+        category,
+        notes: notes.trim() || null
+      }]);
+
+      toast({ title: 'Location saved' });
+      play('success');
+      setName('');
+      setAddress('');
+      setCategory('restaurant');
+      setNotes('');
+      fetchLocations();
+      setActiveTab('bookmarks');
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast({ title: 'Error saving location', variant: 'destructive' });
+      play('warn');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await supabase.from('locations').delete().eq('id', id);
+      toast({ title: 'Location deleted' });
+      play('success');
+      fetchLocations();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({ title: 'Error deleting location', variant: 'destructive' });
+    }
+  };
+
+  const categories = [
+    'restaurant', 'cafe', 'bar', 'club', 'prospect', 'client', 
+    'gym', 'park', 'office', 'shop', 'hotel', 'other'
+  ];
+
   return (
     <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Locations'>
-      <div className='space-y-3'>
-        <div className='text-sm text-soft'>Recent locations from your calendar events</div>
-        {loading ? (
-          <div className='text-soft text-sm'>Loading locations...</div>
-        ) : locations.length === 0 ? (
-          <div className='text-soft text-sm'>No locations found in your events</div>
-        ) : (
-          <ScrollArea className='h-[400px]'>
-            <div className='space-y-2 pr-4'>
-              {locations.map((loc, idx) => (
-                <div key={idx} className='p-3 rounded-lg bg-muted/30 space-y-1'>
-                  <div className='flex items-center gap-2'>
-                    <MapPinIcon className='h-4 w-4 text-soft' />
-                    <span className='text-sm font-medium'>{loc.location}</span>
-                  </div>
-                  <div className='text-xs text-soft'>
-                    Last visited: {new Date(loc.start_time).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </div>
-    </ModuleWindow>
-  );
-}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className='grid w-full grid-cols-2'>
+          <TabsTrigger value='bookmarks'>My Places</TabsTrigger>
+          <TabsTrigger value='add'>Add New</TabsTrigger>
+        </TabsList>
 
-export function AIGeneralWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
-  return (
-    <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='General AI'>
-      <Suspense fallback={<div className='p-6 text-soft'>Loading chat interface…</div>}>
-        <SmartChatInterface showHeader={false}/>
-      </Suspense>
+        <TabsContent value='bookmarks' className='space-y-3'>
+          {loading ? (
+            <div className='text-soft text-sm'>Loading...</div>
+          ) : locations.length === 0 ? (
+            <div className='text-center py-8 text-soft'>
+              <MapPinIcon className='h-12 w-12 mx-auto mb-2 opacity-50' />
+              <p className='text-sm'>No saved locations yet</p>
+              <Button 
+                variant='ghost' 
+                size='sm' 
+                onClick={() => setActiveTab('add')}
+                className='mt-2'
+              >
+                Add your first location
+              </Button>
+            </div>
+          ) : (
+            <ScrollArea className='h-[400px]'>
+              <div className='space-y-2 pr-4'>
+                {locations.map((loc) => (
+                  <div key={loc.id} className='p-3 rounded-lg glass-soft space-y-2'>
+                    <div className='flex items-start justify-between'>
+                      <div className='flex-1'>
+                        <div className='flex items-center gap-2'>
+                          <MapPinIcon className='h-4 w-4 text-primary' />
+                          <span className='font-medium text-strong'>{loc.name}</span>
+                        </div>
+                        <Badge variant='secondary' className='text-xs mt-1'>
+                          {loc.category}
+                        </Badge>
+                      </div>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={() => handleDelete(loc.id)}
+                        className='text-destructive hover:text-destructive'
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                    {loc.address && (
+                      <div className='text-sm text-muted'>{loc.address}</div>
+                    )}
+                    {loc.notes && (
+                      <div className='text-sm text-soft italic'>{loc.notes}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </TabsContent>
+
+        <TabsContent value='add' className='space-y-4'>
+          <div className='space-y-2'>
+            <Label>Name *</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder='e.g., Blue Bottle Coffee'
+            />
+          </div>
+
+          <div className='space-y-2'>
+            <Label>Category *</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(cat => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className='space-y-2'>
+            <Label>Address</Label>
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder='123 Main St, City'
+            />
+          </div>
+
+          <div className='space-y-2'>
+            <Label>Notes</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder='Any additional context...'
+              rows={3}
+            />
+          </div>
+
+          <Button 
+            onClick={handleSave} 
+            disabled={loading}
+            className='w-full'
+          >
+            {loading ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : null}
+            Save Location
+          </Button>
+        </TabsContent>
+      </Tabs>
     </ModuleWindow>
   );
 }
 
 export function AIPerplexityWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
+  const SimplifiedAIChat = React.lazy(() => import('@/components/chat/SimplifiedAIChat').then(m => ({ default: m.SimplifiedAIChat })));
+  
   return (
-    <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Perplexity AI'>
-      <Suspense fallback={<div className='p-6 text-soft'>Loading chat interface…</div>}>
-        <SmartChatInterface showHeader={false} forceMode='perplexity'/>
+    <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Perplexity Search'>
+      <Suspense fallback={<div className='p-6 text-soft'>Loading…</div>}>
+        <SimplifiedAIChat mode='perplexity' />
       </Suspense>
     </ModuleWindow>
   );
 }
 
 export function AIGeminiWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}){
+  const SimplifiedAIChat = React.lazy(() => import('@/components/chat/SimplifiedAIChat').then(m => ({ default: m.SimplifiedAIChat })));
+  
   return (
-    <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Gemini AI'>
-      <Suspense fallback={<div className='p-6 text-soft'>Loading chat interface…</div>}>
-        <SmartChatInterface showHeader={false} forceMode='gemini'/>
+    <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Gemini Chat'>
+      <Suspense fallback={<div className='p-6 text-soft'>Loading…</div>}>
+        <SimplifiedAIChat mode='gemini' />
       </Suspense>
     </ModuleWindow>
   );

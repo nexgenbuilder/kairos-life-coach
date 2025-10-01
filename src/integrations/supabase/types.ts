@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_quotas: {
+        Row: {
+          created_at: string
+          engine: string
+          id: string
+          updated_at: string
+          usage_count: number
+          usage_limit: number
+          user_id: string
+          window_end: string
+          window_start: string
+          window_type: string
+        }
+        Insert: {
+          created_at?: string
+          engine: string
+          id?: string
+          updated_at?: string
+          usage_count?: number
+          usage_limit?: number
+          user_id: string
+          window_end?: string
+          window_start?: string
+          window_type?: string
+        }
+        Update: {
+          created_at?: string
+          engine?: string
+          id?: string
+          updated_at?: string
+          usage_count?: number
+          usage_limit?: number
+          user_id?: string
+          window_end?: string
+          window_start?: string
+          window_type?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           created_at: string
@@ -204,6 +243,54 @@ export type Database = {
           {
             foreignKeyName: "business_revenue_organization_id_fkey"
             columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_threads: {
+        Row: {
+          active_mode: string
+          created_at: string
+          id: string
+          modes_history: Json | null
+          space_id: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_mode?: string
+          created_at?: string
+          id?: string
+          modes_history?: Json | null
+          space_id?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_mode?: string
+          created_at?: string
+          id?: string
+          modes_history?: Json | null
+          space_id?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_threads_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_threads_space_id_fkey"
+            columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
@@ -1030,27 +1117,75 @@ export type Database = {
       }
       failed_auth_attempts: {
         Row: {
-          attempt_type: string
-          attempted_email: string | null
-          created_at: string
+          created_at: string | null
           id: string
-          ip_address: string
+          identifier: string
+          ip_address: string | null
+          user_agent: string | null
         }
         Insert: {
-          attempt_type: string
-          attempted_email?: string | null
-          created_at?: string
+          created_at?: string | null
           id?: string
-          ip_address: string
+          identifier: string
+          ip_address?: string | null
+          user_agent?: string | null
         }
         Update: {
-          attempt_type?: string
-          attempted_email?: string | null
-          created_at?: string
+          created_at?: string | null
           id?: string
-          ip_address?: string
+          identifier?: string
+          ip_address?: string | null
+          user_agent?: string | null
         }
         Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          config: Json | null
+          created_at: string
+          feature_name: string
+          id: string
+          is_enabled: boolean
+          organization_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          feature_name: string
+          id?: string
+          is_enabled?: boolean
+          organization_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          feature_name?: string
+          id?: string
+          is_enabled?: boolean
+          organization_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flags_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flags_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       file_metadata: {
         Row: {
@@ -1613,6 +1748,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      locations: {
+        Row: {
+          address: string | null
+          category: string
+          created_at: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          notes: string | null
+          organization_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          notes?: string | null
+          organization_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          notes?: string | null
+          organization_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       medication_logs: {
         Row: {
@@ -2465,31 +2642,28 @@ export type Database = {
       }
       rate_limits: {
         Row: {
-          created_at: string
+          created_at: string | null
           endpoint: string
           id: string
-          ip_address: string | null
-          request_count: number
+          request_count: number | null
           user_id: string | null
-          window_start: string
+          window_start: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           endpoint: string
           id?: string
-          ip_address?: string | null
-          request_count?: number
+          request_count?: number | null
           user_id?: string | null
-          window_start?: string
+          window_start?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           endpoint?: string
           id?: string
-          ip_address?: string | null
-          request_count?: number
+          request_count?: number | null
           user_id?: string | null
-          window_start?: string
+          window_start?: string | null
         }
         Relationships: []
       }
@@ -3310,6 +3484,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_ai_usage: {
+        Args: { p_engine?: string; p_user_id: string }
+        Returns: {
+          engine: string
+          usage_limit: number
+          used: number
+          window_end: string
+        }[]
+      }
       get_organization_members: {
         Args: { org_id: string }
         Returns: {
@@ -3366,6 +3549,10 @@ export type Database = {
       get_user_role: {
         Args: { user_uuid: string }
         Returns: string
+      }
+      increment_ai_usage: {
+        Args: { p_amount?: number; p_engine: string; p_user_id: string }
+        Returns: boolean
       }
       log_audit: {
         Args:
