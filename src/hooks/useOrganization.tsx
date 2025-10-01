@@ -53,120 +53,121 @@ export const useOrganization = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    let retryCount = 0;
-    const MAX_RETRIES = 3;
-
     const fetchUserData = async () => {
       if (!user) {
-        if (mounted) {
-          console.log('[Organization] No user, clearing state');
-          setLoading(false);
-          setActiveContext(null);
-          setUserContexts([]);
-          setMembership(null);
-          setModuleSettings([]);
-        }
+        console.log('[useOrganization] No user, skipping fetch');
+        setLoading(false);
+        setActiveContext(null);
+        setUserContexts([]);
+        setMembership(null);
+        setModuleSettings([]);
         return;
       }
 
+      console.log('[useOrganization] Fetching user data for:', user.id);
+      setLoading(true);
+      setError(null);
+
       try {
-        if (mounted) {
-          setLoading(true);
-          setError(null);
-          console.log('[Organization] Loading user data...');
-        }
+        // Get user's contexts
+        const { data: contextsData, error: contextsError } = await supabase
+          .rpc('get_user_contexts', { user_uuid: user.id });
 
-        // Parallel fetch: user contexts and active context
-        const [contextsResult, activeContextResult] = await Promise.all([
-          supabase.rpc('get_user_contexts', { user_uuid: user.id }),
-          supabase.rpc('get_user_active_context', { user_uuid: user.id })
-        ]);
-
-        if (!mounted) return;
-
-        if (contextsResult.error) {
-          throw new Error(`Failed to fetch contexts: ${contextsResult.error.message}`);
-        }
-        
-        if (activeContextResult.error) {
-          throw new Error(`Failed to fetch active context: ${activeContextResult.error.message}`);
-        }
-
-        const contexts = contextsResult.data || [];
-        const activeContextId = activeContextResult.data;
-
-        console.log('[Organization] Loaded contexts:', contexts.length, 'Active:', activeContextId);
-        setUserContexts(contexts);
-
-        if (activeContextId) {
-          // Parallel fetch: context details, membership, and module settings
-          const [contextResult, membershipResult, settingsResult] = await Promise.all([
-            supabase.from('organizations').select('*').eq('id', activeContextId).maybeSingle(),
-            supabase.from('organization_memberships').select('*').eq('user_id', user.id).eq('organization_id', activeContextId).eq('is_active', true).maybeSingle(),
-            supabase.from('module_permissions').select('*').eq('organization_id', activeContextId)
-          ]);
-
-          if (!mounted) return;
-
-          if (contextResult.error) throw contextResult.error;
-          if (membershipResult.error) throw membershipResult.error;
-          if (settingsResult.error) throw settingsResult.error;
-
-          if (contextResult.data) {
-            console.log('[Organization] Loaded active context:', contextResult.data.name);
-            setActiveContext({
-              ...contextResult.data,
-              type: contextResult.data.type as Group['type']
-            });
-          }
-
-          if (membershipResult.data) {
-            setMembership({
-              ...membershipResult.data,
-              group_id: membershipResult.data.organization_id
-            });
-          }
-
-          setModuleSettings((settingsResult.data || []).map(setting => ({
-            ...setting,
-            group_id: setting.organization_id,
-            visibility: (setting.visibility as ModuleSetting['visibility']) || 'all_members',
-            is_shared: setting.is_shared ?? true,
-            can_view: setting.can_view ?? true,
-            can_edit: setting.can_edit ?? true,
-            can_admin: setting.can_admin ?? false
-          })));
+        if (contextsError) {
+          console.error('[useOrganization] Error fetching user contexts:', contextsError);
+          setError('Failed to load contexts');
         } else {
+          console.log('[useOrganization] User contexts:', contextsData);
+          setUserContexts(contextsData || []);
+        }
+
+        // Get active context
+        const { data: activeContextId, error: activeError } = await supabase
+          .rpc('get_user_active_context', { user_uuid: user.id });
+
+        if (activeError) {
+          console.error('[useOrganization] Error fetching active context:', activeError);
+          setError('Failed to load active context');
+        } else if (activeContextId) {
+          console.log('[useOrganization] Active context ID:', activeContextId);
+          // Get active context details
+          const { data: contextData, error: contextError } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', activeContextId)
+            .maybeSingle();
+
+          if (contextError) {
+            console.error('[useOrganization] Error fetching context details:', contextError);
+            setError('Failed to load workspace details');
+          } else if (contextData) {
+            console.log('[useOrganization] Context data loaded:', contextData);
+            setActiveContext({
+              ...contextData,
+              type: contextData.type as Group['type']
+            });
+          } else {
+            console.log('[useOrganization] No context data found for ID:', activeContextId);
+          }
+
+          // Get membership details
+          const { data: membershipData, error: membershipError } = await supabase
+            .from('organization_memberships')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('organization_id', activeContextId)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (membershipError) {
+            console.error('[useOrganization] Error fetching membership:', membershipError);
+            setError('Failed to load membership details');
+          } else if (membershipData) {
+            console.log('[useOrganization] Membership data loaded');
+            setMembership({
+              ...membershipData,
+              group_id: membershipData.organization_id
+            });
+          } else {
+            console.log('[useOrganization] No membership found');
+          }
+
+          // Get module settings
+          const { data: settingsData, error: settingsError } = await supabase
+            .from('module_permissions')
+            .select('*')
+            .eq('organization_id', activeContextId);
+
+          if (settingsError) {
+            console.error('[useOrganization] Error fetching module settings:', settingsError);
+            setError('Failed to load module settings');
+          } else {
+            console.log('[useOrganization] Module settings loaded:', settingsData?.length || 0);
+            setModuleSettings((settingsData || []).map(setting => ({
+              ...setting,
+              group_id: setting.organization_id,
+              visibility: (setting.visibility as ModuleSetting['visibility']) || 'all_members',
+              is_shared: setting.is_shared ?? true,
+              can_view: setting.can_view ?? true,
+              can_edit: setting.can_edit ?? true,
+              can_admin: setting.can_admin ?? false
+            })));
+          }
+        } else {
+          console.log('[useOrganization] No active context found');
+          // User has no active context - they need onboarding
           setActiveContext(null);
         }
-      } catch (err) {
-        if (!mounted) return;
-        
-        console.error('[Organization] Error loading user data:', err);
-        
-        // Retry with exponential backoff
-        if (retryCount < MAX_RETRIES) {
-          retryCount++;
-          const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
-          console.log(`[Organization] Retrying in ${delay}ms (attempt ${retryCount}/${MAX_RETRIES})`);
-          setTimeout(() => fetchUserData(), delay);
-          return;
-        }
-        
-        setError(err instanceof Error ? err.message : 'Failed to load organization data');
+      } catch (error) {
+        console.error('[useOrganization] Error fetching user data:', error);
+        setError('Failed to load user data');
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        console.log('[useOrganization] Finished loading, activeContext:', activeContext?.id || 'none');
+        setLoading(false);
       }
     };
 
     fetchUserData();
-
-    return () => {
-      mounted = false;
-    };
   }, [user]);
 
   const hasModuleAccess = (moduleName: string) => {
