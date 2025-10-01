@@ -222,14 +222,22 @@ export const useOrganization = () => {
   ): Promise<{ success: boolean; groupId?: string; error?: string }> => {
     if (!user) return { success: false, error: 'User not authenticated' };
 
+    let createdGroupId: string | null = null;
+
     try {
-      console.log('[useOrganization] Creating group:', { name, type, description, modules, discoverable });
+      console.log('[useOrganization] ===== Starting space creation =====');
+      console.log('[useOrganization] Parameters:', { name, type, description, modules, discoverable });
       
       // Ensure user is authenticated
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) return { success: false, error: 'User not authenticated' };
+      if (!currentUser) {
+        console.error('[useOrganization] No authenticated user found');
+        return { success: false, error: 'User not authenticated' };
+      }
+      console.log('[useOrganization] Authenticated user:', currentUser.id);
 
-      // Create group
+      // Step 1: Create organization
+      console.log('[useOrganization] Step 1: Creating organization...');
       const { data: groupData, error: groupError } = await supabase
         .from('organizations')
         .insert({
@@ -244,58 +252,68 @@ export const useOrganization = () => {
         .single();
 
       if (groupError) {
-        console.error('[useOrganization] Error creating group:', groupError);
-        return { success: false, error: groupError.message };
+        console.error('[useOrganization] ❌ Organization creation failed:', groupError);
+        return { success: false, error: `Failed to create organization: ${groupError.message}` };
       }
 
-      console.log('[useOrganization] Group created:', groupData.id);
+      createdGroupId = groupData.id;
+      console.log('[useOrganization] ✅ Organization created:', groupData.id);
 
-      // Create membership for creator
+      // Step 2: Create membership with ON CONFLICT handling
+      console.log('[useOrganization] Step 2: Creating membership...');
       const { error: membershipError } = await supabase
         .from('organization_memberships')
-        .insert({
+        .upsert({
           organization_id: groupData.id,
-          user_id: user.id,
+          user_id: currentUser.id,
           role: 'owner',
+          is_active: true,
+        }, {
+          onConflict: 'organization_id,user_id',
+          ignoreDuplicates: false
         });
 
       if (membershipError) {
-        console.error('[useOrganization] Error creating membership:', membershipError);
-        return { success: false, error: membershipError.message };
+        console.error('[useOrganization] ❌ Membership creation failed:', membershipError);
+        return { success: false, error: `Failed to create membership: ${membershipError.message}` };
       }
+      console.log('[useOrganization] ✅ Membership created');
 
-      console.log('[useOrganization] Membership created');
-
-      // Set all other contexts to inactive first
+      // Step 3: Deactivate other contexts
+      console.log('[useOrganization] Step 3: Deactivating other contexts...');
       const { error: deactivateError } = await supabase
         .from('user_contexts')
         .update({ is_active: false })
-        .eq('user_id', user.id);
+        .eq('user_id', currentUser.id);
 
       if (deactivateError) {
-        console.error('[useOrganization] Error deactivating contexts:', deactivateError);
-        return { success: false, error: deactivateError.message };
+        console.error('[useOrganization] ❌ Context deactivation failed:', deactivateError);
+        return { success: false, error: `Failed to deactivate contexts: ${deactivateError.message}` };
       }
+      console.log('[useOrganization] ✅ Other contexts deactivated');
 
-      // Add to user contexts and set as active
+      // Step 4: Create new context with ON CONFLICT handling
+      console.log('[useOrganization] Step 4: Creating user context...');
       const { error: contextError } = await supabase
         .from('user_contexts')
-        .insert({
-          user_id: user.id,
+        .upsert({
+          user_id: currentUser.id,
           group_id: groupData.id,
           is_active: true,
+        }, {
+          onConflict: 'user_id,group_id',
+          ignoreDuplicates: false
         });
 
       if (contextError) {
-        console.error('[useOrganization] Error creating context:', contextError);
-        return { success: false, error: contextError.message };
+        console.error('[useOrganization] ❌ Context creation failed:', contextError);
+        return { success: false, error: `Failed to create context: ${contextError.message}` };
       }
+      console.log('[useOrganization] ✅ User context created and activated');
 
-      console.log('[useOrganization] User context created and activated');
-
-      // Create module permissions if modules are provided
+      // Step 5: Create module permissions
       if (modules && modules.length > 0) {
-        console.log('[useOrganization] Creating module permissions for:', modules);
+        console.log('[useOrganization] Step 5: Creating module permissions for:', modules);
         
         const modulePermissions = modules.map(moduleName => ({
           organization_id: groupData.id,
@@ -305,25 +323,47 @@ export const useOrganization = () => {
           can_view: true,
           can_edit: true,
           can_admin: false,
-          visibility: 'all_members',
+          visibility: 'all_members' as const,
         }));
 
-        const { error: permissionsError } = await supabase
+        console.log('[useOrganization] Inserting permissions:', modulePermissions);
+
+        const { data: insertedPermissions, error: permissionsError } = await supabase
           .from('module_permissions')
-          .insert(modulePermissions);
+          .insert(modulePermissions)
+          .select();
 
         if (permissionsError) {
-          console.error('[useOrganization] Error creating module permissions:', permissionsError);
-          return { success: false, error: permissionsError.message };
+          console.error('[useOrganization] ❌ Module permissions creation failed:', permissionsError);
+          return { success: false, error: `Failed to create module permissions: ${permissionsError.message}` };
         }
 
-        console.log('[useOrganization] Module permissions created successfully');
+        console.log('[useOrganization] ✅ Module permissions created:', insertedPermissions?.length || 0);
+      } else {
+        console.log('[useOrganization] No modules to create');
       }
       
+      console.log('[useOrganization] ===== Space creation completed successfully =====');
       return { success: true, groupId: groupData.id };
+      
     } catch (error: any) {
-      console.error('[useOrganization] Error creating group:', error);
-      return { success: false, error: error.message || 'Unknown error' };
+      console.error('[useOrganization] ❌ Fatal error during space creation:', error);
+      
+      // Attempt cleanup if we created the organization
+      if (createdGroupId) {
+        console.log('[useOrganization] Attempting cleanup of organization:', createdGroupId);
+        try {
+          await supabase.from('module_permissions').delete().eq('organization_id', createdGroupId);
+          await supabase.from('user_contexts').delete().eq('group_id', createdGroupId);
+          await supabase.from('organization_memberships').delete().eq('organization_id', createdGroupId);
+          await supabase.from('organizations').delete().eq('id', createdGroupId);
+          console.log('[useOrganization] Cleanup completed');
+        } catch (cleanupError) {
+          console.error('[useOrganization] Cleanup failed:', cleanupError);
+        }
+      }
+      
+      return { success: false, error: error.message || 'Unknown error occurred' };
     }
   };
 

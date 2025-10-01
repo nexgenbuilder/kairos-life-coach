@@ -116,8 +116,15 @@ export default function CreateSpacePage() {
     setIsCreating(true);
 
     try {
-      console.log('[CreateSpace] Creating space with:', { spaceName, spaceType, selectedModules, pricingType });
+      console.log('[CreateSpace] ===== Starting space creation =====');
+      console.log('[CreateSpace] Details:', { spaceName, spaceType, selectedModules, pricingType, isDiscoverable });
       
+      // Show progress toast
+      toast({
+        title: 'Creating Space',
+        description: 'Setting up your new space...',
+      });
+
       const result = await createGroup(
         spaceName.trim(),
         spaceType,
@@ -126,43 +133,74 @@ export default function CreateSpacePage() {
         isDiscoverable
       );
 
-      if (!result.success || !result.groupId) {
+      if (!result.success) {
+        console.error('[CreateSpace] Creation failed:', result.error);
         throw new Error(result.error || 'Failed to create space');
       }
 
-      console.log('[CreateSpace] Space created, updating settings...');
-
-      // Update pricing and other settings
-      const { error: updateError } = await supabase
-        .from('organizations')
-        .update({
-          pricing_type: pricingType,
-          price_amount_cents: pricingType === 'paid' ? Math.round(parseFloat(priceAmount) * 100) : 0,
-          subscription_interval: pricingType === 'paid' ? subscriptionInterval : null,
-        })
-        .eq('id', result.groupId);
-
-      if (updateError) {
-        console.error('[CreateSpace] Error updating pricing:', updateError);
-        throw updateError;
+      if (!result.groupId) {
+        console.error('[CreateSpace] No group ID returned');
+        throw new Error('Space was created but ID is missing');
       }
 
-      console.log('[CreateSpace] Space created successfully!');
+      console.log('[CreateSpace] ✅ Space created successfully:', result.groupId);
+
+      // Update pricing settings if needed
+      if (pricingType === 'paid') {
+        console.log('[CreateSpace] Updating pricing settings...');
+        const { error: updateError } = await supabase
+          .from('organizations')
+          .update({
+            pricing_type: pricingType,
+            price_amount_cents: Math.round(parseFloat(priceAmount) * 100),
+            subscription_interval: subscriptionInterval,
+          })
+          .eq('id', result.groupId);
+
+        if (updateError) {
+          console.error('[CreateSpace] ❌ Error updating pricing:', updateError);
+          toast({
+            title: 'Warning',
+            description: 'Space created but pricing settings failed to save',
+            variant: 'destructive',
+          });
+        } else {
+          console.log('[CreateSpace] ✅ Pricing settings updated');
+        }
+      }
+
+      console.log('[CreateSpace] ===== Space creation completed =====');
       
       toast({
-        title: 'Space Created!',
-        description: `${spaceName} has been created successfully`,
+        title: 'Success!',
+        description: `${spaceName} has been created and is now active`,
       });
       
-      // Navigate to dashboard after successful creation
+      // Navigate to dashboard
       setTimeout(() => {
         navigate('/dashboard');
-      }, 500);
+      }, 1000);
+      
     } catch (error: any) {
-      console.error('[CreateSpace] Space creation error:', error);
+      console.error('[CreateSpace] ❌ Fatal error:', error);
+      
+      let errorMessage = 'Failed to create space. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('authentication')) {
+          errorMessage = 'Authentication error. Please log in again.';
+        } else if (error.message.includes('permission')) {
+          errorMessage = 'Permission denied. Please check your access rights.';
+        } else if (error.message.includes('constraint')) {
+          errorMessage = 'A space with similar settings already exists.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: 'Creation Failed',
-        description: error.message || 'Failed to create space. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
