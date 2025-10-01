@@ -43,7 +43,7 @@ interface PublicSpace {
 }
 
 const CATEGORIES = [
-  { value: '', label: 'All Categories' },
+  { value: 'all', label: 'All Categories' },
   { value: 'business', label: 'Business' },
   { value: 'non_profit', label: 'Non-Profit' },
   { value: 'church', label: 'Church' },
@@ -57,7 +57,7 @@ const SpacesPage = () => {
   const { user } = useAuth();
   const [spaces, setSpaces] = useState<PublicSpace[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('');
   const [pricingFilter, setPricingFilter] = useState<'all' | 'free' | 'paid'>('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -198,7 +198,7 @@ const SpacesPage = () => {
   const filteredSpaces = spaces.filter(space => {
     const matchesSearch = space.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       space.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !categoryFilter || space.category === categoryFilter;
+    const matchesCategory = categoryFilter === 'all' || space.category === categoryFilter;
     const matchesLocation = !locationFilter || 
       space.location?.toLowerCase().includes(locationFilter.toLowerCase());
     const matchesPricing = pricingFilter === 'all' || space.pricing_type === pricingFilter;
