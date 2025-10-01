@@ -141,39 +141,51 @@ export function useChatMode(threadId?: string) {
     loadPermissions();
   }, []);
 
-  // Load thread-specific mode
+  // Load mode from database or localStorage
   useEffect(() => {
-    if (!threadId) return;
+    const loadMode = async () => {
+      if (threadId) {
+        // Load from database
+        const { data, error } = await supabase
+          .from('chat_threads')
+          .select('active_mode')
+          .eq('id', threadId)
+          .maybeSingle();
 
-    const loadThreadMode = async () => {
-      const { data, error } = await supabase
-        .from('chat_threads')
-        .select('active_mode')
-        .eq('id', threadId)
-        .maybeSingle();
-
-      if (!error && data?.active_mode) {
-        dispatch({ type: 'SET_MODE', mode: data.active_mode as ChatMode });
+        if (!error && data?.active_mode) {
+          dispatch({ type: 'SET_MODE', mode: data.active_mode as ChatMode });
+        }
+      } else {
+        // Load from localStorage as fallback
+        const savedMode = localStorage.getItem('kairos.chat.active_mode');
+        if (savedMode && ['general', 'perplexity', 'gemini'].includes(savedMode)) {
+          dispatch({ type: 'SET_MODE', mode: savedMode as ChatMode });
+        }
       }
     };
 
-    loadThreadMode();
+    loadMode();
   }, [threadId]);
 
-  // Persist mode changes to thread
+  // Persist mode changes to database or localStorage
   const persistMode = useCallback(async (mode: ChatMode) => {
-    if (!threadId) return;
+    if (threadId) {
+      // Persist to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase
-      .from('chat_threads')
-      .upsert({
-        user_id: user.id,
-        active_mode: mode,
-        updated_at: new Date().toISOString()
-      });
+      await supabase
+        .from('chat_threads')
+        .upsert({
+          id: threadId,
+          user_id: user.id,
+          active_mode: mode,
+          updated_at: new Date().toISOString()
+        });
+    } else {
+      // Persist to localStorage as fallback
+      localStorage.setItem('kairos.chat.active_mode', mode);
+    }
   }, [threadId]);
 
   // Check quota before using an engine

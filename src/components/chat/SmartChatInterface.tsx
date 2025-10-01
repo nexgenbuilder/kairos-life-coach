@@ -40,6 +40,12 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const { session } = useAuth();
   const { toast } = useToast();
   const { activeContext } = useOrganization();
+  
+  // Generate stable threadId for this chat session
+  const threadId = React.useMemo(() => {
+    return activeContext?.id ? `thread-${activeContext.id}` : 'default-thread';
+  }, [activeContext?.id]);
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -51,7 +57,7 @@ export function SmartChatInterface({ className }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { state: modeState, toggleMode, checkQuota, incrementUsage, handleError } = useChatMode();
+  const { state: modeState, toggleMode, checkQuota, incrementUsage, handleError } = useChatMode(threadId);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
