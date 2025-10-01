@@ -63,49 +63,15 @@ serve(async (req) => {
 
     // Get user context from auth header
     const authHeader = req.headers.get('Authorization');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    let userId = null;
-    
-    if (authHeader) {
-      const supabase = createClient(supabaseUrl, supabaseKey, {
-        auth: { persistSession: false },
-        global: {
-          headers: {
-            Authorization: authHeader
-          }
-        }
-      });
-
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-      
-      if (authError) {
-        logSecurityEvent('AUTH_ERROR', { error: authError.message }, req);
-        throw new Error('Authentication failed');
-      }
-      
-      userId = user?.id;
-    }
-
-    if (!userId) {
-      logSecurityEvent('UNAUTHENTICATED_ACCESS', { actionType }, req);
+    if (!authHeader) {
+      logSecurityEvent('MISSING_AUTH_HEADER', { actionType }, req);
       throw new Error('Authentication required');
     }
 
-    // Rate limiting
-    const { data: rateLimitOk } = await supabase.rpc('check_rate_limit', {
-      p_endpoint: `smart-action-${actionType}`,
-      p_limit: 20, // 20 requests per hour per action type
-      p_window_minutes: 60
-    });
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    if (!rateLimitOk) {
-      logSecurityEvent('RATE_LIMIT_EXCEEDED', { userId, actionType }, req);
-      throw new Error('Rate limit exceeded. Please try again later.');
-    }
-
-    // Create authenticated Supabase client for database operations
+    // Create authenticated Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false },
       global: {
@@ -114,6 +80,28 @@ serve(async (req) => {
         }
       }
     });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      logSecurityEvent('AUTH_ERROR', { error: authError?.message }, req);
+      throw new Error('Authentication failed');
+    }
+    
+    const userId = user.id;
+
+    // Rate limiting
+    const { data: rateLimitOk } = await supabase.rpc('check_rate_limit', {
+      p_endpoint: `smart-action-${actionType}`,
+      p_limit: 20,
+      p_window_minutes: 60
+    });
+    
+    if (!rateLimitOk) {
+      logSecurityEvent('RATE_LIMIT_EXCEEDED', { userId, actionType }, req);
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
 
     let response = '';
 

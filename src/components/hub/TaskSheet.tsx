@@ -36,7 +36,7 @@ export function TaskSheet({ open, onOpenChange }: TaskSheetProps) {
     title: '',
     description: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
-    status: 'inactive'
+    status: 'todo'
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,7 +73,7 @@ export function TaskSheet({ open, onOpenChange }: TaskSheetProps) {
         title: '',
         description: '',
         priority: 'medium',
-        status: 'inactive'
+        status: 'todo'
       });
       onOpenChange(false);
     } catch (error) {

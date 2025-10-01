@@ -58,7 +58,8 @@ export function ExpenseSheet({ open, onOpenChange }: ExpenseSheetProps) {
         amount: parseFloat(formData.amount),
         category: formData.category,
         description: formData.description.trim() || 'Expense',
-        date: formData.date
+        date: formData.date,
+        is_recurring: false
       }]);
 
       if (error) throw error;
