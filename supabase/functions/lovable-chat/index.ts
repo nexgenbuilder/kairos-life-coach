@@ -1,3 +1,4 @@
+// Gemini AI Chat Function - Pure Conversation & Image Generation v2.0
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -31,7 +32,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('[lovable-chat] Request received');
+    console.log('[lovable-chat v2.0] Processing Gemini request');
     
     const contentType = req.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
