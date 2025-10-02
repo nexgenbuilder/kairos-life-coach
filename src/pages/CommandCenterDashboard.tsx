@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Search, Sparkles, MessageSquare, Mail, Banknote, ReceiptText, CheckSquare, Calendar, Dumbbell, HeartPulse, Users, Bell, LayoutDashboard, Settings, Boxes, MapPin, Rss } from 'lucide-react';
+import { Search, Sparkles, MessageSquare, Mail, Banknote, ReceiptText, CheckSquare, Calendar, Dumbbell, HeartPulse, Users, Bell, LayoutDashboard, Settings, Boxes, MapPin, Rss, Building } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useSound } from '@/hooks/useSound';
 import {
   TasksWindow, MoneyWindow, ReceiptsWindow, SpacesWindow, MessagesWindow,
   CalendarWindow, FitnessWindow, HealthWindow, NotificationsWindow, FeedWindow, SettingsWindow, AssetsWindow, LocationsWindow,
-  AIPerplexityWindow, AIGeminiWindow, ModuleKey
+  AIPerplexityWindow, AIGeminiWindow, BusinessWindow, ModuleKey
 } from '@/components/command/ModuleWindows';
 
 function CommandTile({ icon: Icon, label, subtitle, onClick }: any) {
@@ -44,6 +44,7 @@ export default function CommandCenterDashboard() {
     { key: 'tasks', label: 'Tasks', icon: CheckSquare, subtitle: 'Quick create / Plan day', action: () => { play('ui'); setOpen('tasks'); } },
     { key: 'money', label: 'Money', icon: Banknote, subtitle: 'Log expense / income', action: () => { play('ui'); setOpen('money'); } },
     { key: 'receipts', label: 'Receipts', icon: ReceiptText, subtitle: 'Scan & extract', action: () => { play('ui'); setOpen('receipts'); } },
+    { key: 'business', label: 'Business', icon: Building, subtitle: 'Manage business', action: () => { play('ui'); setOpen('business'); } },
     { key: 'calendar', label: 'Calendar', icon: Calendar, subtitle: 'Schedule & view', action: () => { play('ui'); setOpen('calendar'); } },
     { key: 'fitness', label: 'Fitness', icon: Dumbbell, subtitle: 'Workouts & streaks', action: () => { play('ui'); setOpen('fitness'); } },
     { key: 'health', label: 'Health', icon: HeartPulse, subtitle: 'Vitals & habits', action: () => { play('ui'); setOpen('health'); } },
@@ -124,6 +125,7 @@ export default function CommandCenterDashboard() {
     <TasksWindow open={open==='tasks'} onOpenChange={()=>setOpen(null)} />
     <MoneyWindow open={open==='money'} onOpenChange={()=>setOpen(null)} />
     <ReceiptsWindow open={open==='receipts'} onOpenChange={()=>setOpen(null)} />
+    <BusinessWindow open={open==='business'} onOpenChange={()=>setOpen(null)} />
     <SpacesWindow open={open==='spaces'} onOpenChange={()=>setOpen(null)} />
     <MessagesWindow open={open==='messages'} onOpenChange={()=>setOpen(null)} />
     <CalendarWindow open={open==='calendar'} onOpenChange={()=>setOpen(null)} />

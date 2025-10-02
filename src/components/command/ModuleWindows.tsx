@@ -24,7 +24,7 @@ import { startOfWeek } from 'date-fns';
 
 const SmartChatInterface = React.lazy(() => import('@/components/chat/SmartChatInterface'));
 
-export type ModuleKey = 'perplexity'|'gemini'|'messages'|'tasks'|'money'|'receipts'|'calendar'|'fitness'|'health'|'spaces'|'notifications'|'feed'|'settings'|'cloud'|'locations';
+export type ModuleKey = 'perplexity'|'gemini'|'messages'|'tasks'|'money'|'receipts'|'calendar'|'fitness'|'health'|'spaces'|'notifications'|'feed'|'settings'|'cloud'|'locations'|'business';
 
 export function ModuleWindow({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (v: boolean) => void; title: string; children: React.ReactNode }) {
   return (
@@ -2094,6 +2094,207 @@ export function LocationsWindow(p:{open:boolean; onOpenChange:(v:boolean)=>void}
             {loading ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : null}
             Save Location
           </Button>
+        </TabsContent>
+      </Tabs>
+    </ModuleWindow>
+  );
+}
+
+export function BusinessWindow(p: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [activeTab, setActiveTab] = useState('contacts');
+  const [people, setPeople] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [revenue, setRevenue] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const { play } = useSound();
+
+  useEffect(() => {
+    if (p.open) {
+      loadBusinessData();
+    }
+  }, [p.open]);
+
+  const loadBusinessData = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [peopleData, inventoryData, expensesData, revenueData] = await Promise.all([
+        supabase.from('people').select('*').eq('user_id', user.id).in('type', ['client', 'supplier', 'partner', 'vendor']).order('created_at', { ascending: false }).limit(10),
+        supabase.from('inventory').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
+        supabase.from('business_expenses').select('*').eq('user_id', user.id).order('date', { ascending: false }).limit(10),
+        supabase.from('business_revenue').select('*').eq('user_id', user.id).order('date', { ascending: false }).limit(10)
+      ]);
+
+      setPeople(peopleData.data || []);
+      setInventory(inventoryData.data || []);
+      setExpenses(expensesData.data || []);
+      setRevenue(revenueData.data || []);
+    } catch (error) {
+      console.error('Failed to load business data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalInventoryValue = inventory.reduce((sum, item) => sum + ((item.unit_price_cents || 0) * item.quantity), 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount_cents, 0);
+  const totalRevenue = revenue.reduce((sum, rev) => sum + rev.amount_cents, 0);
+
+  return (
+    <ModuleWindow open={p.open} onOpenChange={p.onOpenChange} title='Business'>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className='glass-soft w-full'>
+          <TabsTrigger value='contacts' className='flex-1'>Contacts</TabsTrigger>
+          <TabsTrigger value='inventory' className='flex-1'>Inventory</TabsTrigger>
+          <TabsTrigger value='expenses' className='flex-1'>Expenses</TabsTrigger>
+          <TabsTrigger value='revenue' className='flex-1'>Revenue</TabsTrigger>
+          <TabsTrigger value='payroll' className='flex-1'>Payroll</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value='contacts' className='mt-4'>
+          <div className='space-y-4'>
+            <div className='flex justify-between items-center'>
+              <p className='text-sm text-muted'>Business contacts (clients, suppliers, partners)</p>
+              <Button size='sm' onClick={() => window.location.href = '/business'}>
+                View All
+              </Button>
+            </div>
+            {loading ? (
+              <div className='text-center py-8 text-muted'>Loading...</div>
+            ) : people.length === 0 ? (
+              <div className='text-center py-8 text-muted'>No contacts yet</div>
+            ) : (
+              <ScrollArea className='h-[300px]'>
+                <div className='space-y-2'>
+                  {people.map((person) => (
+                    <div key={person.id} className='p-3 glass-soft rounded-lg flex justify-between items-center'>
+                      <div>
+                        <div className='font-medium text-strong'>{person.full_name}</div>
+                        <div className='text-xs text-muted'>{person.email}</div>
+                      </div>
+                      <Badge variant='outline' className='capitalize'>{person.type}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value='inventory' className='mt-4'>
+          <div className='space-y-4'>
+            <div className='flex justify-between items-center'>
+              <div>
+                <p className='text-sm text-muted'>Total inventory value</p>
+                <p className='text-2xl font-bold text-strong'>${(totalInventoryValue / 100).toFixed(2)}</p>
+              </div>
+              <Button size='sm' onClick={() => window.location.href = '/business'}>
+                Manage
+              </Button>
+            </div>
+            {loading ? (
+              <div className='text-center py-8 text-muted'>Loading...</div>
+            ) : inventory.length === 0 ? (
+              <div className='text-center py-8 text-muted'>No inventory items yet</div>
+            ) : (
+              <ScrollArea className='h-[300px]'>
+                <div className='space-y-2'>
+                  {inventory.map((item) => (
+                    <div key={item.id} className='p-3 glass-soft rounded-lg flex justify-between items-center'>
+                      <div>
+                        <div className='font-medium text-strong'>{item.name}</div>
+                        <div className='text-xs text-muted'>Qty: {item.quantity} • ${((item.unit_price_cents || 0) / 100).toFixed(2)} each</div>
+                      </div>
+                      <div className='text-right'>
+                        <div className='font-medium text-strong'>${((item.unit_price_cents || 0) * item.quantity / 100).toFixed(2)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value='expenses' className='mt-4'>
+          <div className='space-y-4'>
+            <div className='flex justify-between items-center'>
+              <div>
+                <p className='text-sm text-muted'>Total expenses</p>
+                <p className='text-2xl font-bold text-strong'>${(totalExpenses / 100).toFixed(2)}</p>
+              </div>
+              <Button size='sm' onClick={() => window.location.href = '/business'}>
+                View All
+              </Button>
+            </div>
+            {loading ? (
+              <div className='text-center py-8 text-muted'>Loading...</div>
+            ) : expenses.length === 0 ? (
+              <div className='text-center py-8 text-muted'>No expenses yet</div>
+            ) : (
+              <ScrollArea className='h-[300px]'>
+                <div className='space-y-2'>
+                  {expenses.map((expense) => (
+                    <div key={expense.id} className='p-3 glass-soft rounded-lg flex justify-between items-center'>
+                      <div>
+                        <div className='font-medium text-strong'>{expense.description}</div>
+                        <div className='text-xs text-muted'>{new Date(expense.date).toLocaleDateString()} • {expense.category}</div>
+                      </div>
+                      <div className='font-medium text-strong'>-${(expense.amount_cents / 100).toFixed(2)}</div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value='revenue' className='mt-4'>
+          <div className='space-y-4'>
+            <div className='flex justify-between items-center'>
+              <div>
+                <p className='text-sm text-muted'>Total revenue</p>
+                <p className='text-2xl font-bold text-strong'>${(totalRevenue / 100).toFixed(2)}</p>
+              </div>
+              <Button size='sm' onClick={() => window.location.href = '/business'}>
+                View All
+              </Button>
+            </div>
+            {loading ? (
+              <div className='text-center py-8 text-muted'>Loading...</div>
+            ) : revenue.length === 0 ? (
+              <div className='text-center py-8 text-muted'>No revenue yet</div>
+            ) : (
+              <ScrollArea className='h-[300px]'>
+                <div className='space-y-2'>
+                  {revenue.map((rev) => (
+                    <div key={rev.id} className='p-3 glass-soft rounded-lg flex justify-between items-center'>
+                      <div>
+                        <div className='font-medium text-strong'>{rev.description}</div>
+                        <div className='text-xs text-muted'>{new Date(rev.date).toLocaleDateString()} • {rev.source}</div>
+                      </div>
+                      <div className='font-medium text-strong'>+${(rev.amount_cents / 100).toFixed(2)}</div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value='payroll' className='mt-4'>
+          <div className='space-y-4'>
+            <p className='text-sm text-muted'>Manage employee payroll and compensation</p>
+            <div className='text-center py-8'>
+              <Button onClick={() => window.location.href = '/business'}>
+                Go to Payroll Manager
+              </Button>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </ModuleWindow>
